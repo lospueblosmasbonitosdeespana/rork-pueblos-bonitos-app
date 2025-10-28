@@ -3,7 +3,7 @@ import { View, ActivityIndicator, StyleSheet, Text } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { COLORS, SPACING, TYPOGRAPHY } from '@/constants/theme';
 
-const RUTAS_URL = 'https://lospueblosmasbonitosdeespana.org/category/rutas/';
+const RUTAS_URL = 'https://lospueblosmasbonitosdeespana.org/category/rutas/?app=1';
 
 const RUTAS_PATHS = [
   '/ruta-pueblos-del-blanco-infinito/',
@@ -35,60 +35,93 @@ export default function RutasScreen() {
       
       function shouldHideHeaderFooter() {
         const currentUrl = window.location.href;
-        return PATHS_TO_HIDE.some(path => currentUrl.includes(path));
+        return PATHS_TO_HIDE.some(path => currentUrl.includes(path)) || currentUrl.includes('category/rutas');
+      }
+      
+      function addAppParam(url) {
+        try {
+          const urlObj = new URL(url, window.location.href);
+          if (urlObj.hostname === 'lospueblosmasbonitosdeespana.org' && !urlObj.searchParams.has('app')) {
+            urlObj.searchParams.set('app', '1');
+            return urlObj.toString();
+          }
+        } catch (e) {
+          console.log('Error parsing URL:', e);
+        }
+        return url;
       }
       
       function hideHeaderFooter() {
-        if (shouldHideHeaderFooter()) {
-          const style = document.createElement('style');
-          style.id = 'lpbe-hide-header-footer';
-          style.innerHTML = \`
-            header,
-            .site-header,
-            .main-navigation,
-            nav,
-            .nav-menu,
-            #masthead,
-            .header,
-            .menu,
-            .top-bar,
-            footer,
-            .site-footer,
-            .footer,
-            #colophon,
-            .bottom-bar {
-              display: none !important;
-            }
-
-            body {
-              padding-top: 0 !important;
-              margin-top: 0 !important;
-              padding-bottom: 0 !important;
-              margin-bottom: 0 !important;
-              overflow-x: hidden !important;
-            }
-
-            .site-content,
-            .entry-content,
-            article {
-              max-width: 100% !important;
-              overflow-x: hidden !important;
-            }
-
-            img {
-              max-width: 100% !important;
-              height: auto !important;
-            }
-          \`;
-          
-          if (!document.getElementById('lpbe-hide-header-footer')) {
-            document.head.appendChild(style);
-            console.log('✅ Header y footer ocultados en:', window.location.href);
+        const style = document.createElement('style');
+        style.id = 'lpbe-hide-header-footer';
+        style.innerHTML = \`
+          header,
+          .site-header,
+          .main-navigation,
+          nav,
+          .nav-menu,
+          #masthead,
+          .header,
+          .menu,
+          .top-bar,
+          footer,
+          .site-footer,
+          .footer,
+          #colophon,
+          .bottom-bar,
+          #wpadminbar {
+            display: none !important;
           }
+
+          body {
+            padding-top: 0 !important;
+            margin-top: 0 !important;
+            padding-bottom: 0 !important;
+            margin-bottom: 0 !important;
+            overflow-x: hidden !important;
+          }
+
+          .site-content,
+          .entry-content,
+          article {
+            max-width: 100% !important;
+            overflow-x: hidden !important;
+          }
+
+          img {
+            max-width: 100% !important;
+            height: auto !important;
+          }
+        \`;
+        
+        if (!document.getElementById('lpbe-hide-header-footer')) {
+          document.head.appendChild(style);
+          console.log('✅ Header y footer ocultados en:', window.location.href);
         }
       }
       
+      function interceptLinks() {
+        document.addEventListener('click', function(e) {
+          let target = e.target;
+          while (target && target.tagName !== 'A') {
+            target = target.parentElement;
+          }
+          
+          if (target && target.tagName === 'A' && target.href) {
+            const href = target.href;
+            const modifiedUrl = addAppParam(href);
+            
+            if (modifiedUrl !== href) {
+              e.preventDefault();
+              window.location.href = modifiedUrl;
+              console.log('🔗 Navegando con app=1:', modifiedUrl);
+            }
+          }
+        }, true);
+      }
+      
       hideHeaderFooter();
+      interceptLinks();
       
       const observer = new MutationObserver(() => {
         hideHeaderFooter();
@@ -125,6 +158,9 @@ export default function RutasScreen() {
             onLoadEnd={() => {
               console.log('✅ Rutas cargadas correctamente');
               setLoading(false);
+            }}
+            onNavigationStateChange={(navState) => {
+              console.log('🧭 Navegación detectada:', navState.url);
             }}
             onError={(syntheticEvent) => {
               const { nativeEvent } = syntheticEvent;
