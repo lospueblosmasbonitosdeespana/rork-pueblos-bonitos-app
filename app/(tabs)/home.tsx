@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { Image } from 'expo-image';
-import { Building2, User, Camera, MapIcon, ShoppingBag, Newspaper } from 'lucide-react-native';
+import { Building2, User, Camera, Compass, ShoppingBag, Newspaper } from 'lucide-react-native';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { SPACING } from '@/constants/theme';
@@ -37,11 +37,11 @@ export default function HomeScreen() {
 
         <TouchableOpacity
           style={styles.button}
-          onPress={() => {}}
+          onPress={() => router.push('/(tabs)/multiexperiencias')}
           activeOpacity={0.8}
         >
           <View style={styles.iconContainer}>
-            <MapIcon size={32} color="#FFFFFF" strokeWidth={2} />
+            <Compass size={32} color="#FFFFFF" strokeWidth={2} />
           </View>
           <Text style={styles.buttonText}>{t.home.routes}</Text>
         </TouchableOpacity>
