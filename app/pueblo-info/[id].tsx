@@ -1,8 +1,7 @@
+import React, { useEffect, useState } from 'react';
+import { View, Text, ActivityIndicator, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { Stack, useLocalSearchParams, router } from 'expo-router';
 import { ArrowLeft, Wind, Thermometer, CloudRain, Mountain, Users } from 'lucide-react-native';
-import React, { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View, TouchableOpacity, ActivityIndicator } from 'react-native';
-
 import { COLORS, SHADOWS, SPACING } from '@/constants/theme';
 
 type PuebloInfo = {
@@ -29,39 +28,36 @@ type PuebloInfo = {
 
 export default function PuebloInfo() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const [datos, setDatos] = useState<PuebloInfo | null>(null);
+  const [data, setData] = useState<PuebloInfo | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   console.log('🏞️ PuebloInfo id:', id);
 
   useEffect(() => {
-    let cancelado = false;
-    
-    async function cargar() {
+    async function load() {
       try {
+        console.log('🌍 Fetching pueblo-info for id:', id);
         const res = await fetch(`https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/pueblo-info?id=${id}`);
         console.log('🌍 Response status:', res.status);
         
-        if (!res.ok) throw new Error('http ' + res.status);
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         
         const json = await res.json();
         console.log('🌍 pueblo-info json:', json);
         
-        if (!cancelado) setDatos(json);
+        setData(json);
       } catch (e) {
         console.log('🌍 pueblo-info error:', e);
-        if (!cancelado) setError(String(e));
+        setError(String(e));
       } finally {
-        if (!cancelado) setLoading(false);
+        setLoading(false);
       }
     }
     
-    cargar();
-    
-    return () => {
-      cancelado = true;
-    };
+    if (id) {
+      load();
+    }
   }, [id]);
 
   const getAirQualityColor = (estado: string) => {
@@ -89,15 +85,27 @@ export default function PuebloInfo() {
     );
   }
 
-  if (error || !datos) {
+  if (error || !data) {
     return (
-      <View style={styles.loadingContainer}>
-        <Text style={styles.errorText}>No se ha encontrado información para este pueblo</Text>
-        <Text style={styles.errorSubtext}>{error || 'Sin datos'}</Text>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Text style={styles.backButtonText}>Volver</Text>
-        </TouchableOpacity>
-      </View>
+      <>
+        <Stack.Screen 
+          options={{ 
+            headerTitle: 'Información del Pueblo',
+            headerLeft: () => (
+              <TouchableOpacity onPress={() => router.back()} style={styles.headerBackButton}>
+                <ArrowLeft size={24} color={COLORS.text} />
+              </TouchableOpacity>
+            ),
+          }} 
+        />
+        <View style={styles.loadingContainer}>
+          <Text style={styles.errorText}>No se ha encontrado información para este pueblo</Text>
+          <Text style={styles.errorSubtext}>{error || 'Sin datos'}</Text>
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+            <Text style={styles.backButtonText}>Volver</Text>
+          </TouchableOpacity>
+        </View>
+      </>
     );
   }
 
@@ -105,7 +113,7 @@ export default function PuebloInfo() {
     <>
       <Stack.Screen 
         options={{ 
-          headerTitle: datos.nombre,
+          headerTitle: data.nombre,
           headerLeft: () => (
             <TouchableOpacity onPress={() => router.back()} style={styles.headerBackButton}>
               <ArrowLeft size={24} color={COLORS.text} />
@@ -115,19 +123,19 @@ export default function PuebloInfo() {
       />
       <ScrollView style={styles.container}>
         <View style={styles.content}>
-          <Text style={styles.welcomeTitle}>Bienvenido a {datos.nombre}</Text>
+          <Text style={styles.welcomeTitle}>Bienvenido a {data.nombre}</Text>
           
           <View style={styles.grid}>
             <TouchableOpacity 
-              style={[styles.metricButton, { backgroundColor: getAirQualityColor(datos.aire?.estado || '') }]}
+              style={[styles.metricButton, { backgroundColor: getAirQualityColor(data.aire?.estado || '') }]}
               activeOpacity={0.9}
             >
               <View style={styles.iconContainer}>
                 <Wind size={32} color="#FFFFFF" strokeWidth={2.5} />
               </View>
               <Text style={styles.metricLabel}>Calidad del Aire</Text>
-              <Text style={styles.metricValue}>{datos.aire?.ica || '—'}</Text>
-              <Text style={styles.metricSubtext}>ICA: {datos.aire?.estado || '—'}</Text>
+              <Text style={styles.metricValue}>{data.aire?.ica || '—'}</Text>
+              <Text style={styles.metricSubtext}>ICA: {data.aire?.estado || '—'}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity 
@@ -138,8 +146,10 @@ export default function PuebloInfo() {
                 <Thermometer size={32} color="#FFFFFF" strokeWidth={2.5} />
               </View>
               <Text style={styles.metricLabel}>Temperatura</Text>
-              <Text style={styles.metricValue}>{datos.clima?.temperatura || '—'}°C</Text>
-              <Text style={styles.metricSubtext}>{datos.clima?.descripcion || '—'}</Text>
+              <Text style={styles.metricValue}>
+                {data.clima?.temperatura ? `${data.clima.temperatura.toFixed(1)}°C` : '—'}
+              </Text>
+              <Text style={styles.metricSubtext}>{data.clima?.descripcion || '—'}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity 
@@ -150,7 +160,7 @@ export default function PuebloInfo() {
                 <CloudRain size={32} color="#FFFFFF" strokeWidth={2.5} />
               </View>
               <Text style={styles.metricLabel}>Lluvia últimas 24h</Text>
-              <Text style={styles.metricValue}>{datos.lluvia_24h || '0'} mm</Text>
+              <Text style={styles.metricValue}>{data.lluvia_24h ?? '0'} mm</Text>
               <Text style={styles.metricSubtext}>Últimas 24 horas</Text>
             </TouchableOpacity>
 
@@ -162,28 +172,28 @@ export default function PuebloInfo() {
                 <Mountain size={32} color="#FFFFFF" strokeWidth={2.5} />
               </View>
               <Text style={styles.metricLabel}>Altitud</Text>
-              <Text style={styles.metricValue}>{datos.altitud || '—'} m</Text>
+              <Text style={styles.metricValue}>{data.altitud ?? '—'} m</Text>
               <Text style={styles.metricSubtext}>sobre el nivel del mar</Text>
             </TouchableOpacity>
 
             <TouchableOpacity 
-              style={[styles.metricButton, { backgroundColor: getAfluenciaColor(datos.afluencia?.estado || '') }]}
+              style={[styles.metricButton, { backgroundColor: getAfluenciaColor(data.afluencia?.estado || '') }]}
               activeOpacity={0.9}
             >
               <View style={styles.iconContainer}>
                 <Users size={32} color="#FFFFFF" strokeWidth={2.5} />
               </View>
               <Text style={styles.metricLabel}>Afluencia</Text>
-              <Text style={styles.metricValue}>{datos.afluencia?.estado || '—'}</Text>
-              <Text style={styles.metricSubtext}>{datos.afluencia?.descripcion || '—'}</Text>
+              <Text style={styles.metricValue}>{data.afluencia?.estado || '—'}</Text>
+              <Text style={styles.metricSubtext}>{data.afluencia?.descripcion || '—'}</Text>
             </TouchableOpacity>
           </View>
 
-          {datos.coordenadas && (
+          {data.coordenadas && (
             <View style={styles.coordsCard}>
               <Text style={styles.coordsLabel}>Coordenadas GPS</Text>
               <Text style={styles.coordsValue}>
-                {datos.coordenadas.lat ? datos.coordenadas.lat.toFixed(6) : '—'}, {datos.coordenadas.lng ? datos.coordenadas.lng.toFixed(6) : '—'}
+                {data.coordenadas.lat ? data.coordenadas.lat.toFixed(6) : '—'}, {data.coordenadas.lng ? data.coordenadas.lng.toFixed(6) : '—'}
               </Text>
             </View>
           )}
@@ -218,7 +228,7 @@ const styles = StyleSheet.create({
     color: COLORS.error,
     textAlign: 'center',
     marginBottom: SPACING.sm,
-    fontWeight: '600' as const,
+    fontWeight: '600',
   },
   errorSubtext: {
     fontSize: 14,
@@ -235,7 +245,7 @@ const styles = StyleSheet.create({
   backButtonText: {
     fontSize: 16,
     color: COLORS.card,
-    fontWeight: '700' as const,
+    fontWeight: '700',
   },
   headerBackButton: {
     padding: SPACING.xs,
@@ -243,7 +253,7 @@ const styles = StyleSheet.create({
   },
   welcomeTitle: {
     fontSize: 24,
-    fontWeight: '800' as const,
+    fontWeight: '800',
     color: COLORS.text,
     marginBottom: SPACING.xl,
     textAlign: 'center',
@@ -270,22 +280,22 @@ const styles = StyleSheet.create({
   },
   metricLabel: {
     fontSize: 14,
-    fontWeight: '600' as const,
+    fontWeight: '600',
     color: '#FFFFFF',
     opacity: 0.9,
     marginBottom: SPACING.xs,
-    textTransform: 'uppercase' as const,
+    textTransform: 'uppercase',
     letterSpacing: 1,
   },
   metricValue: {
     fontSize: 42,
-    fontWeight: '900' as const,
+    fontWeight: '900',
     color: '#FFFFFF',
     marginBottom: SPACING.xs,
   },
   metricSubtext: {
     fontSize: 14,
-    fontWeight: '500' as const,
+    fontWeight: '500',
     color: '#FFFFFF',
     opacity: 0.85,
     textAlign: 'center',
@@ -300,16 +310,16 @@ const styles = StyleSheet.create({
   },
   coordsLabel: {
     fontSize: 14,
-    fontWeight: '600' as const,
+    fontWeight: '600',
     color: COLORS.textSecondary,
     marginBottom: SPACING.xs,
-    textTransform: 'uppercase' as const,
+    textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   coordsValue: {
     fontSize: 16,
     color: COLORS.text,
-    fontWeight: '700' as const,
+    fontWeight: '700',
     fontFamily: 'monospace',
   },
 });
