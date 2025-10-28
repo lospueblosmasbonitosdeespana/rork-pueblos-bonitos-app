@@ -193,7 +193,7 @@ export default function PuebloInfo() {
             <View style={styles.coordsCard}>
               <Text style={styles.coordsLabel}>Coordenadas GPS</Text>
               <Text style={styles.coordsValue}>
-                {data.coordenadas.lat ? data.coordenadas.lat.toFixed(6) : '—'}, {data.coordenadas.lng ? data.coordenadas.lng.toFixed(6) : '—'}
+                {data.coordenadas.lat ? Number(data.coordenadas.lat).toFixed(6) : '—'}, {data.coordenadas.lng ? Number(data.coordenadas.lng).toFixed(6) : '—'}
               </Text>
             </View>
           )}
