@@ -1,9 +1,31 @@
-import { Tabs } from "expo-router";
-import { Home, MapPin, Compass, Map, User } from "lucide-react-native";
+import { router, Tabs } from "expo-router";
+import { Bell, Home, MapPin, Compass, Map, User } from "lucide-react-native";
 import React from "react";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { COLORS } from "@/constants/theme";
 import { useLanguage } from "@/contexts/language";
+import { useNotifications } from "@/contexts/notifications";
+
+function NotificationBellButton() {
+  const { unreadCount } = useNotifications();
+
+  return (
+    <TouchableOpacity
+      onPress={() => router.push('/centro-notificaciones')}
+      style={bellStyles.container}
+    >
+      <Bell size={22} color="#800000" strokeWidth={2} />
+      {unreadCount > 0 && (
+        <View style={bellStyles.badge}>
+          <Text style={bellStyles.badgeText}>
+            {unreadCount > 9 ? '9+' : unreadCount}
+          </Text>
+        </View>
+      )}
+    </TouchableOpacity>
+  );
+}
 
 export default function TabLayout() {
   const { t } = useLanguage();
@@ -14,6 +36,7 @@ export default function TabLayout() {
         tabBarActiveTintColor: '#8b2b1a',
         tabBarInactiveTintColor: COLORS.textSecondary,
         headerShown: true,
+        headerRight: () => <NotificationBellButton />,
         tabBarStyle: {
           backgroundColor: '#ffffff',
           borderTopColor: COLORS.border,
@@ -69,3 +92,27 @@ export default function TabLayout() {
     </Tabs>
   );
 }
+
+const bellStyles = StyleSheet.create({
+  container: {
+    marginRight: 16,
+    position: 'relative',
+  },
+  badge: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    backgroundColor: '#ff3b30',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  badgeText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+});

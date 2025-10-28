@@ -6,6 +6,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import { AuthProvider } from "@/contexts/auth";
 import { LanguageProvider } from "@/contexts/language";
+import { NotificationsProvider } from "@/contexts/notifications";
 import { trpc, trpcClient } from "@/lib/trpc";
 
 SplashScreen.preventAutoHideAsync();
@@ -38,6 +39,13 @@ function RootLayoutNav() {
           presentation: "card",
         }}
       />
+      <Stack.Screen
+        name="centro-notificaciones"
+        options={{
+          headerShown: false,
+          presentation: "modal",
+        }}
+      />
     </Stack>
   );
 }
@@ -52,9 +60,11 @@ export default function RootLayout() {
       <QueryClientProvider client={queryClient}>
         <LanguageProvider>
           <AuthProvider>
-            <GestureHandlerRootView>
-              <RootLayoutNav />
-            </GestureHandlerRootView>
+            <NotificationsProvider>
+              <GestureHandlerRootView>
+                <RootLayoutNav />
+              </GestureHandlerRootView>
+            </NotificationsProvider>
           </AuthProvider>
         </LanguageProvider>
       </QueryClientProvider>
