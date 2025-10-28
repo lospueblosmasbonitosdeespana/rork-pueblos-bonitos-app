@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Image, StyleSheet, View, ActivityIndicator, Text } from 'react-native';
+import { StyleSheet, View, ActivityIndicator, Text } from 'react-native';
+import { Image } from 'expo-image';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type WeatherIconProps = {
@@ -38,8 +39,9 @@ export default function WeatherIcon({ lat, lon, size = 40 }: WeatherIconProps) {
           console.log('🌤️ Error response:', errorText);
           const cached = await AsyncStorage.getItem(`${WEATHER_CACHE_KEY}_${lat}_${lon}`);
           if (cached) {
-            console.log('🌤️ Using cached icon URL');
-            setIconUrl(cached);
+            const cachedWithTimestamp = `${cached}?t=${Date.now()}`;
+            console.log('🌤️ Using cached icon URL:', cachedWithTimestamp);
+            setIconUrl(cachedWithTimestamp);
             setError(false);
           } else {
             setError(true);
@@ -62,20 +64,23 @@ export default function WeatherIcon({ lat, lon, size = 40 }: WeatherIconProps) {
           return;
         }
         
-        const url = `https://openweathermap.org/img/wn/${weatherIcon}@2x.png?t=${Date.now()}`;
+        const baseUrl = `https://openweathermap.org/img/wn/${weatherIcon}@2x.png`;
+        const url = `${baseUrl}?t=${Date.now()}`;
         console.log('🌤️ ICONO API:', weatherIcon);
-        console.log('🌤️ URL GENERADA:', url);
+        console.log('🌤️ URL BASE:', baseUrl);
+        console.log('🌤️ URL CON TIMESTAMP:', url);
         
         setIconUrl(url);
         setError(false);
-        await AsyncStorage.setItem(`${WEATHER_CACHE_KEY}_${lat}_${lon}`, url);
+        await AsyncStorage.setItem(`${WEATHER_CACHE_KEY}_${lat}_${lon}`, baseUrl);
         setLoading(false);
       } catch (e) {
         console.log('🌤️ Error fetching weather:', e);
         const cached = await AsyncStorage.getItem(`${WEATHER_CACHE_KEY}_${lat}_${lon}`);
         if (cached) {
-          console.log('🌤️ Using cached icon URL after error');
-          setIconUrl(cached);
+          const cachedWithTimestamp = `${cached}?t=${Date.now()}`;
+          console.log('🌤️ Using cached icon URL after error:', cachedWithTimestamp);
+          setIconUrl(cachedWithTimestamp);
           setError(false);
         } else {
           setError(true);
@@ -87,8 +92,9 @@ export default function WeatherIcon({ lat, lon, size = 40 }: WeatherIconProps) {
     const loadCachedAndFetch = async () => {
       const cached = await AsyncStorage.getItem(`${WEATHER_CACHE_KEY}_${lat}_${lon}`);
       if (cached) {
-        console.log('🌤️ Loading cached icon URL:', cached);
-        setIconUrl(cached);
+        const cachedWithTimestamp = `${cached}?t=${Date.now()}`;
+        console.log('🌤️ Loading cached icon URL:', cachedWithTimestamp);
+        setIconUrl(cachedWithTimestamp);
         setLoading(false);
         setError(false);
       }
@@ -131,14 +137,15 @@ export default function WeatherIcon({ lat, lon, size = 40 }: WeatherIconProps) {
     <Image 
       source={{ uri: iconUrl }} 
       style={[styles.icon, { width: size, height: size }]}
-      resizeMode="contain"
-      onError={(e) => {
-        console.log('🌤️ Image loading error:', e.nativeEvent.error);
+      contentFit="contain"
+      cachePolicy="none"
+      onError={(error) => {
+        console.log('🌤️ Image loading error:', error);
         setError(true);
         setIconUrl(null);
       }}
       onLoad={() => {
-        console.log('🌤️ Image loaded successfully');
+        console.log('🌤️ Image loaded successfully:', iconUrl);
       }}
     />
   );
