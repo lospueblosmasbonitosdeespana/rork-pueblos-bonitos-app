@@ -1,9 +1,10 @@
 import { router } from 'expo-router';
-import { ArrowLeft, Zap } from 'lucide-react-native';
+import { ArrowLeft, Newspaper, AlertTriangle, Navigation, Snowflake } from 'lucide-react-native';
 import React, { useEffect } from 'react';
 import {
   ActivityIndicator,
   FlatList,
+  Linking,
   RefreshControl,
   StyleSheet,
   Text,
@@ -14,27 +15,26 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useNotifications } from '@/contexts/notifications';
 
-function formatDate(fecha: string | undefined | null): string {
-  if (!fecha) {
-    return '';
-  }
+interface NotificationItem {
+  id: number;
+  tipo: 'noticia' | 'alerta' | 'semaforo' | 'nieve';
+  titulo: string;
+  mensaje: string;
+  enlace: string;
+}
 
-  try {
-    const date = new Date(fecha);
-    if (isNaN(date.getTime())) {
-      return '';
-    }
-
-    const day = date.getDate().toString().padStart(2, '0');
-    const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-    const month = months[date.getMonth()];
-    const year = date.getFullYear();
-    const hours = date.getHours().toString().padStart(2, '0');
-    const minutes = date.getMinutes().toString().padStart(2, '0');
-
-    return `${day} ${month} ${year}, ${hours}:${minutes}`;
-  } catch {
-    return '';
+function getNotificationIcon(tipo: string) {
+  switch (tipo) {
+    case 'noticia':
+      return { icon: Newspaper, color: '#800000', emoji: '📰' };
+    case 'semaforo':
+      return { icon: Navigation, color: '#FF6B00', emoji: '🚦' };
+    case 'alerta':
+      return { icon: AlertTriangle, color: '#FFA500', emoji: '⚠️' };
+    case 'nieve':
+      return { icon: Snowflake, color: '#4A90E2', emoji: '❄️' };
+    default:
+      return { icon: Newspaper, color: '#800000', emoji: '📰' };
   }
 }
 
@@ -45,28 +45,32 @@ export default function CentroNotificaciones() {
     markAllAsRead();
   }, [markAllAsRead]);
 
-  const handleNotificationPress = (item: any) => {
-    if (item.tipo === 'push' && item.post_id) {
-      router.push(`/noticia/${item.post_id}`);
+  const handleNotificationPress = async (item: NotificationItem) => {
+    if (item.enlace && item.enlace.trim() !== '') {
+      try {
+        const canOpen = await Linking.canOpenURL(item.enlace);
+        if (canOpen) {
+          await Linking.openURL(item.enlace);
+        }
+      } catch (error) {
+        console.error('Error opening link:', error);
+      }
     }
   };
 
-  const getDateText = (item: any): string => {
-    const formattedDate = formatDate(item.fecha);
-    
-    if (formattedDate) {
-      return formattedDate;
+  const getSubtitleText = (tipo: string): string => {
+    switch (tipo) {
+      case 'noticia':
+        return 'Noticia nueva';
+      case 'semaforo':
+        return 'Actualización de estado';
+      case 'alerta':
+        return 'Aviso importante';
+      case 'nieve':
+        return 'Alerta meteorológica';
+      default:
+        return '';
     }
-
-    if (item.tipo === 'semaforo') {
-      return 'Actualización de semáforo';
-    }
-
-    if (item.tipo === 'silenciosa') {
-      return 'Notificación automática';
-    }
-
-    return '';
   };
 
   if (isLoading) {
@@ -91,12 +95,12 @@ export default function CentroNotificaciones() {
 
       {notificaciones.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>No hay notificaciones</Text>
+          <Text style={styles.emptyText}>No hay notificaciones disponibles</Text>
         </View>
       ) : (
         <FlatList
           data={notificaciones}
-          keyExtractor={(item) => item._ID}
+          keyExtractor={(item) => String(item.id)}
           contentContainerStyle={styles.listContent}
           refreshControl={
             <RefreshControl
@@ -108,32 +112,34 @@ export default function CentroNotificaciones() {
           }
           renderItem={({ item, index }) => {
             const isUnread = index < unreadCount;
-            const isPush = item.tipo === 'push';
-            const isClickable = isPush && item.post_id;
-            const dateText = getDateText(item);
+            const iconData = getNotificationIcon(item.tipo);
+            const IconComponent = iconData.icon;
+            const hasLink = item.enlace && item.enlace.trim() !== '';
+            const subtitleText = getSubtitleText(item.tipo);
 
             const renderContent = () => (
               <>
-                {dateText ? (
-                  <Text style={styles.cardDate}>{dateText}</Text>
-                ) : null}
                 <View style={styles.cardHeader}>
-                  <View style={styles.titleRow}>
-                    {isPush && (
-                      <View style={styles.pushBadge}>
-                        <Zap size={14} color="#fff" fill="#fff" strokeWidth={2} />
-                      </View>
-                    )}
-                    <Text style={[styles.cardTitle, isPush && styles.cardTitleWithBadge]}>
-                      {item.titulo}
-                    </Text>
+                  <View style={styles.iconContainer}>
+                    <View style={[styles.iconCircle, { backgroundColor: iconData.color }]}>
+                      <IconComponent size={20} color="#fff" strokeWidth={2} />
+                    </View>
+                    <View style={styles.headerTextContainer}>
+                      <Text style={styles.subtitleText}>{subtitleText}</Text>
+                      <Text style={styles.cardTitle}>{item.titulo}</Text>
+                    </View>
                   </View>
                 </View>
                 <Text style={styles.cardMessage}>{item.mensaje}</Text>
+                {hasLink && (
+                  <View style={styles.linkIndicator}>
+                    <Text style={styles.linkText}>Toca para abrir ›</Text>
+                  </View>
+                )}
               </>
             );
 
-            if (isClickable) {
+            if (hasLink) {
               return (
                 <TouchableOpacity
                   style={[styles.card, isUnread && styles.cardUnread]}
@@ -218,40 +224,51 @@ const styles = StyleSheet.create({
     borderLeftWidth: 4,
     borderLeftColor: '#800000',
   },
-  cardDate: {
-    fontSize: 12,
-    color: '#999',
-    marginBottom: 8,
-  },
   cardHeader: {
-    marginBottom: 8,
+    marginBottom: 12,
   },
-  titleRow: {
+  iconContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 4,
   },
-  pushBadge: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: '#800000',
+  iconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 8,
+    marginRight: 12,
+  },
+  headerTextContainer: {
+    flex: 1,
+  },
+  subtitleText: {
+    fontSize: 11,
+    color: '#999',
+    fontWeight: '500',
+    marginBottom: 2,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   cardTitle: {
     fontSize: 16,
     fontWeight: '700',
     color: '#1a1a1a',
-    flex: 1,
-  },
-  cardTitleWithBadge: {
-    flex: 1,
   },
   cardMessage: {
     fontSize: 14,
     color: '#444',
     lineHeight: 20,
+  },
+  linkIndicator: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+  },
+  linkText: {
+    fontSize: 13,
+    color: '#800000',
+    fontWeight: '600',
   },
 });

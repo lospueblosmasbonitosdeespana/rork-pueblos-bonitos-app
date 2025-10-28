@@ -11,13 +11,11 @@ const TOKEN_STORAGE_KEY = '@lpbe_expo_push_token';
 const LAST_NOTIFICATION_ID_KEY = '@lpbe_last_notification_id';
 
 interface Notificacion {
-  _ID: string;
+  id: number;
+  tipo: 'noticia' | 'alerta' | 'semaforo' | 'nieve';
   titulo: string;
   mensaje: string;
-  fecha: string;
-  tipo: 'push' | 'silenciosa' | 'semaforo';
-  post_id?: string;
-  leida?: boolean;
+  enlace: string;
 }
 
 Notifications.setNotificationHandler({
@@ -90,9 +88,7 @@ export const [NotificationsProvider, useNotifications] = createContextHook(() =>
         
         if (Array.isArray(data)) {
           data.sort((a, b) => {
-            const dateA = a.fecha ? new Date(a.fecha).getTime() : 0;
-            const dateB = b.fecha ? new Date(b.fecha).getTime() : 0;
-            return dateB - dateA;
+            return b.id - a.id;
           });
           return data;
         }
@@ -202,7 +198,7 @@ export const [NotificationsProvider, useNotifications] = createContextHook(() =>
       return notificacionesQuery.data.length;
     }
 
-    const lastIndex = notificacionesQuery.data.findIndex(n => n._ID === lastNotificationId);
+    const lastIndex = notificacionesQuery.data.findIndex(n => String(n.id) === lastNotificationId);
     
     if (lastIndex === -1) {
       return notificacionesQuery.data.length;
@@ -213,7 +209,7 @@ export const [NotificationsProvider, useNotifications] = createContextHook(() =>
 
   const markAllAsRead = useCallback(async () => {
     if (notificacionesQuery.data && notificacionesQuery.data.length > 0) {
-      const latestId = notificacionesQuery.data[0]._ID;
+      const latestId = String(notificacionesQuery.data[0].id);
       setLastNotificationId(latestId);
       await AsyncStorage.setItem(LAST_NOTIFICATION_ID_KEY, latestId);
       console.log('✅ All notifications marked as read');
