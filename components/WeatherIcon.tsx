@@ -62,8 +62,9 @@ export default function WeatherIcon({ lat, lon, size = 40 }: WeatherIconProps) {
           return;
         }
         
-        const url = `https://openweathermap.org/img/wn/${weatherIcon}@2x.png`;
-        console.log('🌤️ Final Icon URL:', url);
+        const url = `https://openweathermap.org/img/wn/${weatherIcon}@2x.png?t=${Date.now()}`;
+        console.log('🌤️ ICONO API:', weatherIcon);
+        console.log('🌤️ URL GENERADA:', url);
         
         setIconUrl(url);
         setError(false);
