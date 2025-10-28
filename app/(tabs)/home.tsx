@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { Image } from 'expo-image';
 import { Building2, User, QrCode, MapIcon, ShoppingBag, Newspaper } from 'lucide-react-native';
-import { StyleSheet, Text, TouchableOpacity, View, ScrollView } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { SPACING } from '@/constants/theme';
 import { useLanguage } from '@/contexts/language';
@@ -15,103 +15,97 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      <ScrollView 
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.logoSection}>
-          <Image
-            source={{ uri: 'https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/n0f2cz2wtnjdvarjp4b9z' }}
-            style={styles.logo}
-            contentFit="contain"
-          />
-        </View>
+      <View style={styles.logoSection}>
+        <Image
+          source={{ uri: 'https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/n0f2cz2wtnjdvarjp4b9z' }}
+          style={styles.logo}
+          contentFit="contain"
+        />
+      </View>
 
-        <View style={styles.buttonsGrid}>
-          <TouchableOpacity
-            style={styles.button}
-            onPress={() => router.push('/(tabs)/perfil')}
-            activeOpacity={0.8}
-          >
-            <View style={styles.iconContainer}>
-              <User size={32} color="#FFFFFF" strokeWidth={2} />
-            </View>
-            <Text style={styles.buttonText}>{t.home.myAccount}</Text>
-          </TouchableOpacity>
+      <View style={styles.buttonsGrid}>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => router.push('/(tabs)/perfil')}
+          activeOpacity={0.8}
+        >
+          <View style={styles.iconContainer}>
+            <User size={32} color="#FFFFFF" strokeWidth={2} />
+          </View>
+          <Text style={styles.buttonText}>{t.home.myAccount}</Text>
+        </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.button}
-            onPress={() => router.push('/(tabs)/pueblos')}
-            activeOpacity={0.8}
-          >
-            <View style={styles.iconContainer}>
-              <Building2 size={32} color="#FFFFFF" strokeWidth={2} />
-            </View>
-            <Text style={styles.buttonText}>Pueblos</Text>
-          </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => router.push('/(tabs)/pueblos')}
+          activeOpacity={0.8}
+        >
+          <View style={styles.iconContainer}>
+            <Building2 size={32} color="#FFFFFF" strokeWidth={2} />
+          </View>
+          <Text style={styles.buttonText}>Pueblos</Text>
+        </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.button}
-            onPress={openQRScanner}
-            activeOpacity={0.8}
-          >
-            <View style={styles.iconContainer}>
-              <QrCode size={32} color="#FFFFFF" strokeWidth={2} />
-            </View>
-            <Text style={styles.buttonText}>{t.home.qrScanner}</Text>
-          </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={openQRScanner}
+          activeOpacity={0.8}
+        >
+          <View style={styles.iconContainer}>
+            <QrCode size={32} color="#FFFFFF" strokeWidth={2} />
+          </View>
+          <Text style={styles.buttonText}>{t.home.qrScanner}</Text>
+        </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.button}
-            onPress={() => {}}
-            activeOpacity={0.8}
-          >
-            <View style={styles.iconContainer}>
-              <MapIcon size={32} color="#FFFFFF" strokeWidth={2} />
-            </View>
-            <Text style={styles.buttonText}>{t.home.routes}</Text>
-          </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => {}}
+          activeOpacity={0.8}
+        >
+          <View style={styles.iconContainer}>
+            <MapIcon size={32} color="#FFFFFF" strokeWidth={2} />
+          </View>
+          <Text style={styles.buttonText}>{t.home.routes}</Text>
+        </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.button}
-            onPress={() => router.push('/tienda' as any)}
-            activeOpacity={0.8}
-          >
-            <View style={styles.iconContainer}>
-              <ShoppingBag size={32} color="#FFFFFF" strokeWidth={2} />
-            </View>
-            <Text style={styles.buttonText}>Tienda</Text>
-          </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => router.push('/tienda' as any)}
+          activeOpacity={0.8}
+        >
+          <View style={styles.iconContainer}>
+            <ShoppingBag size={32} color="#FFFFFF" strokeWidth={2} />
+          </View>
+          <Text style={styles.buttonText}>Tienda</Text>
+        </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.button}
-            onPress={() => router.push('/noticias' as any)}
-            activeOpacity={0.8}
-          >
-            <View style={styles.iconContainer}>
-              <Newspaper size={32} color="#FFFFFF" strokeWidth={2} />
-            </View>
-            <Text style={styles.buttonText}>Noticias</Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => router.push('/noticias' as any)}
+          activeOpacity={0.8}
+        >
+          <View style={styles.iconContainer}>
+            <Newspaper size={32} color="#FFFFFF" strokeWidth={2} />
+          </View>
+          <Text style={styles.buttonText}>Noticias</Text>
+        </TouchableOpacity>
+      </View>
 
-        <View style={styles.footerLogo}>
-          <Image
-            source={{ uri: 'https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2024/01/logo-lpbe.png' }}
-            style={styles.footerLogoImage}
-            contentFit="contain"
-          />
-        </View>
+      <View style={styles.footerLogo}>
+        <Image
+          source={{ uri: 'https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2024/01/logo-lpbe.png' }}
+          style={styles.footerLogoImage}
+          contentFit="contain"
+        />
+      </View>
 
-        <View style={styles.footer}>
-          <Image
-            source={{ uri: 'https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2024/12/logos-institucionales.png' }}
-            style={styles.footerBanner}
-            contentFit="contain"
-          />
-        </View>
-      </ScrollView>
+      <View style={styles.footer}>
+        <Image
+          source={{ uri: 'https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2024/12/logos-institucionales.png' }}
+          style={styles.footerBanner}
+          contentFit="contain"
+        />
+      </View>
     </View>
   );
 }
@@ -121,20 +115,14 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: SPACING.xl * 2,
-  },
   logoSection: {
     paddingVertical: SPACING.xl,
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
   },
   logo: {
-    width: 280,
-    height: 120,
+    width: 238,
+    height: 102,
   },
   buttonsGrid: {
     paddingHorizontal: SPACING.lg,
