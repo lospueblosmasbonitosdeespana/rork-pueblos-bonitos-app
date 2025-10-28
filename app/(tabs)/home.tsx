@@ -22,7 +22,7 @@ export default function HomeScreen() {
       >
         <View style={styles.logoSection}>
           <Image
-            source={{ uri: 'https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2024/01/logo-lpbe.png' }}
+            source={{ uri: 'https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/n0f2cz2wtnjdvarjp4b9z' }}
             style={styles.logo}
             contentFit="contain"
           />
@@ -133,8 +133,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   logo: {
-    width: 100,
-    height: 100,
+    width: 280,
+    height: 120,
   },
   buttonsGrid: {
     paddingHorizontal: SPACING.lg,
