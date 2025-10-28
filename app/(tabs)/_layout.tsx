@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router";
-import { Home, MapPin, Compass, Map, User } from "lucide-react-native";
+import { Home, MapPin, MapIcon, Map, User } from "lucide-react-native";
 import React from "react";
 
 import { COLORS } from "@/constants/theme";
@@ -44,9 +44,9 @@ export default function TabLayout() {
       <Tabs.Screen
         name="multiexperiencias"
         options={{
-          title: t.tabs.multiexperiencias,
-          headerTitle: t.multiexperiencias.title,
-          tabBarIcon: ({ color }) => <Compass size={24} color={color} strokeWidth={1.5} />,
+          title: t.tabs.rutas,
+          headerTitle: t.tabs.rutas,
+          tabBarIcon: ({ color }) => <MapIcon size={24} color={color} strokeWidth={1.5} />,
         }}
       />
       <Tabs.Screen

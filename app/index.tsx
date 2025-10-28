@@ -6,7 +6,7 @@ import { StyleSheet, View } from 'react-native';
 export default function Index() {
   useEffect(() => {
     const timer = setTimeout(() => {
-      router.replace('/(tabs)/pueblos');
+      router.replace('/(tabs)/home');
     }, 4000);
 
     return () => clearTimeout(timer);
