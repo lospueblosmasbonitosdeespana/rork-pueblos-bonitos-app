@@ -78,37 +78,60 @@ export const [NotificationsProvider, useNotifications] = createContextHook(() =>
     queryKey: ['notificaciones'],
     queryFn: async () => {
       try {
-        console.log('📡 Fetching notifications from API...');
+        console.log('📡 Fetching notifications from: https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/notificaciones');
+        
         const response = await fetch(
           'https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/notificaciones',
           {
+            method: 'GET',
             headers: {
               'Accept': 'application/json',
+              'Content-Type': 'application/json',
             },
           }
         );
         
         console.log('📡 Response status:', response.status);
+        console.log('📡 Response headers:', JSON.stringify(response.headers));
         
         if (!response.ok) {
           const errorText = await response.text();
-          console.error('❌ Server error:', errorText);
-          throw new Error(`Server responded with status ${response.status}`);
+          console.error('❌ Server error response:', errorText);
+          throw new Error(`Server responded with status ${response.status}: ${errorText}`);
         }
         
-        const data = await response.json();
-        console.log('✅ Fetched notifications:', data?.length || 0);
+        const contentType = response.headers.get('content-type');
+        console.log('📡 Content-Type:', contentType);
+        
+        const text = await response.text();
+        console.log('📡 Raw response:', text.substring(0, 200));
+        
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch (parseError) {
+          console.error('❌ JSON parse error:', parseError);
+          console.error('❌ Raw text:', text);
+          throw new Error('Invalid JSON response from server');
+        }
+        
+        console.log('✅ Parsed data:', data);
+        console.log('✅ Number of notifications:', Array.isArray(data) ? data.length : 'not array');
         
         if (Array.isArray(data)) {
           data.sort((a, b) => b.id - a.id);
           return data;
         }
         
-        console.warn('⚠️ API returned non-array data');
+        console.warn('⚠️ API returned non-array data:', typeof data);
         return [];
       } catch (error) {
         console.error('❌ Error fetching notifications:', error);
-        throw error;
+        if (error instanceof Error) {
+          console.error('❌ Error message:', error.message);
+          console.error('❌ Error stack:', error.stack);
+        }
+        throw new Error('Failed to fetch notifications');
       }
     },
     retry: 3,
