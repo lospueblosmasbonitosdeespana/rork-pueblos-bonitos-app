@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, ActivityIndicator, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { Stack, useLocalSearchParams, router } from 'expo-router';
-import { ArrowLeft, Wind, Thermometer, CloudRain, Mountain, Users } from 'lucide-react-native';
+import { ArrowLeft, Wind, CloudRain, Mountain, Users } from 'lucide-react-native';
 import { COLORS, SHADOWS, SPACING } from '@/constants/theme';
+import WeatherIcon from '@/components/WeatherIcon';
 
 type PuebloInfo = {
   nombre: string;
@@ -143,7 +144,11 @@ export default function PuebloInfo() {
               activeOpacity={0.9}
             >
               <View style={styles.iconContainer}>
-                <Thermometer size={32} color="#FFFFFF" strokeWidth={2.5} />
+                <WeatherIcon 
+                  lat={data.coordenadas?.lat} 
+                  lon={data.coordenadas?.lng} 
+                  size={40}
+                />
               </View>
               <Text style={styles.metricLabel}>Temperatura</Text>
               <Text style={styles.metricValue}>
