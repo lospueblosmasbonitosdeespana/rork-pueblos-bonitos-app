@@ -81,13 +81,23 @@ export const [NotificationsProvider, useNotifications] = createContextHook(() =>
     queryFn: async () => {
       try {
         const response = await fetch(
-          'https://lospueblosmasbonitosdeespana.org/wp-json/jet-cct/notificaciones'
+          'https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/notificaciones'
         );
         if (!response.ok) {
           throw new Error('Failed to fetch notifications');
         }
         const data = await response.json();
-        return Array.isArray(data) ? data : [];
+        
+        if (Array.isArray(data)) {
+          data.sort((a, b) => {
+            const dateA = a.fecha ? new Date(a.fecha).getTime() : 0;
+            const dateB = b.fecha ? new Date(b.fecha).getTime() : 0;
+            return dateB - dateA;
+          });
+          return data;
+        }
+        
+        return [];
       } catch (error) {
         console.error('❌ Error fetching notifications:', error);
         return [];
