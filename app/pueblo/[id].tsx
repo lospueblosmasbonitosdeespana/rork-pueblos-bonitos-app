@@ -1,11 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { Stack, useLocalSearchParams, router } from 'expo-router';
 import { Image } from 'expo-image';
-import { MapPin, Map, X } from 'lucide-react-native';
+import { MapPin, Map, X, BarChart3 } from 'lucide-react-native';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Modal, ActivityIndicator, SafeAreaView } from 'react-native';
 import { WebView } from 'react-native-webview';
-import WeatherIcon from '@/components/WeatherIcon';
 
 import { COLORS, SHADOWS, SPACING, TYPOGRAPHY } from '@/constants/theme';
 import { useLanguage } from '@/contexts/language';
@@ -146,11 +145,7 @@ export default function PuebloDetailScreen() {
               onPress={() => router.push(`/pueblo-info/${id}` as any)}
               activeOpacity={0.7}
             >
-              <WeatherIcon 
-                lat={lugar.latitud} 
-                lon={lugar.longitud} 
-                size={28}
-              />
+              <BarChart3 size={24} color={COLORS.card} />
             </TouchableOpacity>
           </View>
 

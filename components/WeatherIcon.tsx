@@ -30,11 +30,11 @@ const mapWeatherToEmoji = (id: number, icon: string, windSpeed: number): string 
   if (id === 803) return isNight ? '☁️' : '🌥️';
   if (id === 804) return '☁️';
   
-  return '⛅';
+  return isNight ? '☁️' : '⛅';
 };
 
 export default function WeatherIcon({ lat, lon, size = 32 }: WeatherIconProps) {
-  const [emoji, setEmoji] = useState<string>('☀️');
+  const [emoji, setEmoji] = useState<string>('⛅');
 
   useEffect(() => {
     const fetchWeather = async () => {
@@ -52,7 +52,7 @@ export default function WeatherIcon({ lat, lon, size = 32 }: WeatherIconProps) {
         
         if (!res.ok) {
           console.log('🌤️ Weather API error:', res.status);
-          const cached = await AsyncStorage.getItem(WEATHER_CACHE_KEY);
+          const cached = await AsyncStorage.getItem(`${WEATHER_CACHE_KEY}_${lat}_${lon}`);
           if (cached) {
             console.log('🌤️ Using cached emoji');
             setEmoji(cached);
@@ -78,10 +78,10 @@ export default function WeatherIcon({ lat, lon, size = 32 }: WeatherIconProps) {
         console.log('🌤️ Emoji selected:', newEmoji);
         
         setEmoji(newEmoji);
-        await AsyncStorage.setItem(WEATHER_CACHE_KEY, newEmoji);
+        await AsyncStorage.setItem(`${WEATHER_CACHE_KEY}_${lat}_${lon}`, newEmoji);
       } catch (e) {
         console.log('🌤️ Error fetching weather:', e);
-        const cached = await AsyncStorage.getItem(WEATHER_CACHE_KEY);
+        const cached = await AsyncStorage.getItem(`${WEATHER_CACHE_KEY}_${lat}_${lon}`);
         if (cached) {
           console.log('🌤️ Using cached emoji after error');
           setEmoji(cached);
@@ -90,7 +90,7 @@ export default function WeatherIcon({ lat, lon, size = 32 }: WeatherIconProps) {
     };
 
     const loadCachedAndFetch = async () => {
-      const cached = await AsyncStorage.getItem(WEATHER_CACHE_KEY);
+      const cached = await AsyncStorage.getItem(`${WEATHER_CACHE_KEY}_${lat}_${lon}`);
       if (cached) {
         console.log('🌤️ Loading cached emoji:', cached);
         setEmoji(cached);
