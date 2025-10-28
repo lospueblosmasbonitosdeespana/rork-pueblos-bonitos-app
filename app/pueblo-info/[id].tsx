@@ -3,7 +3,7 @@ import { Stack, useLocalSearchParams, router } from 'expo-router';
 import { ArrowLeft, Wind, Thermometer, CloudRain, Mountain, Users } from 'lucide-react-native';
 import { ScrollView, StyleSheet, Text, View, TouchableOpacity, ActivityIndicator } from 'react-native';
 
-import { COLORS, SHADOWS, SPACING, TYPOGRAPHY } from '@/constants/theme';
+import { COLORS, SHADOWS, SPACING } from '@/constants/theme';
 
 type PuebloInfo = {
   nombre: string;
@@ -28,22 +28,39 @@ type PuebloInfo = {
 };
 
 async function fetchPuebloInfo(id: string): Promise<PuebloInfo> {
-  const response = await fetch(
-    `https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/pueblo-info?id=${id}`
-  );
+  console.log('🌍 Fetching pueblo info for id:', id);
+  const url = `https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/pueblo-info?id=${id}`;
+  console.log('🌍 URL:', url);
+  
+  const response = await fetch(url);
+  console.log('🌍 Response status:', response.status);
+  
   if (!response.ok) {
-    throw new Error('Error al cargar la información del pueblo');
+    throw new Error(`Error al cargar la información del pueblo: ${response.status}`);
   }
-  return response.json();
+  
+  const data = await response.json();
+  console.log('🌍 Data received:', data);
+  
+  return data;
 }
 
 export default function PuebloInfoScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
 
+  console.log('🏞️ PuebloInfoScreen id:', id);
+
   const infoQuery = useQuery({
     queryKey: ['pueblo-info', id],
     queryFn: () => fetchPuebloInfo(id),
     enabled: !!id,
+  });
+
+  console.log('🏞️ Query status:', {
+    isLoading: infoQuery.isLoading,
+    isError: infoQuery.isError,
+    error: infoQuery.error,
+    data: infoQuery.data,
   });
 
   const getAirQualityColor = (estado: string) => {
@@ -72,9 +89,13 @@ export default function PuebloInfoScreen() {
   }
 
   if (infoQuery.error || !infoQuery.data) {
+    console.error('❌ Error loading pueblo info:', infoQuery.error);
     return (
       <View style={styles.loadingContainer}>
         <Text style={styles.errorText}>No se ha encontrado información para este pueblo</Text>
+        <Text style={styles.errorSubtext}>
+          {infoQuery.error instanceof Error ? infoQuery.error.message : 'Error desconocido'}
+        </Text>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Text style={styles.backButtonText}>Volver</Text>
         </TouchableOpacity>
@@ -101,75 +122,70 @@ export default function PuebloInfoScreen() {
           <Text style={styles.welcomeTitle}>Bienvenido a {info.nombre}</Text>
           
           <View style={styles.grid}>
-            <View style={[styles.card, { borderLeftColor: getAirQualityColor(info.aire.estado) }]}>
-              <View style={styles.cardHeader}>
-                <Wind size={24} color={getAirQualityColor(info.aire.estado)} />
-                <Text style={styles.cardTitle}>Calidad del Aire</Text>
+            <TouchableOpacity 
+              style={[styles.metricButton, { backgroundColor: getAirQualityColor(info.aire.estado) }]}
+              activeOpacity={0.9}
+            >
+              <View style={styles.iconContainer}>
+                <Wind size={32} color="#FFFFFF" strokeWidth={2.5} />
               </View>
-              <View style={styles.cardBody}>
-                <Text style={[styles.cardValue, { color: getAirQualityColor(info.aire.estado) }]}>
-                  {info.aire.estado}
-                </Text>
-                <Text style={styles.cardSubvalue}>ICA: {info.aire.ica}</Text>
-              </View>
-            </View>
+              <Text style={styles.metricLabel}>Calidad del Aire</Text>
+              <Text style={styles.metricValue}>{info.aire.ica}</Text>
+              <Text style={styles.metricSubtext}>{info.aire.estado}</Text>
+            </TouchableOpacity>
 
-            <View style={[styles.card, { borderLeftColor: '#FF9800' }]}>
-              <View style={styles.cardHeader}>
-                <Thermometer size={24} color="#FF9800" />
-                <Text style={styles.cardTitle}>Temperatura</Text>
+            <TouchableOpacity 
+              style={[styles.metricButton, { backgroundColor: '#FF9800' }]}
+              activeOpacity={0.9}
+            >
+              <View style={styles.iconContainer}>
+                <Thermometer size={32} color="#FFFFFF" strokeWidth={2.5} />
               </View>
-              <View style={styles.cardBody}>
-                <Text style={[styles.cardValue, { color: '#FF9800' }]}>
-                  {info.clima.temperatura}°C
-                </Text>
-                <Text style={styles.cardSubvalue}>{info.clima.descripcion}</Text>
-              </View>
-            </View>
+              <Text style={styles.metricLabel}>Temperatura</Text>
+              <Text style={styles.metricValue}>{info.clima.temperatura}°C</Text>
+              <Text style={styles.metricSubtext}>{info.clima.descripcion}</Text>
+            </TouchableOpacity>
 
-            <View style={[styles.card, { borderLeftColor: '#2196F3' }]}>
-              <View style={styles.cardHeader}>
-                <CloudRain size={24} color="#2196F3" />
-                <Text style={styles.cardTitle}>Lluvia 24h</Text>
+            <TouchableOpacity 
+              style={[styles.metricButton, { backgroundColor: '#2196F3' }]}
+              activeOpacity={0.9}
+            >
+              <View style={styles.iconContainer}>
+                <CloudRain size={32} color="#FFFFFF" strokeWidth={2.5} />
               </View>
-              <View style={styles.cardBody}>
-                <Text style={[styles.cardValue, { color: '#2196F3' }]}>
-                  {info.lluvia_24h} mm
-                </Text>
-                <Text style={styles.cardSubvalue}>Últimas 24 horas</Text>
-              </View>
-            </View>
+              <Text style={styles.metricLabel}>Lluvia 24h</Text>
+              <Text style={styles.metricValue}>{info.lluvia_24h} mm</Text>
+              <Text style={styles.metricSubtext}>Últimas 24 horas</Text>
+            </TouchableOpacity>
 
-            <View style={[styles.card, { borderLeftColor: '#795548' }]}>
-              <View style={styles.cardHeader}>
-                <Mountain size={24} color="#795548" />
-                <Text style={styles.cardTitle}>Altitud</Text>
+            <TouchableOpacity 
+              style={[styles.metricButton, { backgroundColor: '#795548' }]}
+              activeOpacity={0.9}
+            >
+              <View style={styles.iconContainer}>
+                <Mountain size={32} color="#FFFFFF" strokeWidth={2.5} />
               </View>
-              <View style={styles.cardBody}>
-                <Text style={[styles.cardValue, { color: '#795548' }]}>
-                  {info.altitud} m
-                </Text>
-                <Text style={styles.cardSubvalue}>sobre el nivel del mar</Text>
-              </View>
-            </View>
+              <Text style={styles.metricLabel}>Altitud</Text>
+              <Text style={styles.metricValue}>{info.altitud} m</Text>
+              <Text style={styles.metricSubtext}>sobre el nivel del mar</Text>
+            </TouchableOpacity>
 
-            <View style={[styles.card, { borderLeftColor: getAfluenciaColor(info.afluencia.estado) }]}>
-              <View style={styles.cardHeader}>
-                <Users size={24} color={getAfluenciaColor(info.afluencia.estado)} />
-                <Text style={styles.cardTitle}>Afluencia</Text>
+            <TouchableOpacity 
+              style={[styles.metricButton, { backgroundColor: getAfluenciaColor(info.afluencia.estado) }]}
+              activeOpacity={0.9}
+            >
+              <View style={styles.iconContainer}>
+                <Users size={32} color="#FFFFFF" strokeWidth={2.5} />
               </View>
-              <View style={styles.cardBody}>
-                <Text style={[styles.cardValue, { color: getAfluenciaColor(info.afluencia.estado) }]}>
-                  {info.afluencia.estado}
-                </Text>
-                <Text style={styles.cardSubvalue}>{info.afluencia.descripcion}</Text>
-              </View>
-            </View>
+              <Text style={styles.metricLabel}>Afluencia</Text>
+              <Text style={styles.metricValue}>{info.afluencia.estado}</Text>
+              <Text style={styles.metricSubtext}>{info.afluencia.descripcion}</Text>
+            </TouchableOpacity>
           </View>
 
           <View style={styles.coordsCard}>
-            <Text style={styles.coordsTitle}>Coordenadas GPS</Text>
-            <Text style={styles.coordsText}>
+            <Text style={styles.coordsLabel}>Coordenadas GPS</Text>
+            <Text style={styles.coordsValue}>
               {info.coordenadas.lat.toFixed(6)}, {info.coordenadas.lng.toFixed(6)}
             </Text>
           </View>
@@ -182,7 +198,7 @@ export default function PuebloInfoScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F5F7FA',
   },
   content: {
     padding: SPACING.lg,
@@ -191,17 +207,24 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F5F7FA',
     padding: SPACING.lg,
   },
   loadingText: {
-    ...TYPOGRAPHY.body,
+    fontSize: 16,
     color: COLORS.textSecondary,
     marginTop: SPACING.md,
   },
   errorText: {
-    ...TYPOGRAPHY.body,
+    fontSize: 16,
     color: COLORS.error,
+    textAlign: 'center',
+    marginBottom: SPACING.sm,
+    fontWeight: '600' as const,
+  },
+  errorSubtext: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
     textAlign: 'center',
     marginBottom: SPACING.lg,
   },
@@ -212,7 +235,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   backButtonText: {
-    ...TYPOGRAPHY.body,
+    fontSize: 16,
     color: COLORS.card,
     fontWeight: '700' as const,
   },
@@ -221,8 +244,8 @@ const styles = StyleSheet.create({
     marginLeft: SPACING.xs,
   },
   welcomeTitle: {
-    fontSize: 28,
-    fontWeight: '700' as const,
+    fontSize: 24,
+    fontWeight: '800' as const,
     color: COLORS.text,
     marginBottom: SPACING.xl,
     textAlign: 'center',
@@ -230,51 +253,65 @@ const styles = StyleSheet.create({
   grid: {
     gap: SPACING.md,
   },
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: SPACING.lg,
-    borderLeftWidth: 4,
-    ...SHADOWS.medium,
-  },
-  cardHeader: {
-    flexDirection: 'row',
+  metricButton: {
+    borderRadius: 20,
+    padding: SPACING.xl,
     alignItems: 'center',
-    gap: SPACING.sm,
+    ...SHADOWS.medium,
+    minHeight: 160,
+    justifyContent: 'center',
+  },
+  iconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: SPACING.md,
   },
-  cardTitle: {
-    ...TYPOGRAPHY.h3,
-    color: COLORS.text,
-    fontSize: 18,
-  },
-  cardBody: {
-    gap: SPACING.xs,
-  },
-  cardValue: {
-    fontSize: 32,
-    fontWeight: '700' as const,
-  },
-  cardSubvalue: {
-    ...TYPOGRAPHY.body,
-    color: COLORS.textSecondary,
+  metricLabel: {
     fontSize: 14,
+    fontWeight: '600' as const,
+    color: '#FFFFFF',
+    opacity: 0.9,
+    marginBottom: SPACING.xs,
+    textTransform: 'uppercase' as const,
+    letterSpacing: 1,
+  },
+  metricValue: {
+    fontSize: 42,
+    fontWeight: '900' as const,
+    color: '#FFFFFF',
+    marginBottom: SPACING.xs,
+  },
+  metricSubtext: {
+    fontSize: 14,
+    fontWeight: '500' as const,
+    color: '#FFFFFF',
+    opacity: 0.85,
+    textAlign: 'center',
   },
   coordsCard: {
-    backgroundColor: COLORS.card,
+    backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: SPACING.lg,
     marginTop: SPACING.md,
     ...SHADOWS.small,
+    alignItems: 'center',
   },
-  coordsTitle: {
-    ...TYPOGRAPHY.h3,
-    color: COLORS.text,
-    marginBottom: SPACING.xs,
-  },
-  coordsText: {
-    ...TYPOGRAPHY.body,
+  coordsLabel: {
+    fontSize: 14,
+    fontWeight: '600' as const,
     color: COLORS.textSecondary,
+    marginBottom: SPACING.xs,
+    textTransform: 'uppercase' as const,
+    letterSpacing: 0.5,
+  },
+  coordsValue: {
+    fontSize: 16,
+    color: COLORS.text,
+    fontWeight: '700' as const,
     fontFamily: 'monospace',
   },
 });

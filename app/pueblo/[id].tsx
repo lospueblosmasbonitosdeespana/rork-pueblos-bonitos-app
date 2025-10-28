@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Stack, useLocalSearchParams, router } from 'expo-router';
 import { Image } from 'expo-image';
-import { MapPin, Map, X, Compass, Thermometer } from 'lucide-react-native';
+import { MapPin, Map, X, Thermometer } from 'lucide-react-native';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Modal, ActivityIndicator, SafeAreaView } from 'react-native';
 import { WebView } from 'react-native-webview';
@@ -129,8 +129,7 @@ export default function PuebloDetailScreen() {
               onPress={() => setShowMapModal(true)}
               activeOpacity={0.7}
             >
-              <Map size={20} color={COLORS.card} />
-              <Text style={styles.actionButtonText}>{t.pueblo.viewOnMap}</Text>
+              <Map size={24} color={COLORS.card} />
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -138,8 +137,7 @@ export default function PuebloDetailScreen() {
               onPress={() => setShowExperienciasModal(true)}
               activeOpacity={0.7}
             >
-              <Compass size={20} color={COLORS.card} />
-              <Text style={styles.actionButtonText}>Ver experiencias</Text>
+              <Text style={styles.expText}>EXP</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -147,8 +145,7 @@ export default function PuebloDetailScreen() {
               onPress={() => router.push(`/pueblo-info/${id}` as any)}
               activeOpacity={0.7}
             >
-              <Thermometer size={20} color={COLORS.card} />
-              <Text style={styles.actionButtonText}>Clima</Text>
+              <Thermometer size={24} color={COLORS.card} />
             </TouchableOpacity>
           </View>
 
@@ -467,20 +464,19 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     flex: 1,
-    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: COLORS.primary,
-    paddingVertical: SPACING.md,
-    paddingHorizontal: SPACING.sm,
+    paddingVertical: SPACING.lg,
     borderRadius: 12,
-    gap: SPACING.xs,
     ...SHADOWS.medium,
+    minHeight: 56,
   },
-  actionButtonText: {
-    fontSize: 14,
-    fontWeight: '700' as const,
+  expText: {
+    fontSize: 18,
+    fontWeight: '900' as const,
     color: COLORS.card,
+    letterSpacing: 1,
   },
   modalContainer: {
     flex: 1,
