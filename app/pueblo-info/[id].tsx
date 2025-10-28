@@ -32,10 +32,6 @@ export default function PuebloInfo() {
   const [data, setData] = useState<PuebloInfo | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [weatherData, setWeatherData] = useState<{
-    temperature: number;
-    description: string;
-  } | null>(null);
 
   console.log('🏞️ PuebloInfo id:', id);
 
@@ -152,20 +148,13 @@ export default function PuebloInfo() {
                   lat={data.coordenadas?.lat} 
                   lon={data.coordenadas?.lng} 
                   size={40}
-                  onWeatherUpdate={(weather) => {
-                    console.log('🌤️ Weather updated:', weather);
-                    setWeatherData({
-                      temperature: weather.temperature,
-                      description: weather.description,
-                    });
-                  }}
                 />
               </View>
               <Text style={styles.metricLabel}>Temperatura</Text>
               <Text style={styles.metricValue}>
-                {weatherData?.temperature ? `${weatherData.temperature.toFixed(1)}°C` : (data.clima?.temperatura ? `${data.clima.temperatura.toFixed(1)}°C` : '—')}
+                {data.clima?.temperatura ? `${data.clima.temperatura.toFixed(1)}°C` : '—'}
               </Text>
-              <Text style={styles.metricSubtext}>{weatherData?.description || data.clima?.descripcion || '—'}</Text>
+              <Text style={styles.metricSubtext}>{data.clima?.descripcion || '—'}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity 
