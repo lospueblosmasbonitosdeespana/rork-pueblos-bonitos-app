@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Stack, useLocalSearchParams, router } from 'expo-router';
 import { Image } from 'expo-image';
-import { MapPin, Map, X, Compass } from 'lucide-react-native';
+import { MapPin, Map, X, Compass, Wind } from 'lucide-react-native';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Modal, ActivityIndicator, SafeAreaView } from 'react-native';
 import { WebView } from 'react-native-webview';
@@ -140,6 +140,15 @@ export default function PuebloDetailScreen() {
             >
               <Compass size={20} color={COLORS.card} />
               <Text style={styles.actionButtonText}>Ver experiencias</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => router.push(`/pueblo-info/${id}` as any)}
+              activeOpacity={0.7}
+            >
+              <Wind size={20} color={COLORS.card} />
+              <Text style={styles.actionButtonText}>ICA</Text>
             </TouchableOpacity>
           </View>
 
