@@ -12,24 +12,25 @@ const WEATHER_CACHE_KEY = 'weather_emoji_cache';
 
 const OPENWEATHER_API_KEY = process.env.EXPO_PUBLIC_OPENWEATHER_API_KEY || '8f6d7e4c3b2a1f9e8d7c6b5a4f3e2d1c';
 
-const getWeatherEmoji = (description: string): string => {
-  const desc = description.toLowerCase();
-
-  if (desc.includes('clear')) return '☀️';
-  if (desc.includes('few clouds')) return '🌤️';
-  if (desc.includes('scattered clouds')) return '⛅';
-  if (desc.includes('broken clouds')) return '🌥️';
-  if (desc.includes('overcast')) return '☁️';
-  if (desc.includes('light rain')) return '🌦️';
-  if (desc.includes('moderate rain')) return '🌧️';
-  if (desc.includes('heavy rain') || desc.includes('extreme rain')) return '⛈️';
-  if (desc.includes('snow')) return '❄️';
-  if (desc.includes('sleet') || desc.includes('rain and snow')) return '🌨️';
-  if (desc.includes('thunderstorm') || desc.includes('thunder')) return '⚡';
-  if (desc.includes('mist') || desc.includes('fog') || desc.includes('haze')) return '🌫️';
-  if (desc.includes('wind')) return '🌬️';
+const mapWeatherToEmoji = (id: number, icon: string, windSpeed: number): string => {
+  const isNight = icon?.endsWith('n');
   
-  return '☀️';
+  if (windSpeed >= 10) return '🌬️';
+  if (id >= 200 && id < 300) return '⛈️';
+  if (id >= 300 && id < 400) return '🌦️';
+  if (id === 500) return '🌦️';
+  if (id === 501) return '🌧️';
+  if (id >= 502 && id <= 531) return '⛈️';
+  if (id >= 600 && id <= 602) return '❄️';
+  if (id >= 611 && id <= 616) return '🌨️';
+  if (id >= 701 && id <= 781) return '🌫️';
+  if (id === 800) return isNight ? '🌙' : '☀️';
+  if (id === 801) return isNight ? '🌙' : '🌤️';
+  if (id === 802) return isNight ? '☁️' : '⛅';
+  if (id === 803) return isNight ? '☁️' : '🌥️';
+  if (id === 804) return '☁️';
+  
+  return '⛅';
 };
 
 export default function WeatherIcon({ lat, lon, size = 32 }: WeatherIconProps) {
@@ -62,10 +63,18 @@ export default function WeatherIcon({ lat, lon, size = 32 }: WeatherIconProps) {
         const data = await res.json();
         console.log('🌤️ Weather data:', data);
         
-        const condition = data.weather?.[0]?.description || '';
-        console.log('🌤️ Weather condition:', condition);
+        const weatherId = data.weather?.[0]?.id;
+        const weatherIcon = data.weather?.[0]?.icon;
+        const windSpeed = data.wind?.speed || 0;
         
-        const newEmoji = getWeatherEmoji(condition);
+        console.log('🌤️ Weather ID:', weatherId, 'Icon:', weatherIcon, 'Wind:', windSpeed);
+        
+        if (!weatherId || !weatherIcon) {
+          console.log('🌤️ Missing weather data, using cached or default');
+          return;
+        }
+        
+        const newEmoji = mapWeatherToEmoji(weatherId, weatherIcon, windSpeed);
         console.log('🌤️ Emoji selected:', newEmoji);
         
         setEmoji(newEmoji);
