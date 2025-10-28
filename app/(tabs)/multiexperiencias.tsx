@@ -5,11 +5,10 @@ export default function RutasScreen() {
   return (
     <View style={styles.container}>
       <WebView
-        source={{ uri: 'https://lospueblosmasbonitosdeespana.org/category/rutas/?app=1' }}
+        source={{ uri: 'https://lospueblosmasbonitosdeespana.org/category/rutas/' }}
         style={styles.webview}
         javaScriptEnabled={true}
         domStorageEnabled={true}
-        originWhitelist={["*"]}
       />
     </View>
   );
