@@ -39,7 +39,7 @@ function getNotificationIcon(tipo: string) {
 }
 
 export default function CentroNotificaciones() {
-  const { notificaciones, isLoading, markAllAsRead, refreshNotifications, unreadCount } = useNotifications();
+  const { notificaciones, isLoading, error, markAllAsRead, refreshNotifications, unreadCount } = useNotifications();
 
   useEffect(() => {
     markAllAsRead();
@@ -77,11 +77,36 @@ export default function CentroNotificaciones() {
     }
   };
 
-  if (isLoading) {
+  if (isLoading && notificaciones.length === 0) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#800000" />
+          <Text style={styles.loadingText}>Cargando notificaciones...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (error && notificaciones.length === 0) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <ArrowLeft size={24} color="#800000" strokeWidth={2} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Centro de Notificaciones</Text>
+          <View style={styles.placeholder} />
+        </View>
+        <View style={styles.errorContainer}>
+          <AlertTriangle size={48} color="#FF6B00" />
+          <Text style={styles.errorTitle}>Error de conexión</Text>
+          <Text style={styles.errorText}>
+            No se pudieron cargar las notificaciones. Por favor, verifica tu conexión a internet.
+          </Text>
+          <TouchableOpacity style={styles.retryButton} onPress={refreshNotifications}>
+            <Text style={styles.retryButtonText}>Reintentar</Text>
+          </TouchableOpacity>
         </View>
       </SafeAreaView>
     );
@@ -208,6 +233,42 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
     textAlign: 'center',
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 14,
+    color: '#666',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+  },
+  errorTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1a1a1a',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  errorText: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  retryButton: {
+    marginTop: 24,
+    backgroundColor: '#800000',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
   listContent: {
     padding: 16,

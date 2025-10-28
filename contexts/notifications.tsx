@@ -78,27 +78,41 @@ export const [NotificationsProvider, useNotifications] = createContextHook(() =>
     queryKey: ['notificaciones'],
     queryFn: async () => {
       try {
+        console.log('📡 Fetching notifications from API...');
         const response = await fetch(
-          'https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/notificaciones'
+          'https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/notificaciones',
+          {
+            headers: {
+              'Accept': 'application/json',
+            },
+          }
         );
+        
+        console.log('📡 Response status:', response.status);
+        
         if (!response.ok) {
-          throw new Error('Failed to fetch notifications');
+          const errorText = await response.text();
+          console.error('❌ Server error:', errorText);
+          throw new Error(`Server responded with status ${response.status}`);
         }
+        
         const data = await response.json();
+        console.log('✅ Fetched notifications:', data?.length || 0);
         
         if (Array.isArray(data)) {
-          data.sort((a, b) => {
-            return b.id - a.id;
-          });
+          data.sort((a, b) => b.id - a.id);
           return data;
         }
         
+        console.warn('⚠️ API returned non-array data');
         return [];
       } catch (error) {
         console.error('❌ Error fetching notifications:', error);
-        return [];
+        throw error;
       }
     },
+    retry: 3,
+    retryDelay: 1000,
     refetchInterval: 60000,
     staleTime: 30000,
   });
