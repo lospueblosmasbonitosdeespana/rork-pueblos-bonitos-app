@@ -14,6 +14,30 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useNotifications } from '@/contexts/notifications';
 
+function formatDate(fecha: string | undefined | null): string {
+  if (!fecha) {
+    return '';
+  }
+
+  try {
+    const date = new Date(fecha);
+    if (isNaN(date.getTime())) {
+      return '';
+    }
+
+    const day = date.getDate().toString().padStart(2, '0');
+    const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    const month = months[date.getMonth()];
+    const year = date.getFullYear();
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+
+    return `${day} ${month} ${year}, ${hours}:${minutes}`;
+  } catch {
+    return '';
+  }
+}
+
 export default function CentroNotificaciones() {
   const { notificaciones, isLoading, markAllAsRead, refreshNotifications, unreadCount } = useNotifications();
 
@@ -21,19 +45,28 @@ export default function CentroNotificaciones() {
     markAllAsRead();
   }, [markAllAsRead]);
 
-  const formatDate = (fecha: string) => {
-    try {
-      const date = new Date(fecha);
-      return date.toLocaleDateString('es-ES', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      });
-    } catch {
-      return fecha;
+  const handleNotificationPress = (item: any) => {
+    if (item.tipo === 'push' && item.post_id) {
+      router.push(`/noticia/${item.post_id}`);
     }
+  };
+
+  const getDateText = (item: any): string => {
+    const formattedDate = formatDate(item.fecha);
+    
+    if (formattedDate) {
+      return formattedDate;
+    }
+
+    if (item.tipo === 'semaforo') {
+      return 'Actualización de semáforo';
+    }
+
+    if (item.tipo === 'silenciosa') {
+      return 'Notificación automática';
+    }
+
+    return '';
   };
 
   if (isLoading) {
@@ -76,9 +109,14 @@ export default function CentroNotificaciones() {
           renderItem={({ item, index }) => {
             const isUnread = index < unreadCount;
             const isPush = item.tipo === 'push';
+            const isClickable = isPush && item.post_id;
+            const dateText = getDateText(item);
 
-            return (
-              <View style={[styles.card, isUnread && styles.cardUnread]}>
+            const renderContent = () => (
+              <>
+                {dateText ? (
+                  <Text style={styles.cardDate}>{dateText}</Text>
+                ) : null}
                 <View style={styles.cardHeader}>
                   <View style={styles.titleRow}>
                     {isPush && (
@@ -90,9 +128,26 @@ export default function CentroNotificaciones() {
                       {item.titulo}
                     </Text>
                   </View>
-                  <Text style={styles.cardDate}>{formatDate(item.fecha)}</Text>
                 </View>
                 <Text style={styles.cardMessage}>{item.mensaje}</Text>
+              </>
+            );
+
+            if (isClickable) {
+              return (
+                <TouchableOpacity
+                  style={[styles.card, isUnread && styles.cardUnread]}
+                  onPress={() => handleNotificationPress(item)}
+                  activeOpacity={0.7}
+                >
+                  {renderContent()}
+                </TouchableOpacity>
+              );
+            }
+
+            return (
+              <View style={[styles.card, isUnread && styles.cardUnread]}>
+                {renderContent()}
               </View>
             );
           }}
@@ -163,6 +218,11 @@ const styles = StyleSheet.create({
     borderLeftWidth: 4,
     borderLeftColor: '#800000',
   },
+  cardDate: {
+    fontSize: 12,
+    color: '#999',
+    marginBottom: 8,
+  },
   cardHeader: {
     marginBottom: 8,
   },
@@ -188,11 +248,6 @@ const styles = StyleSheet.create({
   },
   cardTitleWithBadge: {
     flex: 1,
-  },
-  cardDate: {
-    fontSize: 12,
-    color: '#999',
-    marginTop: 2,
   },
   cardMessage: {
     fontSize: 14,

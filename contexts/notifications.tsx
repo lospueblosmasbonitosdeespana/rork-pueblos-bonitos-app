@@ -15,7 +15,8 @@ interface Notificacion {
   titulo: string;
   mensaje: string;
   fecha: string;
-  tipo: 'push' | 'silenciosa';
+  tipo: 'push' | 'silenciosa' | 'semaforo';
+  post_id?: string;
   leida?: boolean;
 }
 
