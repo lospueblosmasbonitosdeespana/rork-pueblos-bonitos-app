@@ -31,6 +31,13 @@ function RootLayoutNav() {
           presentation: "modal",
         }}
       />
+      <Stack.Screen
+        name="pueblo-info/[id]"
+        options={{
+          headerTitle: "Información del Pueblo",
+          presentation: "card",
+        }}
+      />
     </Stack>
   );
 }

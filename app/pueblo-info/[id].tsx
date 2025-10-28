@@ -1,6 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
 import { Stack, useLocalSearchParams, router } from 'expo-router';
 import { ArrowLeft, Wind, Thermometer, CloudRain, Mountain, Users } from 'lucide-react-native';
+import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View, TouchableOpacity, ActivityIndicator } from 'react-native';
 
 import { COLORS, SHADOWS, SPACING } from '@/constants/theme';
@@ -27,59 +27,60 @@ type PuebloInfo = {
   };
 };
 
-async function fetchPuebloInfo(id: string): Promise<PuebloInfo> {
-  console.log('🌍 Fetching pueblo info for id:', id);
-  const url = `https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/pueblo-info?id=${id}`;
-  console.log('🌍 URL:', url);
-  
-  const response = await fetch(url);
-  console.log('🌍 Response status:', response.status);
-  
-  if (!response.ok) {
-    throw new Error(`Error al cargar la información del pueblo: ${response.status}`);
-  }
-  
-  const data = await response.json();
-  console.log('🌍 Data received:', data);
-  
-  return data;
-}
-
-export default function PuebloInfoScreen() {
+export default function PuebloInfo() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const [datos, setDatos] = useState<PuebloInfo | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
-  console.log('🏞️ PuebloInfoScreen id:', id);
+  console.log('🏞️ PuebloInfo id:', id);
 
-  const infoQuery = useQuery({
-    queryKey: ['pueblo-info', id],
-    queryFn: () => fetchPuebloInfo(id),
-    enabled: !!id,
-  });
-
-  console.log('🏞️ Query status:', {
-    isLoading: infoQuery.isLoading,
-    isError: infoQuery.isError,
-    error: infoQuery.error,
-    data: infoQuery.data,
-  });
+  useEffect(() => {
+    let cancelado = false;
+    
+    async function cargar() {
+      try {
+        const res = await fetch(`https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/pueblo-info?id=${id}`);
+        console.log('🌍 Response status:', res.status);
+        
+        if (!res.ok) throw new Error('http ' + res.status);
+        
+        const json = await res.json();
+        console.log('🌍 pueblo-info json:', json);
+        
+        if (!cancelado) setDatos(json);
+      } catch (e) {
+        console.log('🌍 pueblo-info error:', e);
+        if (!cancelado) setError(String(e));
+      } finally {
+        if (!cancelado) setLoading(false);
+      }
+    }
+    
+    cargar();
+    
+    return () => {
+      cancelado = true;
+    };
+  }, [id]);
 
   const getAirQualityColor = (estado: string) => {
     const estadoLower = estado.toLowerCase();
     if (estadoLower.includes('buena') || estadoLower.includes('bueno')) return '#4CAF50';
-    if (estadoLower.includes('moderada') || estadoLower.includes('moderado')) return '#FFC107';
+    if (estadoLower.includes('moderada') || estadoLower.includes('moderado') || estadoLower.includes('regular')) return '#FFC107';
     if (estadoLower.includes('mala') || estadoLower.includes('malo')) return '#FF5722';
     return COLORS.textSecondary;
   };
 
   const getAfluenciaColor = (estado: string) => {
     const estadoLower = estado.toLowerCase();
-    if (estadoLower.includes('baja')) return '#4CAF50';
-    if (estadoLower.includes('media') || estadoLower.includes('moderada')) return '#FFC107';
-    if (estadoLower.includes('alta')) return '#FF5722';
+    if (estadoLower.includes('baja') || estadoLower.includes('verde')) return '#4CAF50';
+    if (estadoLower.includes('media') || estadoLower.includes('moderada') || estadoLower.includes('amarillo')) return '#FFC107';
+    if (estadoLower.includes('alta') || estadoLower.includes('rojo')) return '#FF5722';
     return COLORS.textSecondary;
   };
 
-  if (infoQuery.isLoading) {
+  if (loading) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={COLORS.primary} />
@@ -88,14 +89,11 @@ export default function PuebloInfoScreen() {
     );
   }
 
-  if (infoQuery.error || !infoQuery.data) {
-    console.error('❌ Error loading pueblo info:', infoQuery.error);
+  if (error || !datos) {
     return (
       <View style={styles.loadingContainer}>
         <Text style={styles.errorText}>No se ha encontrado información para este pueblo</Text>
-        <Text style={styles.errorSubtext}>
-          {infoQuery.error instanceof Error ? infoQuery.error.message : 'Error desconocido'}
-        </Text>
+        <Text style={styles.errorSubtext}>{error || 'Sin datos'}</Text>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Text style={styles.backButtonText}>Volver</Text>
         </TouchableOpacity>
@@ -103,13 +101,11 @@ export default function PuebloInfoScreen() {
     );
   }
 
-  const info = infoQuery.data;
-
   return (
     <>
       <Stack.Screen 
         options={{ 
-          headerTitle: info.nombre,
+          headerTitle: datos.nombre,
           headerLeft: () => (
             <TouchableOpacity onPress={() => router.back()} style={styles.headerBackButton}>
               <ArrowLeft size={24} color={COLORS.text} />
@@ -119,19 +115,19 @@ export default function PuebloInfoScreen() {
       />
       <ScrollView style={styles.container}>
         <View style={styles.content}>
-          <Text style={styles.welcomeTitle}>Bienvenido a {info.nombre}</Text>
+          <Text style={styles.welcomeTitle}>Bienvenido a {datos.nombre}</Text>
           
           <View style={styles.grid}>
             <TouchableOpacity 
-              style={[styles.metricButton, { backgroundColor: getAirQualityColor(info.aire.estado) }]}
+              style={[styles.metricButton, { backgroundColor: getAirQualityColor(datos.aire?.estado || '') }]}
               activeOpacity={0.9}
             >
               <View style={styles.iconContainer}>
                 <Wind size={32} color="#FFFFFF" strokeWidth={2.5} />
               </View>
               <Text style={styles.metricLabel}>Calidad del Aire</Text>
-              <Text style={styles.metricValue}>{info.aire.ica}</Text>
-              <Text style={styles.metricSubtext}>{info.aire.estado}</Text>
+              <Text style={styles.metricValue}>{datos.aire?.ica || '—'}</Text>
+              <Text style={styles.metricSubtext}>ICA: {datos.aire?.estado || '—'}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity 
@@ -142,8 +138,8 @@ export default function PuebloInfoScreen() {
                 <Thermometer size={32} color="#FFFFFF" strokeWidth={2.5} />
               </View>
               <Text style={styles.metricLabel}>Temperatura</Text>
-              <Text style={styles.metricValue}>{info.clima.temperatura}°C</Text>
-              <Text style={styles.metricSubtext}>{info.clima.descripcion}</Text>
+              <Text style={styles.metricValue}>{datos.clima?.temperatura || '—'}°C</Text>
+              <Text style={styles.metricSubtext}>{datos.clima?.descripcion || '—'}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity 
@@ -153,8 +149,8 @@ export default function PuebloInfoScreen() {
               <View style={styles.iconContainer}>
                 <CloudRain size={32} color="#FFFFFF" strokeWidth={2.5} />
               </View>
-              <Text style={styles.metricLabel}>Lluvia 24h</Text>
-              <Text style={styles.metricValue}>{info.lluvia_24h} mm</Text>
+              <Text style={styles.metricLabel}>Lluvia últimas 24h</Text>
+              <Text style={styles.metricValue}>{datos.lluvia_24h || '0'} mm</Text>
               <Text style={styles.metricSubtext}>Últimas 24 horas</Text>
             </TouchableOpacity>
 
@@ -166,29 +162,31 @@ export default function PuebloInfoScreen() {
                 <Mountain size={32} color="#FFFFFF" strokeWidth={2.5} />
               </View>
               <Text style={styles.metricLabel}>Altitud</Text>
-              <Text style={styles.metricValue}>{info.altitud} m</Text>
+              <Text style={styles.metricValue}>{datos.altitud || '—'} m</Text>
               <Text style={styles.metricSubtext}>sobre el nivel del mar</Text>
             </TouchableOpacity>
 
             <TouchableOpacity 
-              style={[styles.metricButton, { backgroundColor: getAfluenciaColor(info.afluencia.estado) }]}
+              style={[styles.metricButton, { backgroundColor: getAfluenciaColor(datos.afluencia?.estado || '') }]}
               activeOpacity={0.9}
             >
               <View style={styles.iconContainer}>
                 <Users size={32} color="#FFFFFF" strokeWidth={2.5} />
               </View>
               <Text style={styles.metricLabel}>Afluencia</Text>
-              <Text style={styles.metricValue}>{info.afluencia.estado}</Text>
-              <Text style={styles.metricSubtext}>{info.afluencia.descripcion}</Text>
+              <Text style={styles.metricValue}>{datos.afluencia?.estado || '—'}</Text>
+              <Text style={styles.metricSubtext}>{datos.afluencia?.descripcion || '—'}</Text>
             </TouchableOpacity>
           </View>
 
-          <View style={styles.coordsCard}>
-            <Text style={styles.coordsLabel}>Coordenadas GPS</Text>
-            <Text style={styles.coordsValue}>
-              {info.coordenadas.lat.toFixed(6)}, {info.coordenadas.lng.toFixed(6)}
-            </Text>
-          </View>
+          {datos.coordenadas && (
+            <View style={styles.coordsCard}>
+              <Text style={styles.coordsLabel}>Coordenadas GPS</Text>
+              <Text style={styles.coordsValue}>
+                {datos.coordenadas.lat ? datos.coordenadas.lat.toFixed(6) : '—'}, {datos.coordenadas.lng ? datos.coordenadas.lng.toFixed(6) : '—'}
+              </Text>
+            </View>
+          )}
         </View>
       </ScrollView>
     </>
