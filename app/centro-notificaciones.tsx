@@ -46,6 +46,10 @@ export default function CentroNotificaciones() {
   }, [markAllAsRead]);
 
   const handleNotificationPress = async (item: NotificationItem) => {
+    if (item.tipo === 'semaforo') {
+      return;
+    }
+
     if (item.enlace && item.enlace.trim() !== '') {
       try {
         const canOpen = await Linking.canOpenURL(item.enlace);
@@ -114,7 +118,7 @@ export default function CentroNotificaciones() {
             const isUnread = index < unreadCount;
             const iconData = getNotificationIcon(item.tipo);
             const IconComponent = iconData.icon;
-            const hasLink = item.enlace && item.enlace.trim() !== '';
+            const hasLink = item.tipo === 'noticia' && item.enlace && item.enlace.trim() !== '';
             const subtitleText = getSubtitleText(item.tipo);
 
             const renderContent = () => (
