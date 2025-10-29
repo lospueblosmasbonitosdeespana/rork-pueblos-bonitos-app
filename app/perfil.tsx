@@ -11,29 +11,13 @@ import {
 import { useEffect, useRef } from 'react';
 import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useQuery } from '@tanstack/react-query';
 
 import { useUser } from '@/contexts/userContext';
-import { Usuario } from '@/types/api';
-import { fetchUserProfile } from '@/services/api';
 
 export default function PerfilScreen() {
   const hasNavigated = useRef(false);
   const insets = useSafeAreaInsets();
-  const { user: localUser, token, logout, forceLogout, isAuthenticated, isLoading: contextLoading } = useUser();
-
-  const profileQuery = useQuery<Usuario>({
-    queryKey: ['userProfile', token],
-    queryFn: async () => {
-      if (!token) throw new Error('No token');
-      return fetchUserProfile(token);
-    },
-    enabled: !!token,
-    staleTime: 60000,
-    retry: false,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
-  });
+  const { user, token, logout, forceLogout, isAuthenticated, isLoading: contextLoading } = useUser();
 
   const handleLogout = () => {
     Alert.alert('Cerrar Sesión', '¿Estás seguro que deseas salir?', [
@@ -42,8 +26,8 @@ export default function PerfilScreen() {
         text: 'Salir',
         style: 'destructive',
         onPress: async () => {
-          hasNavigated.current = false;
           await logout();
+          hasNavigated.current = false;
           router.replace('/login');
         },
       },
@@ -60,8 +44,8 @@ export default function PerfilScreen() {
           text: 'Forzar Cierre',
           style: 'destructive',
           onPress: async () => {
-            hasNavigated.current = false;
             await forceLogout();
+            hasNavigated.current = false;
             router.replace('/login');
           },
         },
@@ -70,10 +54,10 @@ export default function PerfilScreen() {
   };
 
   useEffect(() => {
-    if (hasNavigated.current) return;
     if (contextLoading) return;
+    if (hasNavigated.current) return;
     
-    console.log('🔍 Perfil - isAuthenticated:', isAuthenticated, 'hasToken:', !!token, 'contextLoading:', contextLoading);
+    console.log('🔍 Perfil - isAuthenticated:', isAuthenticated, 'hasToken:', !!token);
     
     if (!isAuthenticated || !token) {
       console.log('🔄 Redirigiendo a login...');
@@ -81,8 +65,6 @@ export default function PerfilScreen() {
       router.replace('/login');
     }
   }, [isAuthenticated, token, contextLoading]);
-
-  const user = profileQuery.data || localUser;
 
   if (contextLoading) {
     return (
