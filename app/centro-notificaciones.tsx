@@ -361,9 +361,9 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   semaforoCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     marginRight: 10,
   },
   headerTextContainer: {
