@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, ActivityIndicator, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { Stack, useLocalSearchParams, router } from 'expo-router';
-import { ArrowLeft, Wind, CloudRain, Mountain, Users } from 'lucide-react-native';
+import { Wind, CloudRain, Mountain, Users } from 'lucide-react-native';
 import { COLORS, SHADOWS, SPACING } from '@/constants/theme';
 import WeatherIcon from '@/components/WeatherIcon';
 
@@ -121,11 +121,6 @@ export default function PuebloInfo() {
         <Stack.Screen 
           options={{ 
             headerTitle: 'Información del Pueblo',
-            headerLeft: () => (
-              <TouchableOpacity onPress={() => router.back()} style={styles.headerBackButton}>
-                <ArrowLeft size={24} color={COLORS.text} />
-              </TouchableOpacity>
-            ),
           }} 
         />
         <View style={styles.loadingContainer}>
@@ -144,11 +139,6 @@ export default function PuebloInfo() {
       <Stack.Screen 
         options={{ 
           headerTitle: data.nombre,
-          headerLeft: () => (
-            <TouchableOpacity onPress={() => router.back()} style={styles.headerBackButton}>
-              <ArrowLeft size={24} color={COLORS.text} />
-            </TouchableOpacity>
-          ),
         }} 
       />
       <ScrollView style={styles.container}>
@@ -280,10 +270,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: COLORS.card,
     fontWeight: '700',
-  },
-  headerBackButton: {
-    padding: SPACING.xs,
-    marginLeft: SPACING.xs,
   },
   welcomeTitle: {
     fontSize: 24,

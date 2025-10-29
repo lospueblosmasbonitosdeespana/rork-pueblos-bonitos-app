@@ -16,7 +16,13 @@ const queryClient = new QueryClient();
 
 function RootLayoutNav() {
   return (
-    <Stack screenOptions={{ headerBackTitle: "Atrás" }}>
+    <Stack 
+      screenOptions={{ 
+        headerBackTitle: "Atrás",
+        gestureEnabled: true,
+        fullScreenGestureEnabled: false,
+      }}
+    >
       <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen
