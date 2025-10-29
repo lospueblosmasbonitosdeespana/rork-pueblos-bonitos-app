@@ -600,10 +600,7 @@ export async function umLogin(
   password: string
 ): Promise<{ success: boolean; user?: any; token?: string; message: string }> {
   try {
-    console.log('🔑 Attempting login for:', username);
-    
     const loginUrl = 'https://lospueblosmasbonitosdeespana.org/wp-json/um-api/login';
-    console.log('🔗 Login URL:', loginUrl);
     
     const response = await fetch(loginUrl, {
       method: 'POST',
@@ -613,20 +610,14 @@ export async function umLogin(
       },
       body: JSON.stringify({ username, password }),
     });
-
-    console.log('📊 Response status:', response.status);
     
     const responseText = await response.text();
-    console.log('📦 Raw response:', responseText.substring(0, 200));
 
     let data;
     try {
       data = JSON.parse(responseText);
     } catch {
-      console.error('❌ Failed to parse response as JSON');
-      
       if (response.status === 404) {
-        console.log('⚠️ UM API not found, trying JWT auth...');
         return await jwtLogin(username, password);
       }
       
@@ -636,12 +627,21 @@ export async function umLogin(
       };
     }
 
-    console.log('📦 Parsed response:', data);
+    if (response.status === 404 || (data.code && data.code === 'rest_no_route')) {
+      return await jwtLogin(username, password);
+    }
+
+    if (response.status === 401 || data.code === 'incorrect_login') {
+      return {
+        success: false,
+        message: 'Usuario o contraseña incorrectos',
+      };
+    }
 
     if (!response.ok || data.error) {
       return {
         success: false,
-        message: data.message || 'Usuario o contraseña incorrectos',
+        message: data.message || 'Error al iniciar sesión',
       };
     }
 
@@ -658,10 +658,6 @@ export async function umLogin(
       message: 'Login exitoso',
     };
   } catch (error: any) {
-    console.error('❌ UM Login error:', error);
-    console.error('❌ Error details:', error.message);
-    
-    console.log('⚠️ Trying JWT auth as fallback...');
     return await jwtLogin(username, password);
   }
 }
@@ -671,10 +667,7 @@ async function jwtLogin(
   password: string
 ): Promise<{ success: boolean; user?: any; token?: string; message: string }> {
   try {
-    console.log('🔑 JWT Login attempt for:', username);
-    
     const jwtUrl = 'https://lospueblosmasbonitosdeespana.org/wp-json/jwt-auth/v1/token';
-    console.log('🔗 JWT URL:', jwtUrl);
     
     const response = await fetch(jwtUrl, {
       method: 'POST',
@@ -684,11 +677,22 @@ async function jwtLogin(
       },
       body: JSON.stringify({ username, password }),
     });
-
-    console.log('📊 JWT Response status:', response.status);
     
     const data = await response.json();
-    console.log('📦 JWT Response:', data);
+
+    if (response.status === 401 || data.code === '[jwt_auth] incorrect_password') {
+      return {
+        success: false,
+        message: 'Usuario o contraseña incorrectos',
+      };
+    }
+
+    if (response.status === 404 || data.code === 'rest_no_route') {
+      return {
+        success: false,
+        message: 'Servicio de login no disponible. Contacta con soporte.',
+      };
+    }
 
     if (!response.ok || data.code) {
       return {
@@ -710,10 +714,9 @@ async function jwtLogin(
       message: 'Login exitoso',
     };
   } catch (error: any) {
-    console.error('❌ JWT Login error:', error);
     return {
       success: false,
-      message: 'Error de conexión. Verifica tus credenciales.',
+      message: 'Error de conexión. Verifica tu conexión a internet.',
     };
   }
 }

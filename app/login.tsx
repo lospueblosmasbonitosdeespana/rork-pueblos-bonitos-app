@@ -22,18 +22,18 @@ import { useUser } from '@/contexts/userContext';
 
 export default function LoginScreen() {
   const insets = useSafeAreaInsets();
-  const [email, setEmail] = useState<string>('');
+  const [username, setUsername] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const { login, isLoggingIn, isAuthenticated } = useUser();
 
   const handleLogin = async () => {
-    if (!email.trim() || !password.trim()) {
+    if (!username.trim() || !password.trim()) {
       Alert.alert('Error', 'Por favor completa todos los campos');
       return;
     }
 
     try {
-      await login({ username: email.trim(), password: password.trim() });
+      await login({ username: username.trim(), password: password.trim() });
       router.replace('/perfil');
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Usuario o contraseña incorrectos');
@@ -75,16 +75,15 @@ export default function LoginScreen() {
             </Text>
 
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>Email</Text>
+              <Text style={styles.label}>Email o usuario</Text>
               <TextInput
                 style={styles.input}
-                placeholder="tu@email.com"
+                placeholder="Email o usuario"
                 placeholderTextColor="#999"
-                value={email}
-                onChangeText={setEmail}
+                value={username}
+                onChangeText={setUsername}
                 autoCapitalize="none"
                 autoCorrect={false}
-                keyboardType="email-address"
                 editable={!isLoggingIn}
               />
             </View>

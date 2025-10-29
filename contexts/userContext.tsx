@@ -53,7 +53,6 @@ export const [UserProvider, useUser] = createContextHook(() => {
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginCredentials) => {
-      console.log('🔑 Logging in user:', credentials.username);
       const result = await umLogin(credentials.username, credentials.password);
       
       if (!result.success) {
@@ -66,18 +65,15 @@ export const [UserProvider, useUser] = createContextHook(() => {
       };
     },
     onSuccess: async (data) => {
-      console.log('💾 Storing user data');
       await AsyncStorage.setItem(USER_TOKEN_KEY, data.token);
       await AsyncStorage.setItem(USER_DATA_KEY, JSON.stringify(data.user));
       queryClient.setQueryData(['userToken'], data.token);
       queryClient.setQueryData(['userData'], data.user);
-      console.log('✅ User logged in successfully');
     },
   });
 
   const registerMutation = useMutation({
     mutationFn: async (credentials: RegisterCredentials) => {
-      console.log('📝 Registering user:', credentials.email);
       const result = await umRegister(
         credentials.nombre,
         credentials.email,
@@ -94,18 +90,15 @@ export const [UserProvider, useUser] = createContextHook(() => {
       };
     },
     onSuccess: async (data) => {
-      console.log('💾 Storing registered user data');
       await AsyncStorage.setItem(USER_TOKEN_KEY, data.token);
       await AsyncStorage.setItem(USER_DATA_KEY, JSON.stringify(data.user));
       queryClient.setQueryData(['userToken'], data.token);
       queryClient.setQueryData(['userData'], data.user);
-      console.log('✅ User registered successfully');
     },
   });
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      console.log('🚪 Logging out user');
       await AsyncStorage.removeItem(USER_TOKEN_KEY);
       await AsyncStorage.removeItem(USER_DATA_KEY);
     },
@@ -113,7 +106,6 @@ export const [UserProvider, useUser] = createContextHook(() => {
       queryClient.setQueryData(['userToken'], null);
       queryClient.setQueryData(['userData'], null);
       queryClient.clear();
-      console.log('✅ Logout successful');
     },
   });
 
