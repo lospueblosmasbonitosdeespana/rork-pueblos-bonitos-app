@@ -113,10 +113,10 @@ export const [NotificationsProvider, useNotifications] = createContextHook(() =>
     queryKey: ['notificaciones'],
     queryFn: async () => {
       try {
-        console.log('📡 Intentando obtener notificaciones desde JetEngine CCT...');
+        console.log('📡 Intentando obtener notificaciones desde el endpoint actualizado...');
         
         const response = await fetch(
-          'https://lospueblosmasbonitosdeespana.org/wp-json/jet-cct/notificaciones',
+          'https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/notificaciones',
           {
             method: 'GET',
             headers: {
@@ -137,11 +137,11 @@ export const [NotificationsProvider, useNotifications] = createContextHook(() =>
         
         if (Array.isArray(data)) {
           const mapped = data.map((item: any) => ({
-            id: item._ID || item.id || Math.random(),
-            tipo: mapTipo(item.tipo || item.type || 'noticia'),
-            titulo: item.titulo || item.title || 'Sin título',
-            mensaje: item.mensaje || item.message || item.content || '',
-            enlace: item.enlace || item.link || item.url || '',
+            id: item.id || Math.random(),
+            tipo: mapTipo(item.tipo || 'noticia'),
+            titulo: item.titulo || '',
+            mensaje: item.mensaje || '',
+            enlace: item.enlace || '',
           }));
           mapped.sort((a, b) => b.id - a.id);
           return mapped;
