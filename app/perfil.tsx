@@ -28,9 +28,11 @@ export default function PerfilScreen() {
       if (!token) throw new Error('No token');
       return fetchUserProfile(token);
     },
-    enabled: !!token && isAuthenticated,
+    enabled: !!token,
     staleTime: 60000,
-    retry: 1,
+    retry: false,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 
   const handleLogout = () => {
@@ -68,22 +70,21 @@ export default function PerfilScreen() {
   };
 
   useEffect(() => {
-    if (contextLoading) return;
     if (hasNavigated.current) return;
+    if (contextLoading) return;
     
-    console.log('🔍 Perfil - isAuthenticated:', isAuthenticated, 'hasToken:', !!token);
+    console.log('🔍 Perfil - isAuthenticated:', isAuthenticated, 'hasToken:', !!token, 'contextLoading:', contextLoading);
     
     if (!isAuthenticated || !token) {
-      hasNavigated.current = true;
       console.log('🔄 Redirigiendo a login...');
+      hasNavigated.current = true;
       router.replace('/login');
     }
   }, [isAuthenticated, token, contextLoading]);
 
-  const isLoading = contextLoading || profileQuery.isLoading;
   const user = profileQuery.data || localUser;
 
-  if (isLoading) {
+  if (contextLoading) {
     return (
       <>
         <Stack.Screen options={{ headerShown: false }} />
