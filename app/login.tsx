@@ -1,6 +1,6 @@
 import { router, Stack } from 'expo-router';
 import { LogIn } from 'lucide-react-native';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   ActivityIndicator,
@@ -22,11 +22,10 @@ import { useUser } from '@/contexts/userContext';
 
 export default function LoginScreen() {
   // TODOS los hooks al inicio
-  const hasNavigated = useRef(false);
   const [username, setUsername] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const insets = useSafeAreaInsets();
-  const { login, isLoggingIn, isAuthenticated, isLoading } = useUser();
+  const { login, isLoggingIn, isLoading } = useUser();
 
   const handleLogin = async () => {
     if (!username.trim() || !password.trim()) {
@@ -42,17 +41,6 @@ export default function LoginScreen() {
       Alert.alert('Error', error.message || 'Usuario o contraseña incorrectos');
     }
   };
-
-  // useEffect después de todos los hooks
-  useEffect(() => {
-    if (!isLoading && isAuthenticated && !hasNavigated.current) {
-      console.log('Redirigiendo a perfil...');
-      hasNavigated.current = true;
-      setTimeout(() => {
-        router.replace('/perfil');
-      }, 100);
-    }
-  }, [isAuthenticated, isLoading]);
 
   // Renderizado condicional al final
   if (isLoading) {
