@@ -18,9 +18,9 @@ import { Usuario } from '@/types/api';
 import { fetchUserProfile } from '@/services/api';
 
 export default function PerfilScreen() {
+  const hasNavigated = useRef(false);
   const insets = useSafeAreaInsets();
   const { user: localUser, token, logout, forceLogout, isAuthenticated, isLoading: contextLoading } = useUser();
-  const hasNavigated = useRef(false);
 
   const profileQuery = useQuery<Usuario>({
     queryKey: ['userProfile', token],

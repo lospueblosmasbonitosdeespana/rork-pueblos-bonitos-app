@@ -21,11 +21,11 @@ import {
 import { useUser } from '@/contexts/userContext';
 
 export default function LoginScreen() {
-  const insets = useSafeAreaInsets();
+  const hasNavigated = useRef(false);
   const [username, setUsername] = useState<string>('');
   const [password, setPassword] = useState<string>('');
+  const insets = useSafeAreaInsets();
   const { login, isLoggingIn, isAuthenticated, isLoading } = useUser();
-  const hasNavigated = useRef(false);
 
   const handleLogin = async () => {
     if (!username.trim() || !password.trim()) {
