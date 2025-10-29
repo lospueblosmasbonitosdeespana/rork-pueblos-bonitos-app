@@ -3,6 +3,7 @@ import createContextHook from '@nkzw/create-context-hook';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
+import { API_BASE_URL } from '@/constants/api';
 import { umLogin, umRegister } from '@/services/api';
 import { Usuario } from '@/types/api';
 
@@ -22,6 +23,7 @@ const USER_DATA_KEY = '@lpbe_user_data';
 
 export const [UserProvider, useUser] = createContextHook(() => {
   const [isInitialized, setIsInitialized] = useState(false);
+  const [isValidating, setIsValidating] = useState(false);
   const queryClient = useQueryClient();
 
   const userQuery = useQuery<Usuario | null>({
@@ -46,10 +48,55 @@ export const [UserProvider, useUser] = createContextHook(() => {
   });
 
   useEffect(() => {
-    if (userQuery.isSuccess && tokenQuery.isSuccess) {
-      setIsInitialized(true);
+    async function validateToken() {
+      if (userQuery.isSuccess && tokenQuery.isSuccess) {
+        const token = tokenQuery.data;
+        const user = userQuery.data;
+        
+        console.log('🔍 UserContext - Validando sesión:', { hasToken: !!token, hasUser: !!user });
+        
+        if (token && user) {
+          setIsValidating(true);
+          
+          try {
+            const response = await fetch(`${API_BASE_URL}/wp/v2/users/me`, {
+              method: 'GET',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+              },
+            });
+            
+            console.log('🔍 Token validation status:', response.status);
+            
+            if (!response.ok) {
+              console.log('❌ Token inválido, limpiando sesión...');
+              await AsyncStorage.removeItem(USER_TOKEN_KEY);
+              await AsyncStorage.removeItem(USER_DATA_KEY);
+              queryClient.setQueryData(['userToken'], null);
+              queryClient.setQueryData(['userData'], null);
+            } else {
+              console.log('✅ Token válido');
+            }
+          } catch (error: any) {
+            console.error('❌ Error validando token:', error.message);
+            await AsyncStorage.removeItem(USER_TOKEN_KEY);
+            await AsyncStorage.removeItem(USER_DATA_KEY);
+            queryClient.setQueryData(['userToken'], null);
+            queryClient.setQueryData(['userData'], null);
+          } finally {
+            setIsValidating(false);
+            setIsInitialized(true);
+          }
+        } else {
+          console.log('📝 No hay sesión guardada');
+          setIsInitialized(true);
+        }
+      }
     }
-  }, [userQuery.isSuccess, tokenQuery.isSuccess]);
+    
+    validateToken();
+  }, [userQuery.isSuccess, tokenQuery.isSuccess, userQuery.data, tokenQuery.data, queryClient]);
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginCredentials) => {
@@ -129,7 +176,7 @@ export const [UserProvider, useUser] = createContextHook(() => {
     user: userQuery.data ?? null,
     token: tokenQuery.data ?? null,
     isAuthenticated: !!userQuery.data && !!tokenQuery.data,
-    isLoading: !isInitialized || userQuery.isLoading || tokenQuery.isLoading,
+    isLoading: !isInitialized || userQuery.isLoading || tokenQuery.isLoading || isValidating,
     login,
     register,
     logout,
@@ -143,6 +190,7 @@ export const [UserProvider, useUser] = createContextHook(() => {
     isInitialized,
     userQuery.isLoading,
     tokenQuery.isLoading,
+    isValidating,
     login,
     register,
     logout,
