@@ -1,7 +1,6 @@
 import { router, Stack } from 'expo-router';
 import { LogIn } from 'lucide-react-native';
-import { useState } from 'react';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -17,42 +16,34 @@ import {
   TouchableWithoutFeedback,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useUser } from '@/contexts/userContext';
 
 export default function LoginScreen() {
-  // TODOS los hooks al inicio
-  const [username, setUsername] = useState<string>('');
-  const [password, setPassword] = useState<string>('');
   const insets = useSafeAreaInsets();
-  const { login, isLoggingIn, isLoading } = useUser();
+  const { login, isLoggingIn, isAuthenticated, isLoading } = useUser();
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      router.replace('/perfil');
+    }
+  }, [isLoading, isAuthenticated]);
 
   const handleLogin = async () => {
     if (!username.trim() || !password.trim()) {
       Alert.alert('Error', 'Por favor completa todos los campos');
       return;
     }
+
     try {
-      console.log('Intentando login...');
-      await login({ username: username.trim(), password: password.trim() });
-      console.log('Login exitoso');
+      await login(username.trim(), password.trim());
     } catch (error: any) {
-      console.error('Error en login:', error);
       Alert.alert('Error', error.message || 'Usuario o contraseña incorrectos');
     }
   };
-
-  // Renderizado condicional al final
-  if (isLoading) {
-    return (
-      <>
-        <Stack.Screen options={{ headerShown: false }} />
-        <View style={styles.container}>
-          <ActivityIndicator size="large" color="#8B0000" />
-        </View>
-      </>
-    );
-  }
 
   return (
     <>
@@ -67,77 +58,66 @@ export default function LoginScreen() {
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-          <View style={styles.logoContainer}>
-            <Image
-              source={{
-                uri: 'https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2024/01/LPBE-logo-transparente.png',
-              }}
-              style={styles.logo}
-              resizeMode="contain"
-            />
-          </View>
-
-          <View style={styles.formContainer}>
-            <Text style={styles.title}>Iniciar Sesión</Text>
-            <Text style={styles.subtitle}>
-              Accede a tu cuenta para disfrutar de todas las funciones
-            </Text>
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Email o usuario</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Email o usuario"
-                placeholderTextColor="#999"
-                value={username}
-                onChangeText={setUsername}
-                autoCapitalize="none"
-                autoCorrect={false}
-                editable={!isLoggingIn}
+            <View style={styles.logoContainer}>
+              <Image
+                source={{
+                  uri: 'https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2024/01/LPBE-logo-transparente.png',
+                }}
+                style={styles.logo}
+                resizeMode="contain"
               />
             </View>
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Contraseña</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="••••••••"
-                placeholderTextColor="#999"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-                autoCapitalize="none"
-                autoCorrect={false}
-                editable={!isLoggingIn}
-              />
-            </View>
-
-            <TouchableOpacity
-              style={[styles.button, isLoggingIn && styles.buttonDisabled]}
-              onPress={handleLogin}
-              disabled={isLoggingIn}
-            >
-              {isLoggingIn ? (
-                <ActivityIndicator color="#FFF" />
-              ) : (
-                <>
-                  <LogIn size={20} color="#FFF" style={styles.buttonIcon} />
-                  <Text style={styles.buttonText}>Entrar</Text>
-                </>
-              )}
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.registerLink}
-              onPress={() => router.push('/register')}
-              disabled={isLoggingIn}
-            >
-              <Text style={styles.registerLinkText}>
-                ¿No tienes cuenta?{' '}
-                <Text style={styles.registerLinkTextBold}>Regístrate</Text>
+            <View style={styles.formContainer}>
+              <Text style={styles.title}>Iniciar Sesión</Text>
+              <Text style={styles.subtitle}>
+                Accede a tu cuenta para disfrutar de todas las funciones
               </Text>
-            </TouchableOpacity>
-          </View>
+
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Email o usuario</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Email o usuario"
+                  placeholderTextColor="#999"
+                  value={username}
+                  onChangeText={setUsername}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  editable={!isLoggingIn}
+                />
+              </View>
+
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Contraseña</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="••••••••"
+                  placeholderTextColor="#999"
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  editable={!isLoggingIn}
+                />
+              </View>
+
+              <TouchableOpacity
+                style={[styles.button, isLoggingIn && styles.buttonDisabled]}
+                onPress={handleLogin}
+                disabled={isLoggingIn}
+              >
+                {isLoggingIn ? (
+                  <ActivityIndicator color="#FFF" />
+                ) : (
+                  <>
+                    <LogIn size={20} color="#FFF" style={styles.buttonIcon} />
+                    <Text style={styles.buttonText}>Entrar</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
           </ScrollView>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
@@ -221,18 +201,6 @@ const styles = StyleSheet.create({
   buttonText: {
     color: '#FFF',
     fontSize: 16,
-    fontWeight: '600' as const,
-  },
-  registerLink: {
-    marginTop: 24,
-    alignItems: 'center',
-  },
-  registerLinkText: {
-    fontSize: 14,
-    color: '#666',
-  },
-  registerLinkTextBold: {
-    color: '#8B0000',
     fontWeight: '600' as const,
   },
 });

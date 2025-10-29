@@ -1,109 +1,66 @@
-import { router, Stack } from 'expo-router';
-import { LogOut, Mail, User as UserIcon, Shield } from 'lucide-react-native';
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Stack } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LogOut, Mail, User as UserIcon } from 'lucide-react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 import { useUser } from '@/contexts/userContext';
 
 export default function PerfilScreen() {
+  const { user, logout, isLoading } = useUser();
   const insets = useSafeAreaInsets();
-  const { user, logout, isAuthenticated, isLoading, forceLogout } = useUser();
 
-  const handleLogout = async () => {
-    Alert.alert(
-      'Cerrar sesión',
-      '¿Estás seguro de que quieres cerrar sesión?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Cerrar sesión',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              console.log('🚪 Cerrando sesión...');
-              await logout();
-              console.log('✅ Sesión cerrada, redirigiendo...');
-              router.replace('/login');
-            } catch (error) {
-              console.error('❌ Error al cerrar sesión:', error);
-              Alert.alert('Error', 'No se pudo cerrar la sesión');
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  const handleForceLogout = async () => {
-    Alert.alert(
-      'Forzar cierre de sesión',
-      'Esto eliminará todos los datos de sesión almacenados. ¿Continuar?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Forzar cierre',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              console.log('🚨 Forzando cierre...');
-              await forceLogout();
-              console.log('✅ Cierre forzado completado, redirigiendo...');
-              router.replace('/login');
-            } catch (error) {
-              console.error('❌ Error en cierre forzado:', error);
-            }
-          },
-        },
-      ]
-    );
+  const handleLogout = () => {
+    Alert.alert('Cerrar sesión', '¿Estás seguro de que quieres cerrar sesión?', [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Cerrar sesión',
+        style: 'destructive',
+        onPress: logout,
+      },
+    ]);
   };
 
   if (isLoading) {
     return (
       <>
-        <Stack.Screen options={{ headerShown: false }} />
+        <Stack.Screen options={{ title: 'Mi Perfil' }} />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#8B0000" />
-          <Text style={styles.loadingText}>Cargando perfil...</Text>
         </View>
       </>
     );
   }
 
-  if (!isAuthenticated || !user) {
-    router.replace('/login');
-    return null;
-  }
-
   return (
     <>
-      <Stack.Screen
-        options={{
-          title: 'Mi Perfil',
-          headerShown: true,
-        }}
-      />
-      <ScrollView
-        style={[styles.container, { paddingTop: insets.top }]}
-        contentContainerStyle={styles.contentContainer}
-      >
+      <Stack.Screen options={{ title: 'Mi Perfil' }} />
+      <View style={styles.outerContainer}>
+        <ScrollView style={styles.container} contentContainerStyle={[styles.contentContainer, { paddingBottom: insets.bottom + 40 }]}>
         <View style={styles.header}>
           <View style={styles.avatarContainer}>
             <UserIcon size={48} color="#8B0000" strokeWidth={1.5} />
           </View>
-          <Text style={styles.name}>{user.nombre || 'Usuario'}</Text>
-          <Text style={styles.email}>{user.email}</Text>
+          <Text style={styles.name}>{user?.display_name || 'Usuario'}</Text>
+          <Text style={styles.email}>{user?.email}</Text>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Información de la cuenta</Text>
-          
+
           <View style={styles.infoCard}>
             <View style={styles.infoRow}>
               <UserIcon size={20} color="#666" strokeWidth={1.5} />
               <View style={styles.infoContent}>
-                <Text style={styles.infoLabel}>Nombre de usuario</Text>
-                <Text style={styles.infoValue}>{user.nombre || 'No especificado'}</Text>
+                <Text style={styles.infoLabel}>Nombre</Text>
+                <Text style={styles.infoValue}>{user?.display_name || 'No especificado'}</Text>
               </View>
             </View>
 
@@ -113,36 +70,16 @@ export default function PerfilScreen() {
               <Mail size={20} color="#666" strokeWidth={1.5} />
               <View style={styles.infoContent}>
                 <Text style={styles.infoLabel}>Email</Text>
-                <Text style={styles.infoValue}>{user.email}</Text>
-              </View>
-            </View>
-
-            <View style={styles.divider} />
-
-            <View style={styles.infoRow}>
-              <Shield size={20} color="#666" strokeWidth={1.5} />
-              <View style={styles.infoContent}>
-                <Text style={styles.infoLabel}>Rol</Text>
-                <Text style={styles.infoValue}>{user.rol || 'Usuario'}</Text>
+                <Text style={styles.infoValue}>{user?.email}</Text>
               </View>
             </View>
           </View>
         </View>
 
         <View style={styles.section}>
-          <TouchableOpacity
-            style={styles.logoutButton}
-            onPress={handleLogout}
-          >
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
             <LogOut size={20} color="#FFF" strokeWidth={1.5} />
             <Text style={styles.logoutButtonText}>Cerrar sesión</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.forceLogoutButton}
-            onPress={handleForceLogout}
-          >
-            <Text style={styles.forceLogoutButtonText}>Forzar cierre de sesión</Text>
           </TouchableOpacity>
         </View>
 
@@ -150,15 +87,19 @@ export default function PerfilScreen() {
           <Text style={styles.footerText}>Los Pueblos Más Bonitos de España</Text>
           <Text style={styles.footerVersion}>Versión 2.8</Text>
         </View>
-      </ScrollView>
+        </ScrollView>
+      </View>
     </>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  outerContainer: {
     flex: 1,
     backgroundColor: '#f8f8f8',
+  },
+  container: {
+    flex: 1,
   },
   loadingContainer: {
     flex: 1,
@@ -166,14 +107,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#f8f8f8',
   },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: '#666',
-  },
-  contentContainer: {
-    paddingBottom: 40,
-  },
+  contentContainer: {},
   header: {
     backgroundColor: '#FFF',
     paddingVertical: 32,
@@ -267,16 +201,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600' as const,
     marginLeft: 8,
-  },
-  forceLogoutButton: {
-    marginTop: 12,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  forceLogoutButtonText: {
-    fontSize: 14,
-    color: '#999',
-    textDecorationLine: 'underline',
   },
   footer: {
     marginTop: 40,

@@ -33,12 +33,7 @@ function RootLayoutNav() {
           presentation: "modal",
         }}
       />
-      <Stack.Screen
-        name="(app)"
-        options={{
-          headerShown: false,
-        }}
-      />
+
       <Stack.Screen
         name="pueblo/[id]"
         options={{
@@ -57,6 +52,13 @@ function RootLayoutNav() {
         name="pueblo-info/[id]"
         options={{
           headerTitle: "Información del Pueblo",
+          presentation: "card",
+        }}
+      />
+      <Stack.Screen
+        name="perfil"
+        options={{
+          headerTitle: "Mi Perfil",
           presentation: "card",
         }}
       />
