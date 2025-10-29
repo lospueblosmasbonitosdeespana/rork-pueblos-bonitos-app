@@ -54,13 +54,12 @@ export default function PerfilScreen() {
   };
 
   useEffect(() => {
-    if (contextLoading) return;
-    if (hasNavigated.current) return;
-    
-    if (!isAuthenticated || !token) {
+    if (!contextLoading && (!isAuthenticated || !token) && !hasNavigated.current) {
       console.log('🔄 Redirigiendo a login...');
       hasNavigated.current = true;
-      router.replace('/login');
+      setTimeout(() => {
+        router.replace('/login');
+      }, 100);
     }
   }, [isAuthenticated, token, contextLoading]);
 
@@ -79,7 +78,17 @@ export default function PerfilScreen() {
   }
 
   if (!isAuthenticated || !user) {
-    return null;
+    return (
+      <>
+        <Stack.Screen options={{ headerShown: false }} />
+        <View style={[styles.container, { paddingTop: insets.top }]}>
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#8B0000" />
+            <Text style={styles.loadingText}>Redirigiendo...</Text>
+          </View>
+        </View>
+      </>
+    );
   }
 
   const getRolDisplay = (rol?: string): string => {

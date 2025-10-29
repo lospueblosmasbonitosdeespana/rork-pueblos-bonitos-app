@@ -44,13 +44,12 @@ export default function LoginScreen() {
   };
 
   useEffect(() => {
-    if (isLoading) return;
-    if (hasNavigated.current) return;
-    
-    if (isAuthenticated) {
+    if (!isLoading && isAuthenticated && !hasNavigated.current) {
       console.log('🔄 Redirigiendo a perfil...');
       hasNavigated.current = true;
-      router.replace('/perfil');
+      setTimeout(() => {
+        router.replace('/perfil');
+      }, 100);
     }
   }, [isAuthenticated, isLoading]);
 
@@ -63,10 +62,6 @@ export default function LoginScreen() {
         </View>
       </>
     );
-  }
-
-  if (isAuthenticated) {
-    return null;
   }
 
   return (

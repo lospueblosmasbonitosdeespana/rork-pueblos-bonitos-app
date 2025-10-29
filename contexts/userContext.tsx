@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import createContextHook from '@nkzw/create-context-hook';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { umLogin, umRegister } from '@/services/api';
@@ -22,57 +22,49 @@ const USER_DATA_KEY = '@lpbe_user_data';
 
 export const [UserProvider, useUser] = createContextHook(() => {
   const queryClient = useQueryClient();
-  const [hasValidated, setHasValidated] = useState(false);
-
-  const userQuery = useQuery<Usuario | null>({
-    queryKey: ['userData'],
-    queryFn: async () => {
-      const storedUser = await AsyncStorage.getItem(USER_DATA_KEY);
-      if (storedUser) {
-        console.log('📦 Usuario cargado del storage');
-        return JSON.parse(storedUser);
-      }
-      console.log('📦 No hay usuario en storage');
-      return null;
-    },
-    staleTime: Infinity,
-  });
-
-  const tokenQuery = useQuery<string | null>({
-    queryKey: ['userToken'],
-    queryFn: async () => {
-      const storedToken = await AsyncStorage.getItem(USER_TOKEN_KEY);
-      if (storedToken) {
-        console.log('🔑 Token cargado del storage');
-      } else {
-        console.log('🔑 No hay token en storage');
-      }
-      return storedToken;
-    },
-    staleTime: Infinity,
-  });
+  const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState<Usuario | null>(null);
+  const [token, setToken] = useState<string | null>(null);
 
   useEffect(() => {
-    if (hasValidated) return;
-    if (!userQuery.isSuccess || !tokenQuery.isSuccess) return;
-    
-    const token = tokenQuery.data;
-    const user = userQuery.data;
-    
-    console.log('🔍 UserContext inicializado:', { hasToken: !!token, hasUser: !!user });
-    
-    if (!token || !user) {
-      console.log('📝 No hay sesión guardada');
-      setHasValidated(true);
-      return;
-    }
-    
-    console.log('✅ Sesión válida encontrada');
-    setHasValidated(true);
-  }, [userQuery.isSuccess, tokenQuery.isSuccess, hasValidated, tokenQuery.data, userQuery.data]);
+    let isMounted = true;
+
+    const loadStoredData = async () => {
+      try {
+        console.log('🔍 Cargando datos almacenados...');
+        const [storedToken, storedUser] = await Promise.all([
+          AsyncStorage.getItem(USER_TOKEN_KEY),
+          AsyncStorage.getItem(USER_DATA_KEY),
+        ]);
+
+        if (!isMounted) return;
+
+        if (storedToken && storedUser) {
+          console.log('✅ Sesión encontrada');
+          setToken(storedToken);
+          setUser(JSON.parse(storedUser));
+        } else {
+          console.log('📝 No hay sesión guardada');
+        }
+      } catch (error) {
+        console.error('❌ Error cargando datos:', error);
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadStoredData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginCredentials) => {
+      console.log('🔐 Iniciando login...');
       const result = await umLogin(credentials.username, credentials.password);
       
       if (!result.success) {
@@ -85,15 +77,20 @@ export const [UserProvider, useUser] = createContextHook(() => {
       };
     },
     onSuccess: async (data) => {
-      await AsyncStorage.setItem(USER_TOKEN_KEY, data.token);
-      await AsyncStorage.setItem(USER_DATA_KEY, JSON.stringify(data.user));
-      queryClient.setQueryData(['userToken'], data.token);
-      queryClient.setQueryData(['userData'], data.user);
+      console.log('✅ Login exitoso, guardando datos...');
+      await Promise.all([
+        AsyncStorage.setItem(USER_TOKEN_KEY, data.token),
+        AsyncStorage.setItem(USER_DATA_KEY, JSON.stringify(data.user)),
+      ]);
+      setToken(data.token);
+      setUser(data.user);
+      console.log('✅ Datos guardados');
     },
   });
 
   const registerMutation = useMutation({
     mutationFn: async (credentials: RegisterCredentials) => {
+      console.log('📝 Iniciando registro...');
       const result = await umRegister(
         credentials.nombre,
         credentials.email,
@@ -110,26 +107,32 @@ export const [UserProvider, useUser] = createContextHook(() => {
       };
     },
     onSuccess: async (data) => {
-      await AsyncStorage.setItem(USER_TOKEN_KEY, data.token);
-      await AsyncStorage.setItem(USER_DATA_KEY, JSON.stringify(data.user));
-      queryClient.setQueryData(['userToken'], data.token);
-      queryClient.setQueryData(['userData'], data.user);
+      console.log('✅ Registro exitoso, guardando datos...');
+      await Promise.all([
+        AsyncStorage.setItem(USER_TOKEN_KEY, data.token),
+        AsyncStorage.setItem(USER_DATA_KEY, JSON.stringify(data.user)),
+      ]);
+      setToken(data.token);
+      setUser(data.user);
+      console.log('✅ Datos guardados');
     },
   });
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
       console.log('🧹 Limpiando storage...');
-      await AsyncStorage.removeItem(USER_TOKEN_KEY);
-      await AsyncStorage.removeItem(USER_DATA_KEY);
+      await Promise.all([
+        AsyncStorage.removeItem(USER_TOKEN_KEY),
+        AsyncStorage.removeItem(USER_DATA_KEY),
+      ]);
       console.log('✅ Storage limpiado');
     },
     onSuccess: () => {
-      console.log('📦 Limpiando queries...');
-      queryClient.setQueryData(['userToken'], null);
-      queryClient.setQueryData(['userData'], null);
+      console.log('📦 Limpiando estado...');
+      setToken(null);
+      setUser(null);
       queryClient.clear();
-      console.log('✅ Queries limpiadas');
+      console.log('✅ Estado limpiado');
     },
   });
 
@@ -137,36 +140,36 @@ export const [UserProvider, useUser] = createContextHook(() => {
   const { mutateAsync: registerAsync } = registerMutation;
   const { mutateAsync: logoutAsync } = logoutMutation;
 
-  const login = useCallback((credentials: LoginCredentials) => {
+  const login = useCallback(async (credentials: LoginCredentials) => {
     return loginAsync(credentials);
   }, [loginAsync]);
 
-  const register = useCallback((credentials: RegisterCredentials) => {
+  const register = useCallback(async (credentials: RegisterCredentials) => {
     return registerAsync(credentials);
   }, [registerAsync]);
 
   const logout = useCallback(async () => {
     console.log('🚪 Cerrando sesión...');
-    setHasValidated(false);
     await logoutAsync();
-    setHasValidated(true);
     console.log('✅ Sesión cerrada correctamente');
   }, [logoutAsync]);
 
   const forceLogout = useCallback(async () => {
     console.log('🚨 Forzando cierre de sesión...');
-    setHasValidated(false);
-    await AsyncStorage.removeItem(USER_TOKEN_KEY);
-    await AsyncStorage.removeItem(USER_DATA_KEY);
-    queryClient.setQueryData(['userToken'], null);
-    queryClient.setQueryData(['userData'], null);
-    queryClient.clear();
-    setHasValidated(true);
+    try {
+      await Promise.all([
+        AsyncStorage.removeItem(USER_TOKEN_KEY),
+        AsyncStorage.removeItem(USER_DATA_KEY),
+      ]);
+      setToken(null);
+      setUser(null);
+      queryClient.clear();
+      console.log('✅ Cierre forzado completado');
+    } catch (error) {
+      console.error('❌ Error en cierre forzado:', error);
+    }
   }, [queryClient]);
 
-  const isLoading = !hasValidated || userQuery.isLoading || tokenQuery.isLoading;
-  const user = userQuery.data ?? null;
-  const token = tokenQuery.data ?? null;
   const isAuthenticated = !!user && !!token;
 
   return useMemo(() => ({
