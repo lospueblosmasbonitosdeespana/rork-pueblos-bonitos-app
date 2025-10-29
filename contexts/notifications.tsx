@@ -16,6 +16,7 @@ interface Notificacion {
   titulo: string;
   mensaje: string;
   enlace: string;
+  motivo?: string;
 }
 
 Notifications.setNotificationHandler({
@@ -142,6 +143,7 @@ export const [NotificationsProvider, useNotifications] = createContextHook(() =>
             titulo: item.titulo || '',
             mensaje: item.mensaje || '',
             enlace: item.enlace || '',
+            motivo: item.motivo || '',
           }));
           mapped.sort((a, b) => b.id - a.id);
           return mapped;

@@ -21,6 +21,7 @@ interface NotificationItem {
   titulo: string;
   mensaje: string;
   enlace: string;
+  motivo?: string;
 }
 
 function getNotificationIcon(tipo: string) {
@@ -156,8 +157,27 @@ export default function CentroNotificaciones() {
               return null;
             };
 
+            const getSemaforoMessage = () => {
+              if (item.tipo === 'semaforo') {
+                const mensaje = item.mensaje.toLowerCase();
+                const puebloName = item.titulo.replace('Semáforo de ', '');
+                
+                if (mensaje.includes('verde')) {
+                  return `${puebloName} está en perfecto estado para ser visitado.`;
+                }
+                if (mensaje.includes('amarillo')) {
+                  return `${puebloName} tiene una alta afluencia de visitantes estos días.`;
+                }
+                if (mensaje.includes('rojo')) {
+                  return 'Se recomienda visitar otro pueblo de la asociación.';
+                }
+              }
+              return item.mensaje;
+            };
+
             const renderContent = () => {
               const semaforoColor = getSemaforoColor();
+              const semaforoMessage = getSemaforoMessage();
               
               return (
               <>
@@ -178,9 +198,22 @@ export default function CentroNotificaciones() {
                 </View>
                 <View style={styles.messageContainer}>
                   <Text style={styles.cardMessage}>
-                    {item.mensaje}
+                    {semaforoMessage}
                   </Text>
                 </View>
+                {item.tipo === 'semaforo' && (
+                  <View style={styles.estadoContainer}>
+                    <Text style={styles.estadoText}>
+                      {item.mensaje}
+                    </Text>
+                  </View>
+                )}
+                {item.tipo === 'semaforo' && item.motivo && item.motivo.trim() !== '' && (
+                  <View style={styles.motivoContainer}>
+                    <Text style={styles.motivoLabel}>Motivo:</Text>
+                    <Text style={styles.motivoText}>{item.motivo}</Text>
+                  </View>
+                )}
                 {hasLink && (
                   <View style={styles.linkIndicator}>
                     <Text style={styles.linkText}>Toca para abrir ›</Text>
@@ -299,7 +332,7 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: '#fff',
     borderRadius: 12,
-    padding: 16,
+    padding: 12,
     marginBottom: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -312,7 +345,7 @@ const styles = StyleSheet.create({
     borderLeftColor: '#800000',
   },
   cardHeader: {
-    marginBottom: 12,
+    marginBottom: 8,
   },
   iconContainer: {
     flexDirection: 'row',
@@ -336,7 +369,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   subtitleText: {
-    fontSize: 11,
+    fontSize: 10,
     color: '#999',
     fontWeight: '500',
     marginBottom: 2,
@@ -344,9 +377,10 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   cardTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
     color: '#1a1a1a',
+    lineHeight: 20,
   },
   messageContainer: {
     flexDirection: 'row',
@@ -359,10 +393,35 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   linkIndicator: {
-    marginTop: 12,
-    paddingTop: 12,
+    marginTop: 10,
+    paddingTop: 10,
     borderTopWidth: 1,
     borderTopColor: '#f0f0f0',
+  },
+  estadoContainer: {
+    marginTop: 8,
+  },
+  estadoText: {
+    fontSize: 11,
+    color: '#666',
+    fontStyle: 'italic',
+  },
+  motivoContainer: {
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+  },
+  motivoLabel: {
+    fontSize: 11,
+    color: '#999',
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  motivoText: {
+    fontSize: 13,
+    color: '#555',
+    lineHeight: 18,
   },
   linkText: {
     fontSize: 13,
