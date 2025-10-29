@@ -57,8 +57,6 @@ export default function PerfilScreen() {
     if (contextLoading) return;
     if (hasNavigated.current) return;
     
-    console.log('🔍 Perfil - isAuthenticated:', isAuthenticated, 'hasToken:', !!token);
-    
     if (!isAuthenticated || !token) {
       console.log('🔄 Redirigiendo a login...');
       hasNavigated.current = true;

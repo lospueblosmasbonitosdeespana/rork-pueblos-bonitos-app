@@ -6,24 +6,22 @@ import { useUser } from '@/contexts/userContext';
 
 export default function PerfilTabScreen() {
   const hasNavigated = useRef(false);
-  const { isAuthenticated, isLoading, user, token } = useUser();
+  const { isAuthenticated, isLoading } = useUser();
 
   useEffect(() => {
-    console.log('📦 Tab Perfil - isLoading:', isLoading, 'isAuthenticated:', isAuthenticated, 'hasUser:', !!user, 'hasToken:', !!token);
-    
     if (isLoading) return;
     if (hasNavigated.current) return;
     
-    hasNavigated.current = true;
-    
     if (isAuthenticated) {
       console.log('🔄 Tab Perfil - Navegando a /perfil');
+      hasNavigated.current = true;
       router.push('/perfil');
     } else {
       console.log('🔄 Tab Perfil - Navegando a /login');
+      hasNavigated.current = true;
       router.push('/login');
     }
-  }, [isAuthenticated, isLoading, user, token]);
+  }, [isAuthenticated, isLoading]);
 
   return (
     <View style={styles.container}>

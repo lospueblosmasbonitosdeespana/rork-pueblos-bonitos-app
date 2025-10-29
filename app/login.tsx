@@ -47,11 +47,9 @@ export default function LoginScreen() {
     if (isLoading) return;
     if (hasNavigated.current) return;
     
-    console.log('🔍 Login - isAuthenticated:', isAuthenticated);
-    
     if (isAuthenticated) {
-      hasNavigated.current = true;
       console.log('🔄 Redirigiendo a perfil...');
+      hasNavigated.current = true;
       router.replace('/perfil');
     }
   }, [isAuthenticated, isLoading]);
