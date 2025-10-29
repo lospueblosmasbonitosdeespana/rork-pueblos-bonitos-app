@@ -17,7 +17,7 @@ export default function HomeScreen() {
     <View style={styles.container}>
       <View style={styles.logoSection}>
         <Image
-          source={{ uri: 'https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/n0f2cz2wtnjdvarjp4b9z' }}
+          source={{ uri: 'https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/logo-lpbe.png' }}
           style={styles.logo}
           contentFit="contain"
         />
@@ -91,14 +91,6 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </View>
 
-      <View style={styles.footerLogo}>
-        <Image
-          source={{ uri: 'https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2024/01/logo-lpbe.png' }}
-          style={styles.footerLogoImage}
-          contentFit="contain"
-        />
-      </View>
-
       <View style={styles.footer}>
         <Image
           source={{ uri: 'https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2024/12/logos-institucionales.png' }}
@@ -156,15 +148,6 @@ const styles = StyleSheet.create({
     fontWeight: '600' as const,
     color: '#FFFFFF',
     textAlign: 'center',
-  },
-  footerLogo: {
-    marginTop: SPACING.xl * 2,
-    alignItems: 'center',
-    paddingHorizontal: SPACING.lg,
-  },
-  footerLogoImage: {
-    width: 200,
-    height: 100,
   },
   footer: {
     marginTop: SPACING.lg,
