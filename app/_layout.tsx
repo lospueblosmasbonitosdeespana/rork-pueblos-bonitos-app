@@ -20,8 +20,8 @@ function RootLayoutNav() {
       screenOptions={{ 
         headerBackTitle: "Atrás",
         gestureEnabled: true,
-        fullScreenGestureEnabled: false,
         animation: 'default',
+        gestureDirection: 'horizontal',
       }}
     >
       <Stack.Screen name="index" options={{ headerShown: false }} />

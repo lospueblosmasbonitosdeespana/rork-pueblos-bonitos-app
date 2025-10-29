@@ -1,5 +1,4 @@
 import createContextHook from '@nkzw/create-context-hook';
-import { router } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
@@ -133,13 +132,10 @@ export const [UserProvider, useUser] = createContextHook(() => {
       });
 
       setUser(null);
-
-      console.log('[UserContext] Sesión cerrada, redirigiendo a login...');
-      router.replace('/login');
+      console.log('[UserContext] Sesión cerrada exitosamente');
     } catch (error) {
       console.error('[UserContext] Error cerrando sesión:', error);
       setUser(null);
-      router.replace('/login');
     }
   }, []);
 

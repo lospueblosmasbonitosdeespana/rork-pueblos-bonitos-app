@@ -1,17 +1,110 @@
-import { router, Stack } from 'expo-router';
+import { Stack } from 'expo-router';
 import { LogOut, Mail, User as UserIcon } from 'lucide-react-native';
+import React, { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useUser } from '@/contexts/userContext';
+
+function LoginFormInTab() {
+  const { login, isLoggingIn } = useUser();
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const insets = useSafeAreaInsets();
+
+  const handleLogin = async () => {
+    if (!username.trim() || !password.trim()) {
+      Alert.alert('Error', 'Por favor completa todos los campos');
+      return;
+    }
+
+    try {
+      console.log('[LoginFormInTab] Intentando login...');
+      await login({ username: username.trim(), password: password.trim() });
+      console.log('[LoginFormInTab] Login exitoso');
+    } catch (error: any) {
+      console.error('[LoginFormInTab] Error en login:', error);
+      Alert.alert('Error', error.message || 'Usuario o contraseña incorrectos');
+    }
+  };
+
+  return (
+    <KeyboardAvoidingView
+      style={[styles.loginFormContainer, { paddingTop: insets.top }]}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <ScrollView
+          contentContainerStyle={styles.loginScrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.iconContainer}>
+            <UserIcon size={64} color="#8B0000" strokeWidth={1.5} />
+          </View>
+          <Text style={styles.title}>Perfil de Usuario</Text>
+          <Text style={styles.subtitle}>
+            Inicia sesión para acceder a tu perfil y disfrutar de todas las funciones
+          </Text>
+
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Email o usuario</Text>
+            <TextInput
+              style={styles.textInput}
+              placeholder="Email o usuario"
+              placeholderTextColor="#999"
+              value={username}
+              onChangeText={setUsername}
+              autoCapitalize="none"
+              autoCorrect={false}
+              editable={!isLoggingIn}
+            />
+          </View>
+
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Contraseña</Text>
+            <TextInput
+              style={styles.textInput}
+              placeholder="••••••••"
+              placeholderTextColor="#999"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              autoCapitalize="none"
+              autoCorrect={false}
+              editable={!isLoggingIn}
+            />
+          </View>
+
+          <TouchableOpacity
+            style={[styles.loginButton, isLoggingIn && styles.loginButtonDisabled]}
+            onPress={handleLogin}
+            disabled={isLoggingIn}
+          >
+            {isLoggingIn ? (
+              <ActivityIndicator color="#FFF" />
+            ) : (
+              <Text style={styles.loginButtonText}>Iniciar Sesión</Text>
+            )}
+          </TouchableOpacity>
+        </ScrollView>
+      </TouchableWithoutFeedback>
+    </KeyboardAvoidingView>
+  );
+}
 
 export default function PerfilTabScreen() {
   const { user, isAuthenticated, isLoading, logout } = useUser();
@@ -24,14 +117,17 @@ export default function PerfilTabScreen() {
         text: 'Cerrar sesión',
         style: 'destructive',
         onPress: async () => {
-          console.log('🚪 Usuario confirmó logout');
+          console.log('[PerfilTab] Usuario confirmó logout');
           await logout();
         },
       },
     ]);
   };
 
+  console.log('[PerfilTab] Estado: isLoading=', isLoading, 'isAuthenticated=', isAuthenticated);
+
   if (isLoading) {
+    console.log('[PerfilTab] Mostrando spinner de carga');
     return (
       <>
         <Stack.Screen options={{ headerShown: false }} />
@@ -43,27 +139,16 @@ export default function PerfilTabScreen() {
   }
 
   if (!isAuthenticated) {
+    console.log('[PerfilTab] Usuario no autenticado, mostrando formulario de login');
     return (
       <>
         <Stack.Screen options={{ headerShown: false }} />
-        <View style={[styles.notAuthContainer, { paddingTop: insets.top }]}>
-          <View style={styles.iconContainer}>
-            <UserIcon size={64} color="#8B0000" strokeWidth={1.5} />
-          </View>
-          <Text style={styles.title}>Perfil de Usuario</Text>
-          <Text style={styles.subtitle}>
-            Inicia sesión para acceder a tu perfil y disfrutar de todas las funciones
-          </Text>
-          <TouchableOpacity
-            style={styles.loginButton}
-            onPress={() => router.push('/login')}
-          >
-            <Text style={styles.loginButtonText}>Iniciar Sesión</Text>
-          </TouchableOpacity>
-        </View>
+        <LoginFormInTab />
       </>
     );
   }
+
+  console.log('[PerfilTab] Usuario autenticado, mostrando perfil');
 
   return (
     <>
@@ -125,6 +210,38 @@ export default function PerfilTabScreen() {
 }
 
 const styles = StyleSheet.create({
+  loginFormContainer: {
+    flex: 1,
+    backgroundColor: '#f8f8f8',
+  },
+  loginScrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: 24,
+    paddingVertical: 40,
+    justifyContent: 'center',
+  },
+  inputContainer: {
+    marginBottom: 20,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '600' as const,
+    color: '#1a1a1a',
+    marginBottom: 8,
+  },
+  textInput: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 16,
+    color: '#1a1a1a',
+    borderWidth: 1,
+    borderColor: '#e5e5e5',
+  },
+  loginButtonDisabled: {
+    opacity: 0.6,
+  },
   outerContainer: {
     flex: 1,
     backgroundColor: '#f8f8f8',
@@ -139,13 +256,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#f8f8f8',
   },
-  notAuthContainer: {
-    flex: 1,
-    backgroundColor: '#f8f8f8',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-  },
   iconContainer: {
     width: 120,
     height: 120,
@@ -156,6 +266,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     borderWidth: 2,
     borderColor: '#8B0000',
+    alignSelf: 'center',
   },
   title: {
     fontSize: 24,
@@ -181,6 +292,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   loginButtonText: {
     color: '#FFF',
