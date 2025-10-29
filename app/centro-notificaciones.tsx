@@ -168,7 +168,7 @@ export default function CentroNotificaciones() {
             const getSemaforoMessage = () => {
               if (item.tipo === 'semaforo') {
                 const mensaje = item.mensaje.toLowerCase();
-                const puebloName = item.titulo.replace('Semáforo de ', '');
+                const puebloName = item.titulo.replace(/^Semáforo de /i, '').trim();
                 
                 if (mensaje.includes('verde')) {
                   return `${puebloName} está en perfecto estado para ser visitado.`;
@@ -200,7 +200,9 @@ export default function CentroNotificaciones() {
                     )}
                     <View style={styles.headerTextContainer}>
                       <Text style={styles.subtitleText}>{subtitleText}</Text>
-                      <Text style={styles.cardTitle}>{item.titulo}</Text>
+                      <Text style={styles.cardTitle}>
+                        {item.tipo === 'semaforo' ? item.titulo.replace(/^Semáforo de /i, '').trim() : item.titulo}
+                      </Text>
                     </View>
                   </View>
                 </View>
@@ -340,8 +342,8 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: '#fff',
     borderRadius: 12,
-    padding: 12,
-    marginBottom: 12,
+    padding: 9,
+    marginBottom: 9,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
@@ -353,25 +355,25 @@ const styles = StyleSheet.create({
     borderLeftColor: '#800000',
   },
   cardHeader: {
-    marginBottom: 8,
+    marginBottom: 6,
   },
   iconContainer: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   iconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: 10,
   },
   semaforoCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    marginRight: 12,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    marginRight: 10,
   },
   headerTextContainer: {
     flex: 1,
@@ -401,13 +403,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   linkIndicator: {
-    marginTop: 10,
-    paddingTop: 10,
+    marginTop: 8,
+    paddingTop: 8,
     borderTopWidth: 1,
     borderTopColor: '#f0f0f0',
   },
   estadoContainer: {
-    marginTop: 8,
+    marginTop: 6,
   },
   estadoText: {
     fontSize: 11,
@@ -415,8 +417,8 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
   motivoContainer: {
-    marginTop: 8,
-    paddingTop: 8,
+    marginTop: 6,
+    paddingTop: 6,
     borderTopWidth: 1,
     borderTopColor: '#f0f0f0',
   },
