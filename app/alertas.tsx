@@ -9,7 +9,6 @@ import {
   RefreshControl,
 } from 'react-native';
 
-import NotificationCard from '@/components/NotificationCard';
 import { COLORS, SPACING, TYPOGRAPHY } from '@/constants/theme';
 import { useLanguage } from '@/contexts/language';
 import { fetchNotificaciones } from '@/services/api';
@@ -23,24 +22,18 @@ export default function AlertasScreen() {
   });
 
   const alertas = (notificacionesQuery.data || []).filter(
-    (n) => n.tipo === 'alerta' || n.tipo === 'urgente'
-  ).sort(
-    (a, b) =>
-      new Date(b.fecha_publicacion).getTime() - new Date(a.fecha_publicacion).getTime()
+    (n) => n.tipo === 'alerta'
   );
 
   const semaforos = (notificacionesQuery.data || []).filter(
-    (n) => n.tipo === 'info'
-  ).sort(
-    (a, b) =>
-      new Date(b.fecha_publicacion).getTime() - new Date(a.fecha_publicacion).getTime()
+    (n) => n.tipo === 'semaforo'
   );
 
   return (
     <>
       <Stack.Screen 
         options={{ 
-          title: t.home.alertsAndNotifications,
+          title: 'Alertas y Avisos',
           headerStyle: {
             backgroundColor: COLORS.card,
           },
@@ -60,8 +53,8 @@ export default function AlertasScreen() {
         >
           <View style={styles.header}>
             <AlertTriangle size={32} color={COLORS.primary} />
-            <Text style={styles.headerTitle}>{t.home.alertsAndNotifications}</Text>
-            <Text style={styles.headerSubtitle}>{t.home.alertsDesc}</Text>
+            <Text style={styles.headerTitle}>Alertas y Avisos</Text>
+            <Text style={styles.headerSubtitle}>Información importante sobre los pueblos</Text>
           </View>
 
           {notificacionesQuery.isLoading && (
@@ -74,11 +67,14 @@ export default function AlertasScreen() {
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
                 <AlertTriangle size={24} color={COLORS.primary} />
-                <Text style={styles.sectionTitle}>{t.home.alertsAndNotifications}</Text>
+                <Text style={styles.sectionTitle}>Alertas</Text>
               </View>
               <View style={styles.alertsContainer}>
                 {alertas.map((notification) => (
-                  <NotificationCard key={notification._ID} notification={notification} />
+                  <View key={notification.id} style={styles.notificationItem}>
+                    <Text style={styles.notificationTitle}>{notification.titulo}</Text>
+                    <Text style={styles.notificationMessage}>{notification.mensaje}</Text>
+                  </View>
                 ))}
               </View>
             </View>
@@ -92,7 +88,10 @@ export default function AlertasScreen() {
               </View>
               <View style={styles.alertsContainer}>
                 {semaforos.map((notification) => (
-                  <NotificationCard key={notification._ID} notification={notification} />
+                  <View key={notification.id} style={styles.notificationItem}>
+                    <Text style={styles.notificationTitle}>{notification.titulo}</Text>
+                    <Text style={styles.notificationMessage}>{notification.mensaje}</Text>
+                  </View>
                 ))}
               </View>
             </View>
@@ -178,6 +177,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   emptyText: {
+    ...TYPOGRAPHY.body,
+    color: COLORS.textSecondary,
+  },
+  notificationItem: {
+    backgroundColor: COLORS.card,
+    padding: SPACING.md,
+    marginHorizontal: SPACING.md,
+    marginBottom: SPACING.sm,
+    borderRadius: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: COLORS.primary,
+  },
+  notificationTitle: {
+    ...TYPOGRAPHY.h3,
+    color: COLORS.text,
+    marginBottom: SPACING.xs,
+  },
+  notificationMessage: {
     ...TYPOGRAPHY.body,
     color: COLORS.textSecondary,
   },
