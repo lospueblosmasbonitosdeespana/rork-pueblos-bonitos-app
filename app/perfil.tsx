@@ -160,7 +160,9 @@ export default function PerfilScreen() {
           </View>
 
           <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-            <LogOut size={20} color="#FFF" style={styles.logoutIcon} />
+            <View style={styles.logoutIcon}>
+              <LogOut size={20} color="#FFF" />
+            </View>
             <Text style={styles.logoutText}>Cerrar Sesión</Text>
           </TouchableOpacity>
         </ScrollView>
@@ -305,6 +307,8 @@ const styles = StyleSheet.create({
   },
   logoutIcon: {
     marginRight: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   logoutText: {
     color: '#FFF',
