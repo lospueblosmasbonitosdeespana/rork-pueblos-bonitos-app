@@ -89,21 +89,21 @@ export default function PerfilScreen() {
     return null;
   }
 
-  const getRolDisplay = (rol?: string) => {
+  const getRolDisplay = (rol?: string): string => {
     if (rol === 'embajador' || rol === 'administrator') return 'Embajador';
     if (rol === 'premium' || rol === 'viajero_premium') return 'Viajero Premium';
     return 'Explorador';
   };
 
-  const getRolColor = (rol?: string) => {
+  const getRolColor = (rol?: string): string => {
     if (rol === 'embajador' || rol === 'administrator') return '#1a4d8f';
     if (rol === 'premium' || rol === 'viajero_premium') return '#d4af37';
     return '#8B0000';
   };
 
-  const rolDisplay = getRolDisplay(user.rol);
-  const rolColor = getRolColor(user.rol);
-  const puntos = user.puntos || 0;
+  const rolDisplay: string = getRolDisplay(user.rol);
+  const rolColor: string = getRolColor(user.rol);
+  const puntos: number = user.puntos || 0;
 
   return (
     <>

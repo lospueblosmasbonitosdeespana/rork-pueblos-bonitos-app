@@ -48,14 +48,19 @@ export const [UserProvider, useUser] = createContextHook(() => {
   });
 
   useEffect(() => {
+    let mounted = true;
+    
     async function validateToken() {
-      if (!isInitialized && userQuery.isSuccess && tokenQuery.isSuccess) {
+      if (isInitialized || !mounted) return;
+      
+      if (userQuery.isSuccess && tokenQuery.isSuccess) {
         const token = tokenQuery.data;
         const user = userQuery.data;
         
         console.log('🔍 UserContext - Validando sesión:', { hasToken: !!token, hasUser: !!user });
         
         if (token && user) {
+          if (!mounted) return;
           setIsValidating(true);
           
           try {
@@ -66,6 +71,8 @@ export const [UserProvider, useUser] = createContextHook(() => {
                 'Content-Type': 'application/json',
               },
             });
+            
+            if (!mounted) return;
             
             console.log('🔍 Token validation status:', response.status);
             
@@ -79,16 +86,19 @@ export const [UserProvider, useUser] = createContextHook(() => {
               console.log('✅ Token válido');
             }
           } catch (error: any) {
+            if (!mounted) return;
             console.error('❌ Error validando token:', error.message);
             await AsyncStorage.removeItem(USER_TOKEN_KEY);
             await AsyncStorage.removeItem(USER_DATA_KEY);
             queryClient.setQueryData(['userToken'], null);
             queryClient.setQueryData(['userData'], null);
           } finally {
+            if (!mounted) return;
             setIsValidating(false);
             setIsInitialized(true);
           }
         } else {
+          if (!mounted) return;
           console.log('📝 No hay sesión guardada');
           setIsInitialized(true);
         }
@@ -96,7 +106,11 @@ export const [UserProvider, useUser] = createContextHook(() => {
     }
     
     validateToken();
-  }, [isInitialized, userQuery.isSuccess, tokenQuery.isSuccess, userQuery.data, tokenQuery.data, queryClient]);
+    
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginCredentials) => {
