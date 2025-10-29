@@ -1,189 +1,156 @@
 import { router, Stack } from 'expo-router';
-import {
-  AlertTriangle,
-  Heart,
-  Image as ImageIcon,
-  LogOut,
-  MessageSquare,
-  Trophy,
-  User,
-} from 'lucide-react-native';
-import { useEffect, useRef } from 'react';
-import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { LogOut, Mail, User as UserIcon, Shield } from 'lucide-react-native';
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useUser } from '@/contexts/userContext';
 
 export default function PerfilScreen() {
-  const hasNavigated = useRef(false);
   const insets = useSafeAreaInsets();
-  const { user, token, logout, forceLogout, isAuthenticated, isLoading: contextLoading } = useUser();
+  const { user, logout, isAuthenticated, isLoading, forceLogout } = useUser();
 
-  const handleLogout = () => {
-    Alert.alert('Cerrar Sesión', '¿Estás seguro que deseas salir?', [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Salir',
-        style: 'destructive',
-        onPress: async () => {
-          await logout();
-          hasNavigated.current = false;
-          router.replace('/login');
-        },
-      },
-    ]);
-  };
-
-  const handleForceLogout = () => {
+  const handleLogout = async () => {
     Alert.alert(
-      'Forzar Cierre de Sesión',
-      'Esto limpiará completamente tu sesión guardada. Úsalo si tienes problemas para acceder.',
+      'Cerrar sesión',
+      '¿Estás seguro de que quieres cerrar sesión?',
       [
         { text: 'Cancelar', style: 'cancel' },
         {
-          text: 'Forzar Cierre',
+          text: 'Cerrar sesión',
           style: 'destructive',
           onPress: async () => {
-            await forceLogout();
-            hasNavigated.current = false;
-            router.replace('/login');
+            try {
+              console.log('🚪 Cerrando sesión...');
+              await logout();
+              console.log('✅ Sesión cerrada, redirigiendo...');
+              router.replace('/login');
+            } catch (error) {
+              console.error('❌ Error al cerrar sesión:', error);
+              Alert.alert('Error', 'No se pudo cerrar la sesión');
+            }
           },
         },
       ]
     );
   };
 
-  useEffect(() => {
-    if (!contextLoading && (!isAuthenticated || !token) && !hasNavigated.current) {
-      console.log('🔄 Redirigiendo a login...');
-      hasNavigated.current = true;
-      setTimeout(() => {
-        router.replace('/login');
-      }, 100);
-    }
-  }, [isAuthenticated, token, contextLoading]);
+  const handleForceLogout = async () => {
+    Alert.alert(
+      'Forzar cierre de sesión',
+      'Esto eliminará todos los datos de sesión almacenados. ¿Continuar?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Forzar cierre',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              console.log('🚨 Forzando cierre...');
+              await forceLogout();
+              console.log('✅ Cierre forzado completado, redirigiendo...');
+              router.replace('/login');
+            } catch (error) {
+              console.error('❌ Error en cierre forzado:', error);
+            }
+          },
+        },
+      ]
+    );
+  };
 
-  if (contextLoading) {
+  if (isLoading) {
     return (
       <>
         <Stack.Screen options={{ headerShown: false }} />
-        <View style={[styles.container, { paddingTop: insets.top }]}>
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#8B0000" />
-            <Text style={styles.loadingText}>Cargando perfil...</Text>
-          </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#8B0000" />
+          <Text style={styles.loadingText}>Cargando perfil...</Text>
         </View>
       </>
     );
   }
 
   if (!isAuthenticated || !user) {
-    return (
-      <>
-        <Stack.Screen options={{ headerShown: false }} />
-        <View style={[styles.container, { paddingTop: insets.top }]}>
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#8B0000" />
-            <Text style={styles.loadingText}>Redirigiendo...</Text>
-          </View>
-        </View>
-      </>
-    );
+    router.replace('/login');
+    return null;
   }
-
-  const getRolDisplay = (rol?: string): string => {
-    if (rol === 'embajador' || rol === 'administrator') return 'Embajador';
-    if (rol === 'premium' || rol === 'viajero_premium') return 'Viajero Premium';
-    return 'Explorador';
-  };
-
-  const getRolColor = (rol?: string): string => {
-    if (rol === 'embajador' || rol === 'administrator') return '#1a4d8f';
-    if (rol === 'premium' || rol === 'viajero_premium') return '#d4af37';
-    return '#8B0000';
-  };
-
-  const rolDisplay: string = getRolDisplay(user.rol);
-  const rolColor: string = getRolColor(user.rol);
-  const puntos: number = user.puntos || 0;
 
   return (
     <>
-      <Stack.Screen options={{ headerShown: false }} />
-      <View style={[styles.container, { paddingTop: insets.top }]}>
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={styles.header}>
-            <View style={styles.avatarContainer}>
-              {user.avatar_url ? (
-                <Image source={{ uri: user.avatar_url }} style={styles.avatar} />
-              ) : (
-                <View style={styles.avatarPlaceholder}>
-                  <User size={48} color="#8B0000" />
-                </View>
-              )}
+      <Stack.Screen
+        options={{
+          title: 'Mi Perfil',
+          headerShown: true,
+        }}
+      />
+      <ScrollView
+        style={[styles.container, { paddingTop: insets.top }]}
+        contentContainerStyle={styles.contentContainer}
+      >
+        <View style={styles.header}>
+          <View style={styles.avatarContainer}>
+            <UserIcon size={48} color="#8B0000" strokeWidth={1.5} />
+          </View>
+          <Text style={styles.name}>{user.nombre || 'Usuario'}</Text>
+          <Text style={styles.email}>{user.email}</Text>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Información de la cuenta</Text>
+          
+          <View style={styles.infoCard}>
+            <View style={styles.infoRow}>
+              <UserIcon size={20} color="#666" strokeWidth={1.5} />
+              <View style={styles.infoContent}>
+                <Text style={styles.infoLabel}>Nombre de usuario</Text>
+                <Text style={styles.infoValue}>{user.nombre || 'No especificado'}</Text>
+              </View>
             </View>
-            <Text style={styles.name}>{user.display_name || user.username}</Text>
-            {user.email && (
-              <Text style={styles.email}>{user.email}</Text>
-            )}
-            <View style={[styles.rolBadge, { backgroundColor: rolColor }]}>
-              <Text style={styles.rolText}>{rolDisplay}</Text>
+
+            <View style={styles.divider} />
+
+            <View style={styles.infoRow}>
+              <Mail size={20} color="#666" strokeWidth={1.5} />
+              <View style={styles.infoContent}>
+                <Text style={styles.infoLabel}>Email</Text>
+                <Text style={styles.infoValue}>{user.email}</Text>
+              </View>
+            </View>
+
+            <View style={styles.divider} />
+
+            <View style={styles.infoRow}>
+              <Shield size={20} color="#666" strokeWidth={1.5} />
+              <View style={styles.infoContent}>
+                <Text style={styles.infoLabel}>Rol</Text>
+                <Text style={styles.infoValue}>{user.rol || 'Usuario'}</Text>
+              </View>
             </View>
           </View>
+        </View>
 
-          <View style={styles.statsCard}>
-            <View style={styles.statItem}>
-              <Trophy size={24} color="#8B0000" />
-              <Text style={styles.statValue}>{puntos}</Text>
-              <Text style={styles.statLabel}>Puntos</Text>
-            </View>
-          </View>
-
-          <View style={styles.menuSection}>
-            <TouchableOpacity style={styles.menuItem}>
-              <View style={styles.menuIconContainer}>
-                <ImageIcon size={22} color="#8B0000" />
-              </View>
-              <Text style={styles.menuText}>Mis fotos</Text>
-            </TouchableOpacity>
-
-            <View style={styles.menuDivider} />
-
-            <TouchableOpacity style={styles.menuItem}>
-              <View style={styles.menuIconContainer}>
-                <Heart size={22} color="#8B0000" />
-              </View>
-              <Text style={styles.menuText}>Mis favoritos</Text>
-            </TouchableOpacity>
-
-            <View style={styles.menuDivider} />
-
-            <TouchableOpacity style={styles.menuItem}>
-              <View style={styles.menuIconContainer}>
-                <MessageSquare size={22} color="#8B0000" />
-              </View>
-              <Text style={styles.menuText}>Mis reseñas</Text>
-            </TouchableOpacity>
-          </View>
-
-          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-            <View style={styles.logoutIcon}>
-              <LogOut size={20} color="#FFF" />
-            </View>
-            <Text style={styles.logoutText}>Cerrar Sesión</Text>
+        <View style={styles.section}>
+          <TouchableOpacity
+            style={styles.logoutButton}
+            onPress={handleLogout}
+          >
+            <LogOut size={20} color="#FFF" strokeWidth={1.5} />
+            <Text style={styles.logoutButtonText}>Cerrar sesión</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.forceLogoutButton} onPress={handleForceLogout}>
-            <View style={styles.forceLogoutIcon}>
-              <AlertTriangle size={18} color="#ff6b6b" />
-            </View>
-            <Text style={styles.forceLogoutText}>Forzar Cierre de Sesión</Text>
+          <TouchableOpacity
+            style={styles.forceLogoutButton}
+            onPress={handleForceLogout}
+          >
+            <Text style={styles.forceLogoutButtonText}>Forzar cierre de sesión</Text>
           </TouchableOpacity>
-        </ScrollView>
-      </View>
+        </View>
+
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>Los Pueblos Más Bonitos de España</Text>
+          <Text style={styles.footerVersion}>Versión 2.8</Text>
+        </View>
+      </ScrollView>
     </>
   );
 }
@@ -193,121 +160,94 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f8f8f8',
   },
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingVertical: 24,
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f8f8f8',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#666',
+  },
+  contentContainer: {
     paddingBottom: 40,
   },
   header: {
-    alignItems: 'center',
-    paddingVertical: 32,
     backgroundColor: '#FFF',
-    borderRadius: 16,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
+    paddingVertical: 32,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e5e5',
   },
   avatarContainer: {
-    marginBottom: 16,
-  },
-  avatar: {
     width: 96,
     height: 96,
     borderRadius: 48,
-    borderWidth: 3,
-    borderColor: '#8B0000',
-  },
-  avatarPlaceholder: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: '#f5f5f5',
-    borderWidth: 3,
-    borderColor: '#8B0000',
-    alignItems: 'center',
+    backgroundColor: '#f8f8f8',
     justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+    borderWidth: 2,
+    borderColor: '#8B0000',
   },
   name: {
     fontSize: 24,
     fontWeight: '700' as const,
     color: '#1a1a1a',
-    marginBottom: 8,
-  },
-  rolBadge: {
-    backgroundColor: '#8B0000',
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-  rolText: {
-    color: '#FFF',
-    fontSize: 14,
-    fontWeight: '600' as const,
-  },
-  statsCard: {
-    backgroundColor: '#FFF',
-    borderRadius: 16,
-    padding: 24,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-    flexDirection: 'row',
-    justifyContent: 'center',
-  },
-  statItem: {
-    alignItems: 'center',
-  },
-  statValue: {
-    fontSize: 28,
-    fontWeight: '700' as const,
-    color: '#1a1a1a',
-    marginTop: 8,
     marginBottom: 4,
   },
-  statLabel: {
-    fontSize: 14,
+  email: {
+    fontSize: 15,
     color: '#666',
   },
-  menuSection: {
-    backgroundColor: '#FFF',
-    borderRadius: 16,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-    overflow: 'hidden',
+  section: {
+    marginTop: 24,
+    paddingHorizontal: 24,
   },
-  menuItem: {
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: '600' as const,
+    color: '#666',
+    marginBottom: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  infoCard: {
+    backgroundColor: '#FFF',
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 18,
+    paddingVertical: 12,
   },
-  menuIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#fff5f5',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 14,
+  infoContent: {
+    flex: 1,
+    marginLeft: 16,
   },
-  menuText: {
+  infoLabel: {
+    fontSize: 13,
+    color: '#999',
+    marginBottom: 4,
+  },
+  infoValue: {
     fontSize: 16,
     color: '#1a1a1a',
     fontWeight: '500' as const,
   },
-  menuDivider: {
+  divider: {
     height: 1,
     backgroundColor: '#f0f0f0',
-    marginLeft: 72,
+    marginVertical: 8,
   },
   logoutButton: {
     backgroundColor: '#8B0000',
@@ -322,50 +262,35 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
   },
-  logoutIcon: {
-    marginRight: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logoutText: {
+  logoutButtonText: {
     color: '#FFF',
     fontSize: 16,
     fontWeight: '600' as const,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 14,
-    color: '#666',
-  },
-  email: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 12,
+    marginLeft: 8,
   },
   forceLogoutButton: {
-    backgroundColor: '#FFF',
-    borderRadius: 12,
-    paddingVertical: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
     marginTop: 12,
-    borderWidth: 1,
-    borderColor: '#ff6b6b',
-  },
-  forceLogoutIcon: {
-    marginRight: 8,
+    paddingVertical: 12,
     alignItems: 'center',
-    justifyContent: 'center',
   },
-  forceLogoutText: {
-    color: '#ff6b6b',
+  forceLogoutButtonText: {
     fontSize: 14,
-    fontWeight: '600' as const,
+    color: '#999',
+    textDecorationLine: 'underline',
+  },
+  footer: {
+    marginTop: 40,
+    alignItems: 'center',
+    paddingHorizontal: 24,
+  },
+  footerText: {
+    fontSize: 13,
+    color: '#999',
+    textAlign: 'center',
+  },
+  footerVersion: {
+    fontSize: 12,
+    color: '#ccc',
+    marginTop: 4,
   },
 });
