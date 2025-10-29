@@ -47,19 +47,27 @@ export default function CentroNotificaciones() {
   }, [markAllAsRead]);
 
   const handleNotificationPress = async (item: NotificationItem) => {
+    console.log('📱 Pulsada notificación:', item.tipo, item.titulo);
+    
     if (item.tipo === 'semaforo') {
+      console.log('🚦 Notificación de semáforo, sin acción');
       return;
     }
 
     if (item.enlace && item.enlace.trim() !== '') {
+      console.log('🔗 Abriendo enlace:', item.enlace);
       try {
         const canOpen = await Linking.canOpenURL(item.enlace);
         if (canOpen) {
           await Linking.openURL(item.enlace);
+        } else {
+          console.warn('⚠️ No se puede abrir el enlace:', item.enlace);
         }
       } catch (error) {
-        console.error('Error opening link:', error);
+        console.error('❌ Error abriendo enlace:', error);
       }
+    } else {
+      console.log('ℹ️ Notificación sin enlace');
     }
   };
 
@@ -144,7 +152,7 @@ export default function CentroNotificaciones() {
             const isUnread = index < unreadCount;
             const iconData = getNotificationIcon(item.tipo);
             const IconComponent = iconData.icon;
-            const hasLink = item.tipo === 'noticia' && item.enlace && item.enlace.trim() !== '';
+            const hasLink = (item.tipo === 'noticia' || item.tipo === 'alerta' || item.tipo === 'nieve') && item.enlace && item.enlace.trim() !== '';
             const subtitleText = getSubtitleText(item.tipo);
 
             const getSemaforoColor = () => {

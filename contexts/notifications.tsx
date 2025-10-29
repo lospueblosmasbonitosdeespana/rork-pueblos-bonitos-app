@@ -134,18 +134,24 @@ export const [NotificationsProvider, useNotifications] = createContextHook(() =>
         }
         
         const data = await response.json();
-        console.log('✅ Notificaciones obtenidas:', data);
+        console.log('✅ Notificaciones obtenidas:', JSON.stringify(data, null, 2));
+        console.log('📊 Total de notificaciones:', Array.isArray(data) ? data.length : 0);
         
         if (Array.isArray(data)) {
-          const mapped = data.map((item: any) => ({
-            id: item.id || Math.random(),
-            tipo: mapTipo(item.tipo || 'noticia'),
-            titulo: item.titulo || '',
-            mensaje: item.mensaje || '',
-            enlace: item.enlace || '',
-            motivo: item.motivo || '',
-          }));
+          const mapped = data.map((item: any) => {
+            const notificacion = {
+              id: item.id || Math.random(),
+              tipo: mapTipo(item.tipo || 'noticia'),
+              titulo: item.titulo || '',
+              mensaje: item.mensaje || '',
+              enlace: item.enlace || '',
+              motivo: item.motivo || '',
+            };
+            console.log(`📦 Notificación mapeada [${notificacion.tipo}]:`, notificacion.titulo);
+            return notificacion;
+          });
           mapped.sort((a, b) => b.id - a.id);
+          console.log('📊 Tipos de notificaciones:', mapped.map(n => n.tipo).join(', '));
           return mapped;
         }
         
