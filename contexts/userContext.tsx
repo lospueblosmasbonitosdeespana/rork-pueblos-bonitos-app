@@ -1,6 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import createContextHook from '@nkzw/create-context-hook';
-import { router } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
@@ -82,19 +81,15 @@ export const [UserProvider, useUser] = createContextHook(() => {
     try {
       console.log('🚪 Cerrando sesión...');
 
+      setUser(null);
+      setToken(null);
+
       await Promise.all([
         AsyncStorage.removeItem(USER_TOKEN_KEY),
         AsyncStorage.removeItem(USER_DATA_KEY),
       ]);
 
-      setUser(null);
-      setToken(null);
-
-      console.log('✅ Sesión cerrada, redirigiendo...');
-
-      setTimeout(() => {
-        router.replace('/(tabs)/perfil-tab');
-      }, 100);
+      console.log('✅ Sesión cerrada');
     } catch (error) {
       console.error('❌ Error cerrando sesión:', error);
     }
