@@ -14,21 +14,11 @@ export default function Index() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.logoContainer}>
-        <Image
-          source={{ uri: 'https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2024/01/logo-lpbe.png' }}
-          style={styles.logoTop}
-          contentFit="contain"
-        />
-      </View>
-      
-      <View style={styles.institutionalContainer}>
-        <Image
-          source={{ uri: 'https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2024/12/logos-institucionales.png' }}
-          style={styles.logoBottom}
-          contentFit="contain"
-        />
-      </View>
+      <Image
+        source={{ uri: 'https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/logo-lpbe.png' }}
+        style={styles.splashImage}
+        contentFit="contain"
+      />
     </View>
   );
 }
@@ -39,27 +29,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 60,
   },
-  logoContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+  splashImage: {
     width: '100%',
-    paddingHorizontal: 40,
-  },
-  logoTop: {
-    width: '100%',
-    height: 200,
-  },
-  institutionalContainer: {
-    width: '100%',
-    paddingHorizontal: 40,
-    paddingBottom: 40,
-    alignItems: 'center',
-  },
-  logoBottom: {
-    width: '100%',
-    height: 120,
+    height: '100%',
   },
 });

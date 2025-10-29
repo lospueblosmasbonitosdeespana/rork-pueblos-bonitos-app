@@ -150,7 +150,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   footer: {
-    marginTop: SPACING.lg,
+    marginTop: SPACING.sm,
     paddingHorizontal: SPACING.lg,
     paddingBottom: SPACING.md,
   },
