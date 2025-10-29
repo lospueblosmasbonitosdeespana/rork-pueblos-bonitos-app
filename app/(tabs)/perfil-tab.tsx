@@ -17,6 +17,8 @@ export default function PerfilTabScreen() {
   const { user, isAuthenticated, isLoading, logout } = useUser();
   const insets = useSafeAreaInsets();
 
+  console.log('PERFIL TAB → isLoading:', isLoading, 'isAuthenticated:', isAuthenticated);
+
   const handleLogout = () => {
     Alert.alert('Cerrar sesión', '¿Estás seguro de que quieres cerrar sesión?', [
       { text: 'Cancelar', style: 'cancel' },

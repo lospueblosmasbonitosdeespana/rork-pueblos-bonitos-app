@@ -28,7 +28,8 @@ export default function LoginScreen() {
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      router.replace('/perfil');
+      console.log('Login detectó autenticación, redirigiendo a perfil-tab');
+      router.replace('/(tabs)/perfil-tab');
     }
   }, [isLoading, isAuthenticated]);
 

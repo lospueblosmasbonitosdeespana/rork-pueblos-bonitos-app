@@ -69,11 +69,7 @@ export const [UserProvider, useUser] = createContextHook(() => {
       setUser(userData);
       setToken(userToken);
 
-      console.log('✅ Login exitoso, redirigiendo a perfil...');
-      
-      setTimeout(() => {
-        router.push('/perfil');
-      }, 100);
+      console.log('✅ Login exitoso');
     } catch (error: any) {
       console.error('❌ Error en login:', error);
       throw error;
@@ -94,9 +90,11 @@ export const [UserProvider, useUser] = createContextHook(() => {
       setUser(null);
       setToken(null);
 
-      console.log('✅ Sesión cerrada');
-      
-      router.replace('/login');
+      console.log('✅ Sesión cerrada, redirigiendo...');
+
+      setTimeout(() => {
+        router.replace('/(tabs)/perfil-tab');
+      }, 100);
     } catch (error) {
       console.error('❌ Error cerrando sesión:', error);
     }
