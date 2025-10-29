@@ -1,25 +1,30 @@
-import { Redirect } from 'expo-router';
+import { router } from 'expo-router';
+import { useEffect, useRef } from 'react';
 import { ActivityIndicator, View, StyleSheet } from 'react-native';
 import { useUser } from '@/contexts/userContext';
 
 export default function PerfilTabScreen() {
-  // TODOS los hooks primero
   const { isAuthenticated, isLoading } = useUser();
+  const hasNavigated = useRef(false);
 
-  // Lógica después
-  if (isLoading) {
-    return (
-      <View style={styles.container}>
-        <ActivityIndicator size="large" color="#8B0000" />
-      </View>
-    );
-  }
+  useEffect(() => {
+    if (isLoading || hasNavigated.current) {
+      return;
+    }
 
-  // Redirecciones
-  return isAuthenticated ? (
-    <Redirect href="/perfil" />
-  ) : (
-    <Redirect href="/login" />
+    hasNavigated.current = true;
+
+    if (isAuthenticated) {
+      router.replace('/perfil');
+    } else {
+      router.replace('/login');
+    }
+  }, [isAuthenticated, isLoading]);
+
+  return (
+    <View style={styles.container}>
+      <ActivityIndicator size="large" color="#8B0000" />
+    </View>
   );
 }
 
