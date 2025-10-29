@@ -19,15 +19,9 @@ import { Notificacion } from '@/types/api';
 function getSemaforoColor(mensaje: string): string {
   if (!mensaje) return '#9ca3af';
   const text = mensaje.toLowerCase();
-  console.log('DEBUG Semáforo - Mensaje:', mensaje, '| Color detectado:', 
-    text.includes('rojo') ? 'ROJO' : 
-    text.includes('amarillo') ? 'AMARILLO' : 
-    text.includes('verde') ? 'VERDE' : 
-    'GRIS (no detectado)'
-  );
-  if (text.includes('rojo')) return '#ef4444';
-  if (text.includes('amarillo')) return '#eab308';
-  if (text.includes('verde')) return '#22c55e';
+  if (text.includes('rojo') || text.includes('recomienda visitar otro')) return '#ef4444';
+  if (text.includes('amarillo') || text.includes('alta afluencia')) return '#eab308';
+  if (text.includes('verde') || text.includes('perfecto estado')) return '#22c55e';
   return '#9ca3af';
 }
 
