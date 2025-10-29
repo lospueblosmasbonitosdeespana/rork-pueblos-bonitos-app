@@ -1,6 +1,6 @@
 import { router, Stack } from 'expo-router';
 import { LogIn } from 'lucide-react-native';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   ActivityIndicator,
@@ -34,14 +34,18 @@ export default function LoginScreen() {
 
     try {
       await login({ username: username.trim(), password: password.trim() });
-      router.replace('/perfil');
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Usuario o contraseña incorrectos');
     }
   };
 
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.replace('/perfil');
+    }
+  }, [isAuthenticated]);
+
   if (isAuthenticated) {
-    router.replace('/perfil');
     return null;
   }
 

@@ -7,6 +7,7 @@ import {
   Trophy,
   User,
 } from 'lucide-react-native';
+import { useEffect } from 'react';
 import { Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -30,8 +31,13 @@ export default function PerfilScreen() {
     ]);
   };
 
+  useEffect(() => {
+    if (!isAuthenticated || !user) {
+      router.replace('/login');
+    }
+  }, [isAuthenticated, user]);
+
   if (!isAuthenticated || !user) {
-    router.replace('/login');
     return null;
   }
 
