@@ -24,7 +24,7 @@ export default function LoginScreen() {
   const insets = useSafeAreaInsets();
   const [username, setUsername] = useState<string>('');
   const [password, setPassword] = useState<string>('');
-  const { login, isLoggingIn, isAuthenticated } = useUser();
+  const { login, isLoggingIn, isAuthenticated, isLoading } = useUser();
 
   const handleLogin = async () => {
     if (!username.trim() || !password.trim()) {
@@ -33,20 +33,30 @@ export default function LoginScreen() {
     }
 
     try {
+      console.log('🔐 Intentando login...');
       await login({ username: username.trim(), password: password.trim() });
+      console.log('✅ Login exitoso, redirigiendo...');
+      router.replace('/perfil');
     } catch (error: any) {
+      console.error('❌ Error en login:', error);
       Alert.alert('Error', error.message || 'Usuario o contraseña incorrectos');
     }
   };
 
   useEffect(() => {
-    if (isAuthenticated) {
+    console.log('🔍 Login - isAuthenticated:', isAuthenticated, 'isLoading:', isLoading);
+    if (!isLoading && isAuthenticated) {
+      console.log('✅ Usuario autenticado, redirigiendo a perfil...');
       router.replace('/perfil');
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, isLoading]);
 
-  if (isAuthenticated) {
-    return null;
+  if (!isLoading && isAuthenticated) {
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color="#8B0000" />
+      </View>
+    );
   }
 
   return (

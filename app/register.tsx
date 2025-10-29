@@ -1,6 +1,6 @@
 import { router, Stack } from 'expo-router';
 import { UserPlus } from 'lucide-react-native';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   ActivityIndicator,
@@ -26,7 +26,7 @@ export default function RegisterScreen() {
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [confirmPassword, setConfirmPassword] = useState<string>('');
-  const { register, isRegistering, isAuthenticated } = useUser();
+  const { register, isRegistering, isAuthenticated, isLoading } = useUser();
 
   const handleRegister = async () => {
     if (!nombre.trim() || !email.trim() || !password.trim() || !confirmPassword.trim()) {
@@ -51,20 +51,34 @@ export default function RegisterScreen() {
     }
 
     try {
+      console.log('📝 Intentando registro...');
       await register({
         nombre: nombre.trim(),
         email: email.trim(),
         password: password.trim(),
       });
+      console.log('✅ Registro exitoso, redirigiendo...');
       router.replace('/perfil');
     } catch (error: any) {
+      console.error('❌ Error en registro:', error);
       Alert.alert('Error', error.message || 'No se pudo crear la cuenta');
     }
   };
 
-  if (isAuthenticated) {
-    router.replace('/perfil');
-    return null;
+  useEffect(() => {
+    console.log('🔍 Register - isAuthenticated:', isAuthenticated, 'isLoading:', isLoading);
+    if (!isLoading && isAuthenticated) {
+      console.log('✅ Usuario autenticado, redirigiendo a perfil...');
+      router.replace('/perfil');
+    }
+  }, [isAuthenticated, isLoading]);
+
+  if (!isLoading && isAuthenticated) {
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color="#8B0000" />
+      </View>
+    );
   }
 
   return (

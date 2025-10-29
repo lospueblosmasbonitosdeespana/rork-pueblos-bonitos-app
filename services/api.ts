@@ -648,9 +648,12 @@ export async function umLogin(
     return {
       success: true,
       user: data.user || {
-        id: data.user_id,
-        nombre: data.display_name || username,
-        email: data.user_email || username,
+        id: data.user_id || 0,
+        username: data.user_login || username,
+        email: data.user_email || '',
+        display_name: data.display_name || username,
+        avatar_url: data.avatar_url || data.profile_photo || '',
+        roles: data.roles ? [data.role] : ['subscriber'],
         rol: data.role || 'explorador',
         puntos: data.puntos || 0,
       },
@@ -704,9 +707,12 @@ async function jwtLogin(
     return {
       success: true,
       user: {
-        id: data.user_id || '',
-        nombre: data.user_display_name || data.user_nicename || username,
-        email: data.user_email || username,
+        id: parseInt(data.user_id) || 0,
+        username: data.user_nicename || username,
+        email: data.user_email || '',
+        display_name: data.user_display_name || data.user_nicename || username,
+        avatar_url: '',
+        roles: ['subscriber'],
         rol: 'explorador',
         puntos: 0,
       },

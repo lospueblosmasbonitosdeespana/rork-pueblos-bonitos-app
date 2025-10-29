@@ -8,14 +8,14 @@ import {
   User,
 } from 'lucide-react-native';
 import { useEffect } from 'react';
-import { Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useUser } from '@/contexts/userContext';
 
 export default function PerfilScreen() {
   const insets = useSafeAreaInsets();
-  const { user, logout, isAuthenticated } = useUser();
+  const { user, logout, isAuthenticated, isLoading } = useUser();
 
   const handleLogout = () => {
     Alert.alert('Cerrar Sesión', '¿Estás seguro que deseas salir?', [
@@ -25,17 +25,33 @@ export default function PerfilScreen() {
         style: 'destructive',
         onPress: async () => {
           await logout();
-          router.replace('/login');
+          router.replace('/(tabs)/home');
         },
       },
     ]);
   };
 
   useEffect(() => {
-    if (!isAuthenticated || !user) {
+    console.log('🔍 Perfil - isAuthenticated:', isAuthenticated, 'user:', user?.nombre, 'isLoading:', isLoading);
+    
+    if (!isLoading && !isAuthenticated) {
+      console.log('🔄 Redirigiendo a login...');
       router.replace('/login');
     }
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated, isLoading]);
+
+  if (isLoading) {
+    return (
+      <>
+        <Stack.Screen options={{ headerShown: false }} />
+        <View style={[styles.container, { paddingTop: insets.top }]}>
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#8B0000" />
+          </View>
+        </View>
+      </>
+    );
+  }
 
   if (!isAuthenticated || !user) {
     return null;
@@ -261,5 +277,10 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 16,
     fontWeight: '600' as const,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
