@@ -199,21 +199,18 @@ export default function CentroNotificaciones() {
                     ) : null}
                     <View style={styles.headerTextContainer}>
                       <Text style={styles.subtitleText}>{subtitleText}</Text>
-                      <Text style={styles.cardTitle} numberOfLines={1}>
-                        {item.tipo === 'semaforo' ? item.titulo.replace(/^Semáforo de /i, '').trim() : item.titulo}
+                      <Text style={styles.cardTitle} numberOfLines={item.tipo === 'noticia' ? 2 : 1}>
+                        {item.tipo === 'semaforo' 
+                          ? item.titulo.replace(/^Semáforo de /i, '').trim() 
+                          : item.titulo.replace(/^Nueva noticia:\s*/i, '').trim()}
                       </Text>
                     </View>
                   </View>
                 </View>
-                <View style={styles.messageContainer}>
-                  <Text style={styles.cardMessage} numberOfLines={1}>
-                    {semaforoMessage}
-                  </Text>
-                </View>
                 {item.tipo === 'semaforo' && (
-                  <View style={styles.estadoContainer}>
-                    <Text style={styles.estadoText}>
-                      {item.mensaje}
+                  <View style={styles.messageContainer}>
+                    <Text style={styles.cardMessage} numberOfLines={1}>
+                      {semaforoMessage}
                     </Text>
                   </View>
                 )}
