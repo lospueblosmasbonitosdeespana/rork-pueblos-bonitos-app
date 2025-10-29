@@ -34,10 +34,9 @@ function RootLayoutNav() {
         }}
       />
       <Stack.Screen
-        name="perfil"
+        name="(app)"
         options={{
           headerShown: false,
-          presentation: "card",
         }}
       />
       <Stack.Screen

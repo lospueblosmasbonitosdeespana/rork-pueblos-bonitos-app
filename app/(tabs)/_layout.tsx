@@ -82,10 +82,11 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="perfil"
+        name="perfil-tab"
         options={{
           title: t.tabs.profile,
           headerTitle: t.profile.title,
+          headerShown: false,
           tabBarIcon: ({ color }) => <User size={24} color={color} strokeWidth={1.5} />,
         }}
       />
