@@ -5,6 +5,8 @@ import { ArrowLeft, Wind, CloudRain, Mountain, Users } from 'lucide-react-native
 import { COLORS, SHADOWS, SPACING } from '@/constants/theme';
 import WeatherIcon from '@/components/WeatherIcon';
 
+const OPENWEATHER_API_KEY = '8a08af2ba8e236a0fbac662a78a7f24b';
+
 type PuebloInfo = {
   nombre: string;
   coordenadas: {
@@ -42,10 +44,37 @@ export default function PuebloInfo() {
         const res = await fetch(`https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/pueblo-info?id=${id}`);
         console.log('🌍 Response status:', res.status);
         
-        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        if (!res.ok) {
+          const errorText = await res.text();
+          console.log('🌍 Server error:', errorText);
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
         
         const json = await res.json();
-        console.log('🌍 pueblo-info json:', json);
+        console.log('🌍 pueblo-info json:', JSON.stringify(json, null, 2));
+        
+        if (!json.clima || !json.clima.temperatura || !json.clima.descripcion) {
+          console.log('🌍 Datos meteorológicos incompletos, obteniendo desde OpenWeather...');
+          try {
+            const weatherRes = await fetch(
+              `https://api.openweathermap.org/data/2.5/weather?lat=${json.coordenadas.lat}&lon=${json.coordenadas.lng}&appid=${OPENWEATHER_API_KEY}&units=metric&lang=es`
+            );
+            if (weatherRes.ok) {
+              const weatherData = await weatherRes.json();
+              console.log('🌍 OpenWeather data:', JSON.stringify(weatherData, null, 2));
+              json.clima = json.clima || {};
+              json.clima.temperatura = json.clima.temperatura || weatherData.main.temp;
+              json.clima.descripcion = json.clima.descripcion || weatherData.weather[0].description;
+              json.clima.icon = weatherData.weather[0].icon;
+              
+              if (!json.lluvia_24h && weatherData.rain) {
+                json.lluvia_24h = weatherData.rain['1h'] || weatherData.rain['3h'] || 0;
+              }
+            }
+          } catch (weatherError) {
+            console.log('🌍 Error fetching OpenWeather data:', weatherError);
+          }
+        }
         
         setData(json);
       } catch (e) {

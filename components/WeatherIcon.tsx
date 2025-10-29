@@ -11,7 +11,7 @@ type WeatherIconProps = {
 
 const WEATHER_CACHE_KEY = 'weather_icon_cache';
 
-const OPENWEATHER_API_KEY = '9ce45e94ada3e86dab5e89fb11a2d066';
+const OPENWEATHER_API_KEY = '8a08af2ba8e236a0fbac662a78a7f24b';
 
 export default function WeatherIcon({ lat, lon, size = 40 }: WeatherIconProps) {
   const [iconUrl, setIconUrl] = useState<string | null>(null);
