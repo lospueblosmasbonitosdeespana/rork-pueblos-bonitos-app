@@ -156,13 +156,20 @@ export default function CentroNotificaciones() {
               return null;
             };
 
-            const renderContent = () => (
+            const renderContent = () => {
+              const semaforoColor = getSemaforoColor();
+              
+              return (
               <>
                 <View style={styles.cardHeader}>
                   <View style={styles.iconContainer}>
-                    <View style={[styles.iconCircle, { backgroundColor: iconData.color }]}>
-                      <IconComponent size={20} color="#fff" strokeWidth={2} />
-                    </View>
+                    {item.tipo === 'semaforo' && semaforoColor ? (
+                      <View style={[styles.semaforoCircle, { backgroundColor: semaforoColor }]} />
+                    ) : (
+                      <View style={[styles.iconCircle, { backgroundColor: iconData.color }]}>
+                        <IconComponent size={20} color="#fff" strokeWidth={2} />
+                      </View>
+                    )}
                     <View style={styles.headerTextContainer}>
                       <Text style={styles.subtitleText}>{subtitleText}</Text>
                       <Text style={styles.cardTitle}>{item.titulo}</Text>
@@ -170,10 +177,7 @@ export default function CentroNotificaciones() {
                   </View>
                 </View>
                 <View style={styles.messageContainer}>
-                  {item.tipo === 'semaforo' && getSemaforoColor() && (
-                    <View style={[styles.semaforoIndicator, { backgroundColor: getSemaforoColor() }]} />
-                  )}
-                  <Text style={[styles.cardMessage, item.tipo === 'semaforo' && styles.cardMessageWithIndicator]}>
+                  <Text style={styles.cardMessage}>
                     {item.mensaje}
                   </Text>
                 </View>
@@ -184,6 +188,7 @@ export default function CentroNotificaciones() {
                 )}
               </>
             );
+            };
 
             if (hasLink) {
               return (
@@ -321,6 +326,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 12,
   },
+  semaforoCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 12,
+  },
   headerTextContainer: {
     flex: 1,
   },
@@ -341,18 +352,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  semaforoIndicator: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    marginRight: 8,
-  },
   cardMessage: {
     fontSize: 14,
     color: '#444',
     lineHeight: 20,
-  },
-  cardMessageWithIndicator: {
     flex: 1,
   },
   linkIndicator: {
