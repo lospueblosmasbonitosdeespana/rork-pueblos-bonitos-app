@@ -1,76 +1,57 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import createContextHook from '@nkzw/create-context-hook';
 import { router } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { umLogin, validateUserToken } from '@/services/api';
+import { API_BASE_URL } from '@/constants/api';
 import { Usuario } from '@/types/api';
-
-const USER_TOKEN_KEY = '@lpbe_user_token';
-const USER_DATA_KEY = '@lpbe_user_data';
 
 export const [UserProvider, useUser] = createContextHook(() => {
   const [user, setUser] = useState<Usuario | null>(null);
-  const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   useEffect(() => {
-    loadUserFromStorage();
+    checkSession();
   }, []);
 
-  const loadUserFromStorage = async () => {
+  const checkSession = async () => {
     try {
-      console.log('[UserContext] Cargando usuario del storage...');
-      const [storedToken, storedUserData] = await Promise.all([
-        AsyncStorage.getItem(USER_TOKEN_KEY),
-        AsyncStorage.getItem(USER_DATA_KEY),
-      ]);
+      console.log('[UserContext] Verificando sesión con WordPress...');
+      
+      const response = await fetch(`${API_BASE_URL}/wp/v2/users/me`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Accept': 'application/json',
+        },
+      });
 
-      if (storedToken && storedUserData) {
-        try {
-          const userData = JSON.parse(storedUserData);
-          console.log('[UserContext] Usuario encontrado en storage:', userData.display_name);
-          
-          if (!userData.id || typeof userData.id !== 'number') {
-            console.log('[UserContext] Datos de usuario invalidos, limpiando sesion');
-            throw new Error('Invalid user data');
-          }
-          
-          console.log('[UserContext] Validando token...');
-          const isValid = await validateUserToken(userData.id);
-          
-          if (isValid) {
-            console.log('[UserContext] Token valido, restaurando sesion');
-            setToken(storedToken);
-            setUser(userData);
-          } else {
-            console.log('[UserContext] Token invalido, limpiando sesion');
-            throw new Error('Invalid token');
-          }
-        } catch (validationError) {
-          console.error('[UserContext] Error validando usuario:', validationError);
-          await Promise.all([
-            AsyncStorage.removeItem(USER_TOKEN_KEY),
-            AsyncStorage.removeItem(USER_DATA_KEY),
-          ]);
-          setUser(null);
-          setToken(null);
-        }
+      if (response.ok) {
+        const userData = await response.json();
+        console.log('[UserContext] Sesión activa encontrada:', userData.name);
+        
+        const mappedUser: Usuario = {
+          id: userData.id,
+          username: userData.slug || userData.username || '',
+          email: userData.email || '',
+          display_name: userData.name || '',
+          roles: userData.roles || ['subscriber'],
+        };
+        
+        setUser(mappedUser);
+      } else if (response.status === 401) {
+        console.log('[UserContext] No hay sesión activa');
+        setUser(null);
       } else {
-        console.log('[UserContext] No hay sesion guardada');
+        console.log('[UserContext] Error verificando sesión:', response.status);
+        setUser(null);
       }
     } catch (error) {
-      console.error('[UserContext] Error cargando usuario:', error);
-      await Promise.all([
-        AsyncStorage.removeItem(USER_TOKEN_KEY),
-        AsyncStorage.removeItem(USER_DATA_KEY),
-      ]);
+      console.error('[UserContext] Error verificando sesión:', error);
       setUser(null);
-      setToken(null);
     } finally {
-      console.log('[UserContext] Terminando carga inicial, isLoading = false');
+      console.log('[UserContext] Verificación completada, isLoading = false');
       setIsLoading(false);
       
       setTimeout(() => {
@@ -82,26 +63,57 @@ export const [UserProvider, useUser] = createContextHook(() => {
   const login = useCallback(async (credentials: { username: string; password: string }) => {
     try {
       setIsLoggingIn(true);
-      console.log('[UserContext] Iniciando login...');
+      console.log('[UserContext] Iniciando login con Ultimate Member...');
 
-      const result = await umLogin(credentials.username, credentials.password);
+      const formData = new FormData();
+      formData.append('log', credentials.username);
+      formData.append('pwd', credentials.password);
+      formData.append('wp-submit', 'Log In');
+      formData.append('redirect_to', 'https://lospueblosmasbonitosdeespana.org/account/');
+      formData.append('testcookie', '1');
 
-      if (!result.success) {
-        throw new Error(result.message);
+      const loginResponse = await fetch('https://lospueblosmasbonitosdeespana.org/wp-login.php', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+        redirect: 'manual',
+      });
+
+      console.log('[UserContext] Login response status:', loginResponse.status);
+
+      const isLoginSuccess = loginResponse.status === 200 || loginResponse.status === 302;
+
+      if (!isLoginSuccess) {
+        throw new Error('Usuario o contraseña incorrectos');
       }
 
-      const userData = result.user;
-      const userToken = result.token || `lpbe_user_${userData.id}`;
+      console.log('[UserContext] Login exitoso, verificando usuario...');
 
-      await Promise.all([
-        AsyncStorage.setItem(USER_TOKEN_KEY, userToken),
-        AsyncStorage.setItem(USER_DATA_KEY, JSON.stringify(userData)),
-      ]);
+      const userResponse = await fetch(`${API_BASE_URL}/wp/v2/users/me`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Accept': 'application/json',
+        },
+      });
 
-      setUser(userData);
-      setToken(userToken);
+      if (!userResponse.ok) {
+        throw new Error('No se pudo verificar la sesión');
+      }
 
-      console.log('[UserContext] Login exitoso:', userData.display_name);
+      const userData = await userResponse.json();
+      console.log('[UserContext] Usuario verificado:', userData.name);
+
+      const mappedUser: Usuario = {
+        id: userData.id,
+        username: userData.slug || userData.username || '',
+        email: userData.email || '',
+        display_name: userData.name || '',
+        roles: userData.roles || ['subscriber'],
+      };
+
+      setUser(mappedUser);
+      console.log('[UserContext] Login completado exitosamente');
     } catch (error: any) {
       console.error('[UserContext] Error en login:', error);
       throw error;
@@ -112,34 +124,35 @@ export const [UserProvider, useUser] = createContextHook(() => {
 
   const logout = useCallback(async () => {
     try {
-      console.log('[UserContext] Cerrando sesion...');
+      console.log('[UserContext] Cerrando sesión...');
 
-      await Promise.all([
-        AsyncStorage.removeItem(USER_TOKEN_KEY),
-        AsyncStorage.removeItem(USER_DATA_KEY),
-      ]);
+      await fetch('https://lospueblosmasbonitosdeespana.org/wp-login.php?action=logout', {
+        method: 'GET',
+        credentials: 'include',
+        redirect: 'manual',
+      });
 
       setUser(null);
-      setToken(null);
 
-      console.log('[UserContext] Sesion cerrada, redirigiendo a login...');
-      
+      console.log('[UserContext] Sesión cerrada, redirigiendo a login...');
       router.replace('/login');
     } catch (error) {
-      console.error('[UserContext] Error cerrando sesion:', error);
+      console.error('[UserContext] Error cerrando sesión:', error);
+      setUser(null);
+      router.replace('/login');
     }
   }, []);
 
   return useMemo(
     () => ({
       user,
-      token,
-      isAuthenticated: !!user && !!token,
+      token: null,
+      isAuthenticated: !!user,
       isLoading,
       isLoggingIn,
       login,
       logout,
     }),
-    [user, token, isLoading, isLoggingIn, login, logout]
+    [user, isLoading, isLoggingIn, login, logout]
   );
 });
