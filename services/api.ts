@@ -269,9 +269,8 @@ export async function fetchNotificaciones(): Promise<Notificacion[]> {
     }
     const data = await response.json();
     console.log('📦 Notificaciones received:', data.length);
-    const active = data.filter((n: Notificacion) => n.activa);
-    console.log('✅ Active notificaciones:', active.length);
-    return active;
+    console.log('NOTIFS DEBUG (services/api)', Array.isArray(data), data?.[0]);
+    return data;
   } catch (error) {
     console.error('❌ Error fetching notificaciones:', error);
     return [];

@@ -131,14 +131,15 @@ export const [NotificationsProvider, useNotifications] = createContextHook(() =>
         console.log('📊 Total de notificaciones:', Array.isArray(data) ? data.length : 0);
         
         if (Array.isArray(data)) {
+          console.log('NOTIFS DEBUG', Array.isArray(data), data?.[0]);
           const mapped = data.map((item: any) => {
             const notificacion = {
-              id: item.id || Math.random(),
-              tipo: mapTipo(item.tipo || 'noticia'),
-              titulo: item.titulo || '',
-              mensaje: item.mensaje || '',
-              enlace: item.enlace || '',
-              motivo: item.motivo || '',
+              id: item.id,
+              tipo: mapTipo(item.tipo),
+              titulo: item.titulo,
+              mensaje: item.mensaje,
+              enlace: item.enlace,
+              motivo: item.motivo,
             };
             console.log(`📦 Notificación mapeada [${notificacion.tipo}]:`, notificacion.titulo);
             return notificacion;
