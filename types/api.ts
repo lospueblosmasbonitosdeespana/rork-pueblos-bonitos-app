@@ -27,15 +27,12 @@ export interface Semaforo {
 }
 
 export interface Notificacion {
-  _ID: string;
+  id: number;
+  tipo: 'noticia' | 'alerta' | 'semaforo' | 'nieve';
   titulo: string;
   mensaje: string;
-  tipo: 'info' | 'alerta' | 'urgente';
-  fecha_publicacion: string;
-  pueblo?: string;
-  activa: boolean;
-  cct_slug: string;
-  cct_modified: string;
+  enlace: string;
+  motivo?: string;
 }
 
 export interface Noticia {

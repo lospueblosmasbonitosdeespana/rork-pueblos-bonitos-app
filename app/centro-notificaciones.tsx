@@ -14,15 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useNotifications } from '@/contexts/notifications';
-
-interface NotificationItem {
-  id: number;
-  tipo: 'noticia' | 'alerta' | 'semaforo' | 'nieve';
-  titulo: string;
-  mensaje: string;
-  enlace: string;
-  motivo?: string;
-}
+import { Notificacion } from '@/types/api';
 
 function getNotificationIcon(tipo: string) {
   switch (tipo) {
@@ -46,7 +38,7 @@ export default function CentroNotificaciones() {
     markAllAsRead();
   }, [markAllAsRead]);
 
-  const handleNotificationPress = async (item: NotificationItem) => {
+  const handleNotificationPress = async (item: Notificacion) => {
     console.log('📱 Pulsada notificación:', item.tipo, item.titulo);
     
     if (item.tipo === 'semaforo') {

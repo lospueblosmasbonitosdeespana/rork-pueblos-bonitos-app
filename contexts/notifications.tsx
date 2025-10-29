@@ -7,17 +7,10 @@ import * as Notifications from 'expo-notifications';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Platform } from 'react-native';
 
+import { Notificacion } from '@/types/api';
+
 const TOKEN_STORAGE_KEY = '@lpbe_expo_push_token';
 const LAST_NOTIFICATION_ID_KEY = '@lpbe_last_notification_id';
-
-interface Notificacion {
-  id: number;
-  tipo: 'noticia' | 'alerta' | 'semaforo' | 'nieve';
-  titulo: string;
-  mensaje: string;
-  enlace: string;
-  motivo?: string;
-}
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
