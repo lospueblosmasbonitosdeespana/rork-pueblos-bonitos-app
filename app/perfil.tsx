@@ -7,7 +7,7 @@ import {
   Trophy,
   User,
 } from 'lucide-react-native';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
@@ -20,7 +20,6 @@ export default function PerfilScreen() {
   const insets = useSafeAreaInsets();
   const { user: localUser, token, logout, isAuthenticated, isLoading: contextLoading } = useUser();
   const hasNavigated = useRef(false);
-  const [shouldRedirect, setShouldRedirect] = useState(false);
 
   const profileQuery = useQuery<Usuario>({
     queryKey: ['userProfile', token],
@@ -40,6 +39,7 @@ export default function PerfilScreen() {
         text: 'Salir',
         style: 'destructive',
         onPress: async () => {
+          hasNavigated.current = false;
           await logout();
           router.replace('/login');
         },
@@ -49,24 +49,16 @@ export default function PerfilScreen() {
 
   useEffect(() => {
     if (contextLoading) return;
+    if (hasNavigated.current) return;
     
     console.log('🔍 Perfil - isAuthenticated:', isAuthenticated, 'hasToken:', !!token);
     
     if (!isAuthenticated || !token) {
-      if (!hasNavigated.current && !shouldRedirect) {
-        console.log('🔄 Preparando redirección a login...');
-        setShouldRedirect(true);
-      }
-    }
-  }, [isAuthenticated, token, contextLoading]);
-
-  useEffect(() => {
-    if (shouldRedirect && !hasNavigated.current) {
       hasNavigated.current = true;
       console.log('🔄 Redirigiendo a login...');
       router.replace('/login');
     }
-  }, [shouldRedirect]);
+  }, [isAuthenticated, token, contextLoading]);
 
   const isLoading = contextLoading || profileQuery.isLoading;
   const user = profileQuery.data || localUser;

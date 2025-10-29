@@ -110,7 +110,7 @@ export const [UserProvider, useUser] = createContextHook(() => {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [isInitialized, userQuery.isSuccess, tokenQuery.isSuccess, userQuery.data, tokenQuery.data, queryClient]);
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginCredentials) => {

@@ -24,7 +24,6 @@ export default function LoginScreen() {
   const insets = useSafeAreaInsets();
   const [username, setUsername] = useState<string>('');
   const [password, setPassword] = useState<string>('');
-  const [shouldRedirect, setShouldRedirect] = useState(false);
   const { login, isLoggingIn, isAuthenticated, isLoading } = useUser();
   const hasNavigated = useRef(false);
 
@@ -46,24 +45,16 @@ export default function LoginScreen() {
 
   useEffect(() => {
     if (isLoading) return;
+    if (hasNavigated.current) return;
     
     console.log('🔍 Login - isAuthenticated:', isAuthenticated);
     
     if (isAuthenticated) {
-      if (!hasNavigated.current && !shouldRedirect) {
-        console.log('✅ Usuario autenticado, preparando redirección...');
-        setShouldRedirect(true);
-      }
-    }
-  }, [isAuthenticated, isLoading]);
-
-  useEffect(() => {
-    if (shouldRedirect && !hasNavigated.current) {
       hasNavigated.current = true;
       console.log('🔄 Redirigiendo a perfil...');
       router.replace('/perfil');
     }
-  }, [shouldRedirect]);
+  }, [isAuthenticated, isLoading]);
 
   if (isLoading) {
     return (
@@ -76,7 +67,7 @@ export default function LoginScreen() {
     );
   }
 
-  if (isAuthenticated && !shouldRedirect) {
+  if (isAuthenticated) {
     return null;
   }
 
