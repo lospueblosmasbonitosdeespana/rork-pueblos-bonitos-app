@@ -1,5 +1,6 @@
 import { router, Stack } from 'expo-router';
 import {
+  AlertTriangle,
   Heart,
   Image as ImageIcon,
   LogOut,
@@ -18,7 +19,7 @@ import { fetchUserProfile } from '@/services/api';
 
 export default function PerfilScreen() {
   const insets = useSafeAreaInsets();
-  const { user: localUser, token, logout, isAuthenticated, isLoading: contextLoading } = useUser();
+  const { user: localUser, token, logout, forceLogout, isAuthenticated, isLoading: contextLoading } = useUser();
   const hasNavigated = useRef(false);
 
   const profileQuery = useQuery<Usuario>({
@@ -45,6 +46,25 @@ export default function PerfilScreen() {
         },
       },
     ]);
+  };
+
+  const handleForceLogout = () => {
+    Alert.alert(
+      'Forzar Cierre de Sesión',
+      'Esto limpiará completamente tu sesión guardada. Úsalo si tienes problemas para acceder.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Forzar Cierre',
+          style: 'destructive',
+          onPress: async () => {
+            hasNavigated.current = false;
+            await forceLogout();
+            router.replace('/login');
+          },
+        },
+      ]
+    );
   };
 
   useEffect(() => {
@@ -164,6 +184,13 @@ export default function PerfilScreen() {
               <LogOut size={20} color="#FFF" />
             </View>
             <Text style={styles.logoutText}>Cerrar Sesión</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.forceLogoutButton} onPress={handleForceLogout}>
+            <View style={styles.forceLogoutIcon}>
+              <AlertTriangle size={18} color="#ff6b6b" />
+            </View>
+            <Text style={styles.forceLogoutText}>Forzar Cierre de Sesión</Text>
           </TouchableOpacity>
         </ScrollView>
       </View>
@@ -329,5 +356,26 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
     marginBottom: 12,
+  },
+  forceLogoutButton: {
+    backgroundColor: '#FFF',
+    borderRadius: 12,
+    paddingVertical: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: '#ff6b6b',
+  },
+  forceLogoutIcon: {
+    marginRight: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  forceLogoutText: {
+    color: '#ff6b6b',
+    fontSize: 14,
+    fontWeight: '600' as const,
   },
 });

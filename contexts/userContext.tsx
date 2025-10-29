@@ -51,57 +51,69 @@ export const [UserProvider, useUser] = createContextHook(() => {
     let mounted = true;
     
     async function validateToken() {
-      if (isInitialized || !mounted) return;
+      if (isInitialized) return;
+      if (!userQuery.isSuccess || !tokenQuery.isSuccess) return;
+      if (!mounted) return;
       
-      if (userQuery.isSuccess && tokenQuery.isSuccess) {
-        const token = tokenQuery.data;
-        const user = userQuery.data;
+      const token = tokenQuery.data;
+      const user = userQuery.data;
+      
+      console.log('🔍 UserContext - Iniciando validación:', { hasToken: !!token, hasUser: !!user });
+      
+      if (token && user) {
+        setIsValidating(true);
         
-        console.log('🔍 UserContext - Validando sesión:', { hasToken: !!token, hasUser: !!user });
-        
-        if (token && user) {
-          if (!mounted) return;
-          setIsValidating(true);
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 10000);
           
-          try {
-            const response = await fetch(`${API_BASE_URL}/wp/v2/users/me`, {
-              method: 'GET',
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-              },
-            });
-            
-            if (!mounted) return;
-            
-            console.log('🔍 Token validation status:', response.status);
-            
-            if (!response.ok) {
-              console.log('❌ Token inválido, limpiando sesión...');
-              await AsyncStorage.removeItem(USER_TOKEN_KEY);
-              await AsyncStorage.removeItem(USER_DATA_KEY);
-              queryClient.setQueryData(['userToken'], null);
-              queryClient.setQueryData(['userData'], null);
-            } else {
-              console.log('✅ Token válido');
-            }
-          } catch (error: any) {
-            if (!mounted) return;
-            console.error('❌ Error validando token:', error.message);
+          const response = await fetch(`${API_BASE_URL}/wp/v2/users/me`, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+            signal: controller.signal,
+          });
+          
+          clearTimeout(timeoutId);
+          
+          if (!mounted) return;
+          
+          console.log('🔍 Token validation status:', response.status);
+          
+          if (!response.ok) {
+            console.log('❌ Token inválido, limpiando sesión...');
             await AsyncStorage.removeItem(USER_TOKEN_KEY);
             await AsyncStorage.removeItem(USER_DATA_KEY);
-            queryClient.setQueryData(['userToken'], null);
-            queryClient.setQueryData(['userData'], null);
-          } finally {
-            if (!mounted) return;
+            await queryClient.setQueryData(['userToken'], null);
+            await queryClient.setQueryData(['userData'], null);
+          } else {
+            console.log('✅ Token válido');
+          }
+        } catch (error: any) {
+          if (!mounted) return;
+          
+          if (error.name === 'AbortError') {
+            console.error('❌ Timeout validando token, limpiando sesión...');
+          } else {
+            console.error('❌ Error validando token:', error.message);
+          }
+          
+          await AsyncStorage.removeItem(USER_TOKEN_KEY);
+          await AsyncStorage.removeItem(USER_DATA_KEY);
+          await queryClient.setQueryData(['userToken'], null);
+          await queryClient.setQueryData(['userData'], null);
+        } finally {
+          if (mounted) {
             setIsValidating(false);
             setIsInitialized(true);
           }
-        } else {
-          if (!mounted) return;
-          console.log('📝 No hay sesión guardada');
-          setIsInitialized(true);
         }
+      } else {
+        if (!mounted) return;
+        console.log('📝 No hay sesión guardada');
+        setIsInitialized(true);
       }
     }
     
@@ -110,7 +122,7 @@ export const [UserProvider, useUser] = createContextHook(() => {
     return () => {
       mounted = false;
     };
-  }, [isInitialized, userQuery.isSuccess, tokenQuery.isSuccess, userQuery.data, tokenQuery.data, queryClient]);
+  }, [userQuery.isSuccess, tokenQuery.isSuccess]);
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginCredentials) => {
@@ -160,13 +172,17 @@ export const [UserProvider, useUser] = createContextHook(() => {
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
+      console.log('🧹 Limpiando storage...');
       await AsyncStorage.removeItem(USER_TOKEN_KEY);
       await AsyncStorage.removeItem(USER_DATA_KEY);
+      console.log('✅ Storage limpiado');
     },
     onSuccess: () => {
+      console.log('📦 Limpiando queries...');
       queryClient.setQueryData(['userToken'], null);
       queryClient.setQueryData(['userData'], null);
       queryClient.clear();
+      console.log('✅ Queries limpiadas');
     },
   });
 
@@ -182,9 +198,24 @@ export const [UserProvider, useUser] = createContextHook(() => {
     return registerAsync(credentials);
   }, [registerAsync]);
 
-  const logout = useCallback(() => {
-    return logoutAsync();
+  const logout = useCallback(async () => {
+    console.log('🚪 Cerrando sesión...');
+    setIsInitialized(false);
+    await logoutAsync();
+    setIsInitialized(true);
+    console.log('✅ Sesión cerrada correctamente');
   }, [logoutAsync]);
+
+  const forceLogout = useCallback(async () => {
+    console.log('🚨 Forzando cierre de sesión...');
+    setIsInitialized(false);
+    await AsyncStorage.removeItem(USER_TOKEN_KEY);
+    await AsyncStorage.removeItem(USER_DATA_KEY);
+    queryClient.setQueryData(['userToken'], null);
+    queryClient.setQueryData(['userData'], null);
+    queryClient.clear();
+    setIsInitialized(true);
+  }, [queryClient]);
 
   return useMemo(() => ({
     user: userQuery.data ?? null,
@@ -194,6 +225,7 @@ export const [UserProvider, useUser] = createContextHook(() => {
     login,
     register,
     logout,
+    forceLogout,
     isLoggingIn: loginMutation.isPending,
     isRegistering: registerMutation.isPending,
     loginError: loginMutation.error,
@@ -208,6 +240,7 @@ export const [UserProvider, useUser] = createContextHook(() => {
     login,
     register,
     logout,
+    forceLogout,
     loginMutation.isPending,
     registerMutation.isPending,
     loginMutation.error,
