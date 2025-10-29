@@ -1,6 +1,6 @@
 import { router, Stack } from 'expo-router';
 import { LogIn } from 'lucide-react-native';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   ActivityIndicator,
@@ -25,6 +25,7 @@ export default function LoginScreen() {
   const [username, setUsername] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const { login, isLoggingIn, isAuthenticated, isLoading } = useUser();
+  const hasNavigated = useRef(false);
 
   const handleLogin = async () => {
     if (!username.trim() || !password.trim()) {
@@ -35,8 +36,7 @@ export default function LoginScreen() {
     try {
       console.log('🔐 Intentando login...');
       await login({ username: username.trim(), password: password.trim() });
-      console.log('✅ Login exitoso, redirigiendo...');
-      router.replace('/perfil');
+      console.log('✅ Login exitoso');
     } catch (error: any) {
       console.error('❌ Error en login:', error);
       Alert.alert('Error', error.message || 'Usuario o contraseña incorrectos');
@@ -45,7 +45,8 @@ export default function LoginScreen() {
 
   useEffect(() => {
     console.log('🔍 Login - isAuthenticated:', isAuthenticated, 'isLoading:', isLoading);
-    if (!isLoading && isAuthenticated) {
+    if (!isLoading && isAuthenticated && !hasNavigated.current) {
+      hasNavigated.current = true;
       console.log('✅ Usuario autenticado, redirigiendo a perfil...');
       router.replace('/perfil');
     }

@@ -1,29 +1,23 @@
 import { router } from 'expo-router';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { ActivityIndicator, View, StyleSheet } from 'react-native';
 
 import { useUser } from '@/contexts/userContext';
 
 export default function PerfilTabScreen() {
   const { isAuthenticated, isLoading } = useUser();
+  const hasNavigated = useRef(false);
 
   useEffect(() => {
-    if (!isLoading) {
+    if (!isLoading && !hasNavigated.current) {
+      hasNavigated.current = true;
       if (isAuthenticated) {
-        router.replace('/perfil');
+        router.push('/perfil');
       } else {
-        router.replace('/login');
+        router.push('/login');
       }
     }
   }, [isAuthenticated, isLoading]);
-
-  if (isLoading) {
-    return (
-      <View style={styles.container}>
-        <ActivityIndicator size="large" color="#8B0000" />
-      </View>
-    );
-  }
 
   return (
     <View style={styles.container}>

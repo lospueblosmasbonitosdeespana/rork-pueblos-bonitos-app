@@ -7,7 +7,7 @@ import {
   Trophy,
   User,
 } from 'lucide-react-native';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -16,6 +16,7 @@ import { useUser } from '@/contexts/userContext';
 export default function PerfilScreen() {
   const insets = useSafeAreaInsets();
   const { user, logout, isAuthenticated, isLoading } = useUser();
+  const hasNavigated = useRef(false);
 
   const handleLogout = () => {
     Alert.alert('Cerrar Sesión', '¿Estás seguro que deseas salir?', [
@@ -34,7 +35,8 @@ export default function PerfilScreen() {
   useEffect(() => {
     console.log('🔍 Perfil - isAuthenticated:', isAuthenticated, 'user:', user?.nombre, 'isLoading:', isLoading);
     
-    if (!isLoading && !isAuthenticated) {
+    if (!isLoading && !isAuthenticated && !hasNavigated.current) {
+      hasNavigated.current = true;
       console.log('🔄 Redirigiendo a login...');
       router.replace('/login');
     }
