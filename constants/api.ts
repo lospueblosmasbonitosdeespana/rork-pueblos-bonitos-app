@@ -2,7 +2,8 @@ export const API_BASE_URL = 'https://lospueblosmasbonitosdeespana.org/wp-json';
 
 export const API_ENDPOINTS = {
   auth: {
-    login: '/wp/v2/users/login',
+    login: '/lpbe/v1/login',
+    profile: '/lpbe/v1/profile',
     validate: '/jwt-auth/v1/token/validate',
     me: '/wp/v2/users/me',
   },

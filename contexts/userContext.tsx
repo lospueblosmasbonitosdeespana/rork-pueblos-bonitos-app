@@ -3,7 +3,6 @@ import createContextHook from '@nkzw/create-context-hook';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { API_BASE_URL } from '@/constants/api';
 import { umLogin, umRegister } from '@/services/api';
 import { Usuario } from '@/types/api';
 
@@ -23,7 +22,6 @@ const USER_DATA_KEY = '@lpbe_user_data';
 
 export const [UserProvider, useUser] = createContextHook(() => {
   const queryClient = useQueryClient();
-  const [isValidating, setIsValidating] = useState(false);
   const [hasValidated, setHasValidated] = useState(false);
 
   const userQuery = useQuery<Usuario | null>({
@@ -31,8 +29,10 @@ export const [UserProvider, useUser] = createContextHook(() => {
     queryFn: async () => {
       const storedUser = await AsyncStorage.getItem(USER_DATA_KEY);
       if (storedUser) {
+        console.log('📦 Usuario cargado del storage');
         return JSON.parse(storedUser);
       }
+      console.log('📦 No hay usuario en storage');
       return null;
     },
     staleTime: Infinity,
@@ -42,6 +42,11 @@ export const [UserProvider, useUser] = createContextHook(() => {
     queryKey: ['userToken'],
     queryFn: async () => {
       const storedToken = await AsyncStorage.getItem(USER_TOKEN_KEY);
+      if (storedToken) {
+        console.log('🔑 Token cargado del storage');
+      } else {
+        console.log('🔑 No hay token en storage');
+      }
       return storedToken;
     },
     staleTime: Infinity,
@@ -50,12 +55,11 @@ export const [UserProvider, useUser] = createContextHook(() => {
   useEffect(() => {
     if (hasValidated) return;
     if (!userQuery.isSuccess || !tokenQuery.isSuccess) return;
-    if (isValidating) return;
     
     const token = tokenQuery.data;
     const user = userQuery.data;
     
-    console.log('🔍 UserContext - Iniciando validación:', { hasToken: !!token, hasUser: !!user });
+    console.log('🔍 UserContext inicializado:', { hasToken: !!token, hasUser: !!user });
     
     if (!token || !user) {
       console.log('📝 No hay sesión guardada');
@@ -63,65 +67,9 @@ export const [UserProvider, useUser] = createContextHook(() => {
       return;
     }
     
-    let mounted = true;
-    setIsValidating(true);
-    
-    async function validateToken() {
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000);
-        
-        const response = await fetch(`${API_BASE_URL}/wp/v2/users/me`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-          signal: controller.signal,
-        });
-        
-        clearTimeout(timeoutId);
-        
-        if (!mounted) return;
-        
-        console.log('🔍 Token validation status:', response.status);
-        
-        if (!response.ok) {
-          console.log('❌ Token inválido, limpiando sesión...');
-          await AsyncStorage.removeItem(USER_TOKEN_KEY);
-          await AsyncStorage.removeItem(USER_DATA_KEY);
-          queryClient.setQueryData(['userToken'], null);
-          queryClient.setQueryData(['userData'], null);
-        } else {
-          console.log('✅ Token válido');
-        }
-      } catch (error: any) {
-        if (!mounted) return;
-        
-        if (error.name === 'AbortError') {
-          console.error('❌ Timeout validando token, limpiando sesión...');
-        } else {
-          console.error('❌ Error validando token:', error.message);
-        }
-        
-        await AsyncStorage.removeItem(USER_TOKEN_KEY);
-        await AsyncStorage.removeItem(USER_DATA_KEY);
-        queryClient.setQueryData(['userToken'], null);
-        queryClient.setQueryData(['userData'], null);
-      } finally {
-        if (mounted) {
-          setIsValidating(false);
-          setHasValidated(true);
-        }
-      }
-    }
-    
-    validateToken();
-    
-    return () => {
-      mounted = false;
-    };
-  }, [userQuery.isSuccess, tokenQuery.isSuccess, hasValidated, isValidating, tokenQuery.data, userQuery.data, queryClient]);
+    console.log('✅ Sesión válida encontrada');
+    setHasValidated(true);
+  }, [userQuery.isSuccess, tokenQuery.isSuccess, hasValidated, tokenQuery.data, userQuery.data]);
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginCredentials) => {
@@ -216,7 +164,7 @@ export const [UserProvider, useUser] = createContextHook(() => {
     setHasValidated(true);
   }, [queryClient]);
 
-  const isLoading = !hasValidated || isValidating || userQuery.isLoading || tokenQuery.isLoading;
+  const isLoading = !hasValidated || userQuery.isLoading || tokenQuery.isLoading;
   const user = userQuery.data ?? null;
   const token = tokenQuery.data ?? null;
   const isAuthenticated = !!user && !!token;

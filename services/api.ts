@@ -600,7 +600,9 @@ export async function umLogin(
   password: string
 ): Promise<{ success: boolean; user?: any; token?: string; message: string }> {
   try {
-    const loginUrl = 'https://lospueblosmasbonitosdeespana.org/wp-json/um-api/login';
+    console.log('🔐 Iniciando login con endpoint nativo /lpbe/v1/login');
+    
+    const loginUrl = `${API_BASE_URL}/lpbe/v1/login`;
     
     const response = await fetch(loginUrl, {
       method: 'POST',
@@ -611,121 +613,47 @@ export async function umLogin(
       body: JSON.stringify({ username, password }),
     });
     
-    const responseText = await response.text();
-
-    let data;
-    try {
-      data = JSON.parse(responseText);
-    } catch {
-      if (response.status === 404) {
-        return await jwtLogin(username, password);
-      }
-      
-      return {
-        success: false,
-        message: 'Respuesta inválida del servidor',
-      };
-    }
-
-    if (response.status === 404 || (data.code && data.code === 'rest_no_route')) {
-      return await jwtLogin(username, password);
-    }
-
-    if (response.status === 401 || data.code === 'incorrect_login') {
-      return {
-        success: false,
-        message: 'Usuario o contraseña incorrectos',
-      };
-    }
-
-    if (!response.ok || data.error) {
-      return {
-        success: false,
-        message: data.message || 'Error al iniciar sesión',
-      };
-    }
-
-    return {
-      success: true,
-      user: data.user || {
-        id: data.user_id || 0,
-        username: data.user_login || username,
-        email: data.user_email || '',
-        display_name: data.display_name || username,
-        avatar_url: data.avatar_url || data.profile_photo || '',
-        roles: data.roles ? [data.role] : ['subscriber'],
-        rol: data.role || 'explorador',
-        puntos: data.puntos || 0,
-      },
-      token: data.token || '',
-      message: 'Login exitoso',
-    };
-  } catch (error: any) {
-    return await jwtLogin(username, password);
-  }
-}
-
-async function jwtLogin(
-  username: string,
-  password: string
-): Promise<{ success: boolean; user?: any; token?: string; message: string }> {
-  try {
-    const jwtUrl = 'https://lospueblosmasbonitosdeespana.org/wp-json/jwt-auth/v1/token';
-    
-    const response = await fetch(jwtUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-      body: JSON.stringify({ username, password }),
-    });
+    console.log('📡 Login response status:', response.status);
     
     const data = await response.json();
+    console.log('📦 Login response data:', data);
 
-    if (response.status === 401 || data.code === '[jwt_auth] incorrect_password') {
-      return {
-        success: false,
-        message: 'Usuario o contraseña incorrectos',
-      };
-    }
-
-    if (response.status === 404 || data.code === 'rest_no_route') {
-      return {
-        success: false,
-        message: 'Servicio de login no disponible. Contacta con soporte.',
-      };
-    }
-
-    if (!response.ok || data.code) {
+    if (!response.ok || data.error) {
       return {
         success: false,
         message: data.message || 'Usuario o contraseña incorrectos',
       };
     }
 
+    const user = {
+      id: data.id || 0,
+      username: data.username || username,
+      email: data.email || '',
+      display_name: data.name || username,
+      avatar_url: '',
+      roles: data.role ? [data.role] : ['subscriber'],
+      rol: data.role || 'explorador',
+      puntos: 0,
+    };
+
+    console.log('✅ Login exitoso:', user.display_name);
+
     return {
       success: true,
-      user: {
-        id: parseInt(data.user_id) || 0,
-        username: data.user_nicename || username,
-        email: data.user_email || '',
-        display_name: data.user_display_name || data.user_nicename || username,
-        avatar_url: '',
-        roles: ['subscriber'],
-        rol: 'explorador',
-        puntos: 0,
-      },
-      token: data.token || '',
+      user,
+      token: `lpbe_user_${data.id}`,
       message: 'Login exitoso',
     };
   } catch (error: any) {
+    console.error('❌ Error en login:', error.message);
     return {
       success: false,
       message: 'Error de conexión. Verifica tu conexión a internet.',
     };
   }
 }
+
+
 
 export async function umRegister(
   nombre: string,
