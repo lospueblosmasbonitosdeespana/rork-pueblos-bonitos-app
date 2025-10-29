@@ -16,6 +16,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNotifications } from '@/contexts/notifications';
 import { Notificacion } from '@/types/api';
 
+function getSemaforoColor(mensaje: string): string {
+  const text = (mensaje || '').toLowerCase();
+  if (text.includes('rojo')) return '#ef4444';
+  if (text.includes('amarillo')) return '#eab308';
+  if (text.includes('verde')) return '#22c55e';
+  return '#9ca3af';
+}
+
 function getNotificationIcon(tipo: string) {
   switch (tipo) {
     case 'noticia':
@@ -146,25 +154,7 @@ export default function CentroNotificaciones() {
             const hasLink = (item.tipo === 'noticia' || item.tipo === 'alerta' || item.tipo === 'nieve') && item.enlace && item.enlace.trim() !== '';
             const subtitleText = getSubtitleText(item.tipo);
 
-            const getSemaforoColor = () => {
-              if (item.tipo === 'semaforo') {
-                const mensaje = item.mensaje.toLowerCase();
-                if (mensaje.includes('verde')) {
-                  console.log('Color: VERDE (#22c55e)');
-                  return '#22c55e';
-                }
-                if (mensaje.includes('amarillo')) {
-                  console.log('Color: AMARILLO (#eab308)');
-                  return '#eab308';
-                }
-                if (mensaje.includes('rojo')) {
-                  console.log('Color: ROJO (#ef4444)');
-                  return '#ef4444';
-                }
-              }
-              console.log('Color: null (no es semáforo o no tiene color)');
-              return null;
-            };
+
 
             const getSemaforoMessage = () => {
               if (item.tipo === 'semaforo') {
@@ -185,23 +175,20 @@ export default function CentroNotificaciones() {
             };
 
             const renderContent = () => {
-              const semaforoColor = getSemaforoColor();
               const semaforoMessage = getSemaforoMessage();
               
               return (
               <>
                 <View style={styles.cardHeader}>
                   <View style={styles.iconContainer}>
-                    {item.tipo === 'semaforo' && semaforoColor ? (
+                    {item.tipo === 'semaforo' ? (
                       <View
                         style={{
                           width: 22,
                           height: 22,
                           borderRadius: 11,
-                          backgroundColor: semaforoColor,
+                          backgroundColor: getSemaforoColor(item.mensaje),
                           marginRight: 10,
-                          alignSelf: 'center',
-                          zIndex: 10,
                         }}
                       />
                     ) : iconData && IconComponent ? (
