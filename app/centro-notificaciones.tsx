@@ -209,7 +209,7 @@ export default function CentroNotificaciones() {
                 </View>
                 {item.tipo === 'semaforo' && (
                   <View style={styles.messageContainer}>
-                    <Text style={styles.cardMessage}>
+                    <Text style={styles.cardMessage} numberOfLines={6}>
                       {semaforoMessage}
                     </Text>
                   </View>
@@ -217,7 +217,7 @@ export default function CentroNotificaciones() {
                 {item.tipo === 'semaforo' && item.motivo && item.motivo.trim() !== '' && (
                   <View style={styles.motivoContainer}>
                     <Text style={styles.motivoLabel}>Motivo:</Text>
-                    <Text style={styles.motivoText}>{item.motivo}</Text>
+                    <Text style={styles.motivoText} numberOfLines={6}>{item.motivo}</Text>
                   </View>
                 )}
                 {hasLink && (
@@ -392,6 +392,7 @@ const styles = StyleSheet.create({
   messageContainer: {
     flexDirection: 'row',
     alignItems: 'flex-start',
+    flexWrap: 'wrap',
   },
   cardMessage: {
     fontSize: 14,
@@ -419,6 +420,7 @@ const styles = StyleSheet.create({
     paddingTop: 6,
     borderTopWidth: 1,
     borderTopColor: '#f0f0f0',
+    flexWrap: 'wrap',
   },
   motivoLabel: {
     fontSize: 11,
