@@ -21,6 +21,7 @@ import {
 import { useUser } from '@/contexts/userContext';
 
 export default function LoginScreen() {
+  // TODOS los hooks al inicio
   const hasNavigated = useRef(false);
   const [username, setUsername] = useState<string>('');
   const [password, setPassword] = useState<string>('');
@@ -32,20 +33,20 @@ export default function LoginScreen() {
       Alert.alert('Error', 'Por favor completa todos los campos');
       return;
     }
-
     try {
-      console.log('🔐 Intentando login...');
+      console.log('Intentando login...');
       await login({ username: username.trim(), password: password.trim() });
-      console.log('✅ Login exitoso');
+      console.log('Login exitoso');
     } catch (error: any) {
-      console.error('❌ Error en login:', error);
+      console.error('Error en login:', error);
       Alert.alert('Error', error.message || 'Usuario o contraseña incorrectos');
     }
   };
 
+  // useEffect después de todos los hooks
   useEffect(() => {
     if (!isLoading && isAuthenticated && !hasNavigated.current) {
-      console.log('🔄 Redirigiendo a perfil...');
+      console.log('Redirigiendo a perfil...');
       hasNavigated.current = true;
       setTimeout(() => {
         router.replace('/perfil');
@@ -53,6 +54,7 @@ export default function LoginScreen() {
     }
   }, [isAuthenticated, isLoading]);
 
+  // Renderizado condicional al final
   if (isLoading) {
     return (
       <>
