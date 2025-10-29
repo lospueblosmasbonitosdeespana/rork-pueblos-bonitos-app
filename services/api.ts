@@ -261,15 +261,11 @@ export async function fetchSemaforoByPueblo(puebloId: string): Promise<Semaforo 
 
 export async function fetchNotificaciones(): Promise<Notificacion[]> {
   try {
-    console.log('🔍 Fetching notificaciones from:', `${API_BASE_URL}${API_ENDPOINTS.cct.notificaciones}`);
     const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.cct.notificaciones}`);
     if (!response.ok) {
-      console.error('❌ Error fetching notificaciones:', response.status);
       return [];
     }
     const data = await response.json();
-    console.log('📦 Notificaciones received:', data.length);
-    console.log('NOTIFS DEBUG (services/api)', Array.isArray(data), data?.[0]);
     return data;
   } catch (error) {
     console.error('❌ Error fetching notificaciones:', error);
@@ -595,6 +591,127 @@ export async function registrarVisita(
     return {
       success: false,
       message: 'Error al registrar la visita',
+    };
+  }
+}
+
+export async function umLogin(
+  username: string,
+  password: string
+): Promise<{ success: boolean; user?: any; token?: string; message: string }> {
+  try {
+    console.log('🔑 UM Login:', username);
+    
+    const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.um.login}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ username, password }),
+    });
+
+    const data = await response.json();
+    console.log('📦 UM Login response:', data);
+
+    if (!response.ok || data.error) {
+      return {
+        success: false,
+        message: data.message || 'Usuario o contraseña incorrectos',
+      };
+    }
+
+    return {
+      success: true,
+      user: data.user,
+      token: data.token,
+      message: 'Login exitoso',
+    };
+  } catch (error: any) {
+    console.error('❌ UM Login error:', error);
+    return {
+      success: false,
+      message: 'Error de conexión',
+    };
+  }
+}
+
+export async function umRegister(
+  nombre: string,
+  email: string,
+  password: string
+): Promise<{ success: boolean; user?: any; token?: string; message: string }> {
+  try {
+    console.log('📝 UM Register:', email);
+    
+    const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.um.register}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        username: email,
+        email,
+        password,
+        display_name: nombre,
+      }),
+    });
+
+    const data = await response.json();
+    console.log('📦 UM Register response:', data);
+
+    if (!response.ok || data.error) {
+      return {
+        success: false,
+        message: data.message || 'Error al crear la cuenta',
+      };
+    }
+
+    return {
+      success: true,
+      user: data.user,
+      token: data.token,
+      message: 'Cuenta creada exitosamente',
+    };
+  } catch (error: any) {
+    console.error('❌ UM Register error:', error);
+    return {
+      success: false,
+      message: 'Error de conexión',
+    };
+  }
+}
+
+export async function umGetProfile(
+  token: string
+): Promise<{ success: boolean; user?: any; message: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.um.profile}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || data.error) {
+      return {
+        success: false,
+        message: data.message || 'Error al cargar perfil',
+      };
+    }
+
+    return {
+      success: true,
+      user: data.user,
+      message: 'Perfil cargado',
+    };
+  } catch (error: any) {
+    console.error('❌ UM Profile error:', error);
+    return {
+      success: false,
+      message: 'Error de conexión',
     };
   }
 }

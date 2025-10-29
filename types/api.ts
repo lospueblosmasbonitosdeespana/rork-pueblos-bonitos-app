@@ -117,6 +117,10 @@ export interface Usuario {
   display_name: string;
   avatar_url?: string;
   roles: string[];
+  puntos?: number;
+  rol?: string;
+  nombre?: string;
+  apellidos?: string;
 }
 
 export interface AuthResponse {

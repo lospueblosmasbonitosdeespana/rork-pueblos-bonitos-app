@@ -6,6 +6,12 @@ export const API_ENDPOINTS = {
     validate: '/jwt-auth/v1/token/validate',
     me: '/wp/v2/users/me',
   },
+  um: {
+    login: '/um-api/login',
+    register: '/um-api/register',
+    profile: '/um-api/profile',
+    updateProfile: '/um-api/update-profile',
+  },
   cct: {
     lugares: '/jet-cct/lugar',
     semaforos: '/jet-cct/semaforos',
