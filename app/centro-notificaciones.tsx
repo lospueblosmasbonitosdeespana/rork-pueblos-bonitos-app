@@ -209,7 +209,7 @@ export default function CentroNotificaciones() {
                 </View>
                 {item.tipo === 'semaforo' && (
                   <View style={styles.messageContainer}>
-                    <Text style={styles.cardMessage} numberOfLines={1}>
+                    <Text style={styles.cardMessage}>
                       {semaforoMessage}
                     </Text>
                   </View>
@@ -391,13 +391,14 @@ const styles = StyleSheet.create({
   },
   messageContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
   },
   cardMessage: {
     fontSize: 14,
     color: '#444',
     lineHeight: 20,
     flex: 1,
+    flexWrap: 'wrap',
   },
   linkIndicator: {
     marginTop: 8,
