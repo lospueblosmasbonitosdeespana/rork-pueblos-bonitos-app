@@ -27,8 +27,9 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
 
   useEffect(() => {
+    console.log('[Login] Estado: isLoading=', isLoading, 'isAuthenticated=', isAuthenticated);
     if (!isLoading && isAuthenticated) {
-      console.log('✅ Login detectó autenticación válida, redirigiendo a perfil-tab');
+      console.log('[Login] Usuario autenticado, redirigiendo a perfil-tab');
       setTimeout(() => {
         router.replace('/(tabs)/perfil-tab');
       }, 100);
@@ -42,10 +43,11 @@ export default function LoginScreen() {
     }
 
     try {
+      console.log('[Login] Intentando login con usuario:', username);
       await login({ username: username.trim(), password: password.trim() });
-      console.log('✅ Login exitoso, esperando redirección automática');
+      console.log('[Login] Login exitoso, esperando redireccion automatica');
     } catch (error: any) {
-      console.error('❌ Error en handleLogin:', error);
+      console.error('[Login] Error en handleLogin:', error);
       Alert.alert('Error', error.message || 'Usuario o contraseña incorrectos');
     }
   };

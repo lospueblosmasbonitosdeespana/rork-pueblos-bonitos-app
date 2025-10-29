@@ -1,6 +1,5 @@
 import { router, Stack } from 'expo-router';
 import { LogOut, Mail, User as UserIcon } from 'lucide-react-native';
-import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -17,15 +16,6 @@ import { useUser } from '@/contexts/userContext';
 export default function PerfilTabScreen() {
   const { user, isAuthenticated, isLoading, logout } = useUser();
   const insets = useSafeAreaInsets();
-  const [isReady, setIsReady] = useState(false);
-
-  useEffect(() => {
-    console.log('PERFIL TAB → isLoading:', isLoading, 'isAuthenticated:', isAuthenticated);
-    if (!isLoading) {
-      console.log('✅ Perfil tab ready, usuario:', user?.display_name || 'No autenticado');
-      setTimeout(() => setIsReady(true), 50);
-    }
-  }, [isLoading, user, isAuthenticated]);
 
   const handleLogout = async () => {
     Alert.alert('Cerrar sesión', '¿Estás seguro de que quieres cerrar sesión?', [
@@ -41,7 +31,7 @@ export default function PerfilTabScreen() {
     ]);
   };
 
-  if (!isReady) {
+  if (isLoading) {
     return (
       <>
         <Stack.Screen options={{ headerShown: false }} />

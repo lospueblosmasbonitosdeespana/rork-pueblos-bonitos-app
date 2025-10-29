@@ -21,6 +21,7 @@ function RootLayoutNav() {
         headerBackTitle: "Atrás",
         gestureEnabled: true,
         fullScreenGestureEnabled: false,
+        animation: 'default',
       }}
     >
       <Stack.Screen name="index" options={{ headerShown: false }} />
@@ -45,6 +46,7 @@ function RootLayoutNav() {
         options={{
           headerTitle: "Pueblo",
           presentation: "card",
+          gestureEnabled: true,
         }}
       />
       <Stack.Screen
@@ -52,6 +54,7 @@ function RootLayoutNav() {
         options={{
           headerTitle: "Noticia",
           presentation: "modal",
+          gestureEnabled: true,
         }}
       />
       <Stack.Screen
@@ -59,13 +62,7 @@ function RootLayoutNav() {
         options={{
           headerTitle: "Información del Pueblo",
           presentation: "card",
-        }}
-      />
-      <Stack.Screen
-        name="perfil"
-        options={{
-          headerTitle: "Mi Perfil",
-          presentation: "card",
+          gestureEnabled: true,
         }}
       />
       <Stack.Screen
@@ -81,20 +78,20 @@ function RootLayoutNav() {
 
 export default function RootLayout() {
   return (
-    <trpc.Provider client={trpcClient} queryClient={queryClient}>
-      <QueryClientProvider client={queryClient}>
-        <LanguageProvider>
-          <UserProvider>
-            <AuthProvider>
-              <NotificationsProvider>
-                <GestureHandlerRootView>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <trpc.Provider client={trpcClient} queryClient={queryClient}>
+        <QueryClientProvider client={queryClient}>
+          <LanguageProvider>
+            <UserProvider>
+              <AuthProvider>
+                <NotificationsProvider>
                   <RootLayoutNav />
-                </GestureHandlerRootView>
-              </NotificationsProvider>
-            </AuthProvider>
-          </UserProvider>
-        </LanguageProvider>
-      </QueryClientProvider>
-    </trpc.Provider>
+                </NotificationsProvider>
+              </AuthProvider>
+            </UserProvider>
+          </LanguageProvider>
+        </QueryClientProvider>
+      </trpc.Provider>
+    </GestureHandlerRootView>
   );
 }

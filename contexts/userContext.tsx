@@ -22,40 +22,55 @@ export const [UserProvider, useUser] = createContextHook(() => {
 
   const loadUserFromStorage = async () => {
     try {
-      console.log('🔍 Cargando usuario del storage...');
+      console.log('[UserContext] Cargando usuario del storage...');
       const [storedToken, storedUserData] = await Promise.all([
         AsyncStorage.getItem(USER_TOKEN_KEY),
         AsyncStorage.getItem(USER_DATA_KEY),
       ]);
 
       if (storedToken && storedUserData) {
-        const userData = JSON.parse(storedUserData);
-        console.log('✅ Usuario encontrado en storage:', userData.display_name);
-        
-        console.log('🔐 Validando token...');
-        const isValid = await validateUserToken(userData.id);
-        
-        if (isValid) {
-          console.log('✅ Token válido, restaurando sesión');
-          setToken(storedToken);
-          setUser(userData);
-        } else {
-          console.log('❌ Token inválido, limpiando sesión');
+        try {
+          const userData = JSON.parse(storedUserData);
+          console.log('[UserContext] Usuario encontrado en storage:', userData.display_name);
+          
+          if (!userData.id || typeof userData.id !== 'number') {
+            console.log('[UserContext] Datos de usuario invalidos, limpiando sesion');
+            throw new Error('Invalid user data');
+          }
+          
+          console.log('[UserContext] Validando token...');
+          const isValid = await validateUserToken(userData.id);
+          
+          if (isValid) {
+            console.log('[UserContext] Token valido, restaurando sesion');
+            setToken(storedToken);
+            setUser(userData);
+          } else {
+            console.log('[UserContext] Token invalido, limpiando sesion');
+            throw new Error('Invalid token');
+          }
+        } catch (validationError) {
+          console.error('[UserContext] Error validando usuario:', validationError);
           await Promise.all([
             AsyncStorage.removeItem(USER_TOKEN_KEY),
             AsyncStorage.removeItem(USER_DATA_KEY),
           ]);
+          setUser(null);
+          setToken(null);
         }
       } else {
-        console.log('📝 No hay sesión guardada');
+        console.log('[UserContext] No hay sesion guardada');
       }
     } catch (error) {
-      console.error('❌ Error cargando usuario:', error);
+      console.error('[UserContext] Error cargando usuario:', error);
       await Promise.all([
         AsyncStorage.removeItem(USER_TOKEN_KEY),
         AsyncStorage.removeItem(USER_DATA_KEY),
       ]);
+      setUser(null);
+      setToken(null);
     } finally {
+      console.log('[UserContext] Terminando carga inicial, isLoading = false');
       setIsLoading(false);
       
       setTimeout(() => {
@@ -67,7 +82,7 @@ export const [UserProvider, useUser] = createContextHook(() => {
   const login = useCallback(async (credentials: { username: string; password: string }) => {
     try {
       setIsLoggingIn(true);
-      console.log('🔐 Iniciando login...');
+      console.log('[UserContext] Iniciando login...');
 
       const result = await umLogin(credentials.username, credentials.password);
 
@@ -86,9 +101,9 @@ export const [UserProvider, useUser] = createContextHook(() => {
       setUser(userData);
       setToken(userToken);
 
-      console.log('✅ Login exitoso');
+      console.log('[UserContext] Login exitoso:', userData.display_name);
     } catch (error: any) {
-      console.error('❌ Error en login:', error);
+      console.error('[UserContext] Error en login:', error);
       throw error;
     } finally {
       setIsLoggingIn(false);
@@ -97,7 +112,7 @@ export const [UserProvider, useUser] = createContextHook(() => {
 
   const logout = useCallback(async () => {
     try {
-      console.log('🚪 Cerrando sesión...');
+      console.log('[UserContext] Cerrando sesion...');
 
       await Promise.all([
         AsyncStorage.removeItem(USER_TOKEN_KEY),
@@ -107,11 +122,11 @@ export const [UserProvider, useUser] = createContextHook(() => {
       setUser(null);
       setToken(null);
 
-      console.log('✅ Sesión cerrada, redirigiendo a login...');
+      console.log('[UserContext] Sesion cerrada, redirigiendo a login...');
       
       router.replace('/login');
     } catch (error) {
-      console.error('❌ Error cerrando sesión:', error);
+      console.error('[UserContext] Error cerrando sesion:', error);
     }
   }, []);
 
