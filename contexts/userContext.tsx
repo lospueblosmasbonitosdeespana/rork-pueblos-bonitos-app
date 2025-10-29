@@ -49,7 +49,7 @@ export const [UserProvider, useUser] = createContextHook(() => {
 
   useEffect(() => {
     async function validateToken() {
-      if (userQuery.isSuccess && tokenQuery.isSuccess) {
+      if (!isInitialized && userQuery.isSuccess && tokenQuery.isSuccess) {
         const token = tokenQuery.data;
         const user = userQuery.data;
         
@@ -96,7 +96,7 @@ export const [UserProvider, useUser] = createContextHook(() => {
     }
     
     validateToken();
-  }, [userQuery.isSuccess, tokenQuery.isSuccess, userQuery.data, tokenQuery.data, queryClient]);
+  }, [isInitialized, userQuery.isSuccess, tokenQuery.isSuccess, userQuery.data, tokenQuery.data, queryClient]);
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginCredentials) => {

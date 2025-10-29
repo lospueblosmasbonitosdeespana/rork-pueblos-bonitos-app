@@ -24,6 +24,7 @@ export default function LoginScreen() {
   const insets = useSafeAreaInsets();
   const [username, setUsername] = useState<string>('');
   const [password, setPassword] = useState<string>('');
+  const [shouldRedirect, setShouldRedirect] = useState(false);
   const { login, isLoggingIn, isAuthenticated, isLoading } = useUser();
   const hasNavigated = useRef(false);
 
@@ -44,20 +45,39 @@ export default function LoginScreen() {
   };
 
   useEffect(() => {
-    console.log('🔍 Login - isAuthenticated:', isAuthenticated, 'isLoading:', isLoading);
-    if (!isLoading && isAuthenticated && !hasNavigated.current) {
-      hasNavigated.current = true;
-      console.log('✅ Usuario autenticado, redirigiendo a perfil...');
-      router.replace('/perfil');
+    if (isLoading) return;
+    
+    console.log('🔍 Login - isAuthenticated:', isAuthenticated);
+    
+    if (isAuthenticated) {
+      if (!hasNavigated.current && !shouldRedirect) {
+        console.log('✅ Usuario autenticado, preparando redirección...');
+        setShouldRedirect(true);
+      }
     }
   }, [isAuthenticated, isLoading]);
 
-  if (!isLoading && isAuthenticated) {
+  useEffect(() => {
+    if (shouldRedirect && !hasNavigated.current) {
+      hasNavigated.current = true;
+      console.log('🔄 Redirigiendo a perfil...');
+      router.replace('/perfil');
+    }
+  }, [shouldRedirect]);
+
+  if (isLoading) {
     return (
-      <View style={styles.container}>
-        <ActivityIndicator size="large" color="#8B0000" />
-      </View>
+      <>
+        <Stack.Screen options={{ headerShown: false }} />
+        <View style={styles.container}>
+          <ActivityIndicator size="large" color="#8B0000" />
+        </View>
+      </>
     );
+  }
+
+  if (isAuthenticated && !shouldRedirect) {
+    return null;
   }
 
   return (

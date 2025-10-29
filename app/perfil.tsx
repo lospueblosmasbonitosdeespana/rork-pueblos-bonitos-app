@@ -7,16 +7,31 @@ import {
   Trophy,
   User,
 } from 'lucide-react-native';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useQuery } from '@tanstack/react-query';
 
 import { useUser } from '@/contexts/userContext';
+import { Usuario } from '@/types/api';
+import { fetchUserProfile } from '@/services/api';
 
 export default function PerfilScreen() {
   const insets = useSafeAreaInsets();
-  const { user, logout, isAuthenticated, isLoading } = useUser();
+  const { user: localUser, token, logout, isAuthenticated, isLoading: contextLoading } = useUser();
   const hasNavigated = useRef(false);
+  const [shouldRedirect, setShouldRedirect] = useState(false);
+
+  const profileQuery = useQuery<Usuario>({
+    queryKey: ['userProfile', token],
+    queryFn: async () => {
+      if (!token) throw new Error('No token');
+      return fetchUserProfile(token);
+    },
+    enabled: !!token && isAuthenticated,
+    staleTime: 60000,
+    retry: 1,
+  });
 
   const handleLogout = () => {
     Alert.alert('Cerrar Sesión', '¿Estás seguro que deseas salir?', [
@@ -26,21 +41,35 @@ export default function PerfilScreen() {
         style: 'destructive',
         onPress: async () => {
           await logout();
-          router.replace('/(tabs)/home');
+          router.replace('/login');
         },
       },
     ]);
   };
 
   useEffect(() => {
-    console.log('🔍 Perfil - isAuthenticated:', isAuthenticated, 'user:', user?.nombre, 'isLoading:', isLoading);
+    if (contextLoading) return;
     
-    if (!isLoading && !isAuthenticated && !hasNavigated.current) {
+    console.log('🔍 Perfil - isAuthenticated:', isAuthenticated, 'hasToken:', !!token);
+    
+    if (!isAuthenticated || !token) {
+      if (!hasNavigated.current && !shouldRedirect) {
+        console.log('🔄 Preparando redirección a login...');
+        setShouldRedirect(true);
+      }
+    }
+  }, [isAuthenticated, token, contextLoading]);
+
+  useEffect(() => {
+    if (shouldRedirect && !hasNavigated.current) {
       hasNavigated.current = true;
       console.log('🔄 Redirigiendo a login...');
       router.replace('/login');
     }
-  }, [isAuthenticated, isLoading]);
+  }, [shouldRedirect]);
+
+  const isLoading = contextLoading || profileQuery.isLoading;
+  const user = profileQuery.data || localUser;
 
   if (isLoading) {
     return (
@@ -49,6 +78,7 @@ export default function PerfilScreen() {
         <View style={[styles.container, { paddingTop: insets.top }]}>
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#8B0000" />
+            <Text style={styles.loadingText}>Cargando perfil...</Text>
           </View>
         </View>
       </>
@@ -59,14 +89,20 @@ export default function PerfilScreen() {
     return null;
   }
 
-  const getRolDisplay = (roles?: string[]) => {
-    if (!roles || roles.length === 0) return 'Explorador';
-    if (roles.includes('administrator')) return 'Embajador';
-    if (roles.includes('premium')) return 'Premium';
+  const getRolDisplay = (rol?: string) => {
+    if (rol === 'embajador' || rol === 'administrator') return 'Embajador';
+    if (rol === 'premium' || rol === 'viajero_premium') return 'Viajero Premium';
     return 'Explorador';
   };
 
-  const rolDisplay = user.rol || getRolDisplay(user.roles);
+  const getRolColor = (rol?: string) => {
+    if (rol === 'embajador' || rol === 'administrator') return '#1a4d8f';
+    if (rol === 'premium' || rol === 'viajero_premium') return '#d4af37';
+    return '#8B0000';
+  };
+
+  const rolDisplay = getRolDisplay(user.rol);
+  const rolColor = getRolColor(user.rol);
   const puntos = user.puntos || 0;
 
   return (
@@ -88,7 +124,10 @@ export default function PerfilScreen() {
               )}
             </View>
             <Text style={styles.name}>{user.display_name || user.username}</Text>
-            <View style={styles.rolBadge}>
+            {user.email && (
+              <Text style={styles.email}>{user.email}</Text>
+            )}
+            <View style={[styles.rolBadge, { backgroundColor: rolColor }]}>
               <Text style={styles.rolText}>{rolDisplay}</Text>
             </View>
           </View>
@@ -284,5 +323,15 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 14,
+    color: '#666',
+  },
+  email: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 12,
   },
 });

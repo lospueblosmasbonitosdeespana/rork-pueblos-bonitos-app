@@ -807,3 +807,70 @@ export async function umGetProfile(
     };
   }
 }
+
+export async function fetchUserProfile(
+  token: string,
+  userId?: number
+): Promise<any> {
+  try {
+    console.log('🔍 Cargando perfil completo de WordPress...');
+    
+    const response = await fetch(`${API_BASE_URL}/wp/v2/users/me`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error ${response.status}: No se pudo cargar el perfil`);
+    }
+
+    const userData = await response.json();
+    console.log('✅ Datos base del usuario obtenidos');
+
+    let puntosTotal = 0;
+    if (userData.id) {
+      try {
+        const puntosResponse = await fetch(
+          `${API_BASE_URL}/jet-cct/puntuacion?user_id=${userData.id}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+          }
+        );
+        if (puntosResponse.ok) {
+          const puntosData = await puntosResponse.json();
+          if (Array.isArray(puntosData) && puntosData.length > 0) {
+            puntosTotal = puntosData[0].puntos_totales || 0;
+            console.log('✅ Puntos cargados:', puntosTotal);
+          }
+        }
+      } catch (error: any) {
+        console.warn('⚠️ No se pudieron cargar los puntos:', error.message);
+      }
+    }
+
+    const profileData = {
+      id: userData.id,
+      username: userData.slug || userData.username || '',
+      email: userData.email || '',
+      display_name: userData.name || userData.display_name || '',
+      avatar_url: userData.avatar_urls?.['96'] || userData.avatar_urls?.['48'] || '',
+      roles: userData.roles || ['subscriber'],
+      puntos: puntosTotal,
+      description: userData.description || '',
+      rol: userData.roles?.includes('administrator') ? 'embajador' 
+        : userData.roles?.includes('premium') || userData.roles?.includes('viajero_premium') ? 'premium' 
+        : 'explorador',
+    };
+
+    console.log('✅ Perfil completo:', profileData.display_name, '-', profileData.rol);
+    return profileData;
+  } catch (error: any) {
+    console.error('❌ Error cargando perfil:', error.message);
+    throw error;
+  }
+}
