@@ -149,10 +149,20 @@ export default function CentroNotificaciones() {
             const getSemaforoColor = () => {
               if (item.tipo === 'semaforo') {
                 const mensaje = item.mensaje.toLowerCase();
-                if (mensaje.includes('verde')) return '#22c55e';
-                if (mensaje.includes('amarillo')) return '#eab308';
-                if (mensaje.includes('rojo')) return '#ef4444';
+                if (mensaje.includes('verde')) {
+                  console.log('Color: VERDE (#22c55e)');
+                  return '#22c55e';
+                }
+                if (mensaje.includes('amarillo')) {
+                  console.log('Color: AMARILLO (#eab308)');
+                  return '#eab308';
+                }
+                if (mensaje.includes('rojo')) {
+                  console.log('Color: ROJO (#ef4444)');
+                  return '#ef4444';
+                }
               }
+              console.log('Color: null (no es semáforo o no tiene color)');
               return null;
             };
 
@@ -183,7 +193,17 @@ export default function CentroNotificaciones() {
                 <View style={styles.cardHeader}>
                   <View style={styles.iconContainer}>
                     {item.tipo === 'semaforo' && semaforoColor ? (
-                      <View style={[styles.semaforoCircle, { backgroundColor: semaforoColor }]} />
+                      <View
+                        style={{
+                          width: 22,
+                          height: 22,
+                          borderRadius: 11,
+                          backgroundColor: semaforoColor,
+                          marginRight: 10,
+                          alignSelf: 'center',
+                          zIndex: 10,
+                        }}
+                      />
                     ) : iconData && IconComponent ? (
                       <View style={[styles.iconCircle, { backgroundColor: iconData.color }]}>
                         <IconComponent size={20} color="#fff" strokeWidth={2} />
@@ -351,6 +371,7 @@ const styles = StyleSheet.create({
   iconContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    overflow: 'visible',
   },
   iconCircle: {
     width: 36,
