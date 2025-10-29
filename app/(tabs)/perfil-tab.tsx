@@ -20,10 +20,12 @@ export default function PerfilTabScreen() {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
+    console.log('PERFIL TAB → isLoading:', isLoading, 'isAuthenticated:', isAuthenticated);
     if (!isLoading) {
-      setIsReady(true);
+      console.log('✅ Perfil tab ready, usuario:', user?.display_name || 'No autenticado');
+      setTimeout(() => setIsReady(true), 50);
     }
-  }, [isLoading]);
+  }, [isLoading, user, isAuthenticated]);
 
   const handleLogout = async () => {
     Alert.alert('Cerrar sesión', '¿Estás seguro de que quieres cerrar sesión?', [
@@ -32,6 +34,7 @@ export default function PerfilTabScreen() {
         text: 'Cerrar sesión',
         style: 'destructive',
         onPress: async () => {
+          console.log('🚪 Usuario confirmó logout');
           await logout();
         },
       },

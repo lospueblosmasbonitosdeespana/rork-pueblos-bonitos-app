@@ -1,9 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import createContextHook from '@nkzw/create-context-hook';
+import { router } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { umLogin } from '@/services/api';
+import { umLogin, validateUserToken } from '@/services/api';
 import { Usuario } from '@/types/api';
 
 const USER_TOKEN_KEY = '@lpbe_user_token';
@@ -29,14 +30,31 @@ export const [UserProvider, useUser] = createContextHook(() => {
 
       if (storedToken && storedUserData) {
         const userData = JSON.parse(storedUserData);
-        console.log('✅ Usuario cargado:', userData.display_name);
-        setToken(storedToken);
-        setUser(userData);
+        console.log('✅ Usuario encontrado en storage:', userData.display_name);
+        
+        console.log('🔐 Validando token...');
+        const isValid = await validateUserToken(userData.id);
+        
+        if (isValid) {
+          console.log('✅ Token válido, restaurando sesión');
+          setToken(storedToken);
+          setUser(userData);
+        } else {
+          console.log('❌ Token inválido, limpiando sesión');
+          await Promise.all([
+            AsyncStorage.removeItem(USER_TOKEN_KEY),
+            AsyncStorage.removeItem(USER_DATA_KEY),
+          ]);
+        }
       } else {
         console.log('📝 No hay sesión guardada');
       }
     } catch (error) {
       console.error('❌ Error cargando usuario:', error);
+      await Promise.all([
+        AsyncStorage.removeItem(USER_TOKEN_KEY),
+        AsyncStorage.removeItem(USER_DATA_KEY),
+      ]);
     } finally {
       setIsLoading(false);
       
@@ -81,15 +99,17 @@ export const [UserProvider, useUser] = createContextHook(() => {
     try {
       console.log('🚪 Cerrando sesión...');
 
-      setUser(null);
-      setToken(null);
-
       await Promise.all([
         AsyncStorage.removeItem(USER_TOKEN_KEY),
         AsyncStorage.removeItem(USER_DATA_KEY),
       ]);
 
-      console.log('✅ Sesión cerrada');
+      setUser(null);
+      setToken(null);
+
+      console.log('✅ Sesión cerrada, redirigiendo a login...');
+      
+      router.replace('/login');
     } catch (error) {
       console.error('❌ Error cerrando sesión:', error);
     }

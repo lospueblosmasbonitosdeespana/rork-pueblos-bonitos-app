@@ -595,6 +595,36 @@ export async function registrarVisita(
   }
 }
 
+export async function validateUserToken(userId: number): Promise<boolean> {
+  try {
+    console.log('🔐 Validando token para usuario', userId);
+    
+    const validateUrl = `${API_BASE_URL}/lpbe/v1/validate-user`;
+    
+    const response = await fetch(validateUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify({ user_id: userId }),
+    });
+    
+    if (!response.ok) {
+      console.log('❌ Token inválido (status:', response.status, ')');
+      return false;
+    }
+    
+    const data = await response.json();
+    console.log('📦 Validación response:', data);
+    
+    return data.valid === true || response.status === 200;
+  } catch (error: any) {
+    console.error('❌ Error validando token:', error.message);
+    return false;
+  }
+}
+
 export async function umLogin(
   username: string,
   password: string

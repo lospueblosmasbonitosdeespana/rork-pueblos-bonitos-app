@@ -28,8 +28,10 @@ export default function LoginScreen() {
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      console.log('Login detectó autenticación, redirigiendo a perfil-tab');
-      router.replace('/(tabs)/perfil-tab');
+      console.log('✅ Login detectó autenticación válida, redirigiendo a perfil-tab');
+      setTimeout(() => {
+        router.replace('/(tabs)/perfil-tab');
+      }, 100);
     }
   }, [isLoading, isAuthenticated]);
 
@@ -41,7 +43,9 @@ export default function LoginScreen() {
 
     try {
       await login({ username: username.trim(), password: password.trim() });
+      console.log('✅ Login exitoso, esperando redirección automática');
     } catch (error: any) {
+      console.error('❌ Error en handleLogin:', error);
       Alert.alert('Error', error.message || 'Usuario o contraseña incorrectos');
     }
   };
