@@ -24,6 +24,8 @@ function getNotificationIcon(tipo: string) {
       return { icon: AlertTriangle, color: '#FFA500' };
     case 'nieve':
       return { icon: Snowflake, color: '#4A90E2' };
+    case 'semaforo':
+      return null;
     default:
       return { icon: Newspaper, color: '#800000' };
   }
@@ -140,7 +142,7 @@ export default function CentroNotificaciones() {
           renderItem={({ item, index }) => {
             const isUnread = index < unreadCount;
             const iconData = getNotificationIcon(item.tipo);
-            const IconComponent = iconData.icon;
+            const IconComponent = iconData?.icon;
             const hasLink = (item.tipo === 'noticia' || item.tipo === 'alerta' || item.tipo === 'nieve') && item.enlace && item.enlace.trim() !== '';
             const subtitleText = getSubtitleText(item.tipo);
 
@@ -182,11 +184,11 @@ export default function CentroNotificaciones() {
                   <View style={styles.iconContainer}>
                     {item.tipo === 'semaforo' && semaforoColor ? (
                       <View style={[styles.semaforoCircle, { backgroundColor: semaforoColor }]} />
-                    ) : (
+                    ) : iconData && IconComponent ? (
                       <View style={[styles.iconCircle, { backgroundColor: iconData.color }]}>
                         <IconComponent size={20} color="#fff" strokeWidth={2} />
                       </View>
-                    )}
+                    ) : null}
                     <View style={styles.headerTextContainer}>
                       <Text style={styles.subtitleText}>{subtitleText}</Text>
                       <Text style={styles.cardTitle} numberOfLines={1}>
