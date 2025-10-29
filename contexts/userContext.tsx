@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import createContextHook from '@nkzw/create-context-hook';
 import { router } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { umLogin } from '@/services/api';
@@ -39,15 +40,19 @@ export const [UserProvider, useUser] = createContextHook(() => {
       console.error('❌ Error cargando usuario:', error);
     } finally {
       setIsLoading(false);
+      
+      setTimeout(() => {
+        SplashScreen.hideAsync();
+      }, 300);
     }
   };
 
-  const login = useCallback(async (username: string, password: string) => {
+  const login = useCallback(async (credentials: { username: string; password: string }) => {
     try {
       setIsLoggingIn(true);
       console.log('🔐 Iniciando login...');
 
-      const result = await umLogin(username, password);
+      const result = await umLogin(credentials.username, credentials.password);
 
       if (!result.success) {
         throw new Error(result.message);

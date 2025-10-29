@@ -39,7 +39,7 @@ export default function LoginScreen() {
     }
 
     try {
-      await login(username.trim(), password.trim());
+      await login({ username: username.trim(), password: password.trim() });
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Usuario o contraseña incorrectos');
     }
