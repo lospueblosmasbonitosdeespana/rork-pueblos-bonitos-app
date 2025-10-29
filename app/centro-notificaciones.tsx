@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { ArrowLeft, Newspaper, AlertTriangle, Navigation, Snowflake } from 'lucide-react-native';
+import { ArrowLeft, Newspaper, AlertTriangle, Snowflake } from 'lucide-react-native';
 import React, { useEffect } from 'react';
 import {
   ActivityIndicator,
@@ -19,15 +19,13 @@ import { Notificacion } from '@/types/api';
 function getNotificationIcon(tipo: string) {
   switch (tipo) {
     case 'noticia':
-      return { icon: Newspaper, color: '#800000', emoji: '📰' };
-    case 'semaforo':
-      return { icon: Navigation, color: '#FF6B00', emoji: '🚦' };
+      return { icon: Newspaper, color: '#800000' };
     case 'alerta':
-      return { icon: AlertTriangle, color: '#FFA500', emoji: '⚠️' };
+      return { icon: AlertTriangle, color: '#FFA500' };
     case 'nieve':
-      return { icon: Snowflake, color: '#4A90E2', emoji: '❄️' };
+      return { icon: Snowflake, color: '#4A90E2' };
     default:
-      return { icon: Newspaper, color: '#800000', emoji: '📰' };
+      return { icon: Newspaper, color: '#800000' };
   }
 }
 
@@ -39,27 +37,26 @@ export default function CentroNotificaciones() {
   }, [markAllAsRead]);
 
   const handleNotificationPress = async (item: Notificacion) => {
-    console.log('📱 Pulsada notificación:', item.tipo, item.titulo);
-    
     if (item.tipo === 'semaforo') {
-      console.log('🚦 Notificación de semáforo, sin acción');
       return;
     }
 
     if (item.enlace && item.enlace.trim() !== '') {
-      console.log('🔗 Abriendo enlace:', item.enlace);
       try {
-        const canOpen = await Linking.canOpenURL(item.enlace);
-        if (canOpen) {
-          await Linking.openURL(item.enlace);
-        } else {
-          console.warn('⚠️ No se puede abrir el enlace:', item.enlace);
+        let enlaceConParametro = item.enlace;
+        if (!enlaceConParametro.includes('?app=1')) {
+          enlaceConParametro = enlaceConParametro.includes('?') 
+            ? `${enlaceConParametro}&app=1` 
+            : `${enlaceConParametro}?app=1`;
         }
-      } catch (error) {
-        console.error('❌ Error abriendo enlace:', error);
+        
+        const canOpen = await Linking.canOpenURL(enlaceConParametro);
+        if (canOpen) {
+          await Linking.openURL(enlaceConParametro);
+        }
+      } catch {
+        // Silent error
       }
-    } else {
-      console.log('ℹ️ Notificación sin enlace');
     }
   };
 
@@ -192,14 +189,14 @@ export default function CentroNotificaciones() {
                     )}
                     <View style={styles.headerTextContainer}>
                       <Text style={styles.subtitleText}>{subtitleText}</Text>
-                      <Text style={styles.cardTitle}>
+                      <Text style={styles.cardTitle} numberOfLines={1}>
                         {item.tipo === 'semaforo' ? item.titulo.replace(/^Semáforo de /i, '').trim() : item.titulo}
                       </Text>
                     </View>
                   </View>
                 </View>
                 <View style={styles.messageContainer}>
-                  <Text style={styles.cardMessage}>
+                  <Text style={styles.cardMessage} numberOfLines={1}>
                     {semaforoMessage}
                   </Text>
                 </View>
@@ -334,8 +331,8 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: '#fff',
     borderRadius: 12,
-    padding: 9,
-    marginBottom: 9,
+    padding: 10,
+    marginBottom: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
@@ -347,7 +344,7 @@ const styles = StyleSheet.create({
     borderLeftColor: '#800000',
   },
   cardHeader: {
-    marginBottom: 6,
+    marginBottom: 8,
   },
   iconContainer: {
     flexDirection: 'row',

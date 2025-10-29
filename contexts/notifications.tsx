@@ -107,8 +107,6 @@ export const [NotificationsProvider, useNotifications] = createContextHook(() =>
     queryKey: ['notificaciones'],
     queryFn: async () => {
       try {
-        console.log('📡 Intentando obtener notificaciones desde el endpoint actualizado...');
-        
         const response = await fetch(
           'https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/notificaciones',
           {
@@ -119,41 +117,27 @@ export const [NotificationsProvider, useNotifications] = createContextHook(() =>
           }
         );
         
-        console.log('📡 Estado respuesta:', response.status);
-        
         if (!response.ok) {
-          console.warn('⚠️ Endpoint de notificaciones no disponible, usando datos de ejemplo');
           return getDemoNotifications();
         }
         
         const data = await response.json();
-        console.log('✅ Notificaciones obtenidas:', JSON.stringify(data, null, 2));
-        console.log('📊 Total de notificaciones:', Array.isArray(data) ? data.length : 0);
         
         if (Array.isArray(data)) {
-          console.log('NOTIFS DEBUG', Array.isArray(data), data?.[0]);
-          const mapped = data.map((item: any) => {
-            const notificacion = {
-              id: item.id,
-              tipo: mapTipo(item.tipo),
-              titulo: item.titulo,
-              mensaje: item.mensaje,
-              enlace: item.enlace,
-              motivo: item.motivo,
-            };
-            console.log(`📦 Notificación mapeada [${notificacion.tipo}]:`, notificacion.titulo);
-            return notificacion;
-          });
+          const mapped = data.map((item: any) => ({
+            id: item.id,
+            tipo: mapTipo(item.tipo),
+            titulo: item.titulo,
+            mensaje: item.mensaje,
+            enlace: item.enlace,
+            motivo: item.motivo,
+          }));
           mapped.sort((a, b) => b.id - a.id);
-          console.log('📊 Tipos de notificaciones:', mapped.map(n => n.tipo).join(', '));
           return mapped;
         }
         
-        console.warn('⚠️ Respuesta no es array, usando datos de ejemplo');
         return getDemoNotifications();
-      } catch (error) {
-        console.error('❌ Error obteniendo notificaciones:', error);
-        console.log('💡 Usando notificaciones de demostración');
+      } catch {
         return getDemoNotifications();
       }
     },
@@ -167,8 +151,6 @@ export const [NotificationsProvider, useNotifications] = createContextHook(() =>
     mutationFn: async (token: string) => {
       const deviceName = Device.deviceName || Constants.deviceName || 'Unknown Device';
       const deviceId = Constants.sessionId || 'unknown';
-
-      console.log('📤 Registering token with server:', token);
 
       const response = await fetch(
         'https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/register-token',
@@ -190,12 +172,10 @@ export const [NotificationsProvider, useNotifications] = createContextHook(() =>
       }
 
       const result = await response.json();
-      console.log('✅ Token registered successfully:', result);
       return result;
     },
     onSuccess: async (_, token) => {
       await AsyncStorage.setItem(TOKEN_STORAGE_KEY, token);
-      console.log('💾 Token stored locally');
     },
   });
 
@@ -208,7 +188,6 @@ export const [NotificationsProvider, useNotifications] = createContextHook(() =>
       const storedToken = await AsyncStorage.getItem(TOKEN_STORAGE_KEY);
       
       if (storedToken && isMounted) {
-        console.log('📱 Using stored token:', storedToken);
         setExpoPushToken(storedToken);
         return;
       }
@@ -223,14 +202,11 @@ export const [NotificationsProvider, useNotifications] = createContextHook(() =>
 
     setupPushNotifications();
 
-    const notificationListener = Notifications.addNotificationReceivedListener(notification => {
-      console.log('🔔 Notification received:', notification);
+    const notificationListener = Notifications.addNotificationReceivedListener(() => {
       queryClient.invalidateQueries({ queryKey: ['notificaciones'] });
     });
 
-    const responseListener = Notifications.addNotificationResponseReceivedListener(response => {
-      console.log('👆 Notification tapped:', response);
-    });
+    const responseListener = Notifications.addNotificationResponseReceivedListener(() => {});
 
     return () => {
       isMounted = false;
@@ -272,7 +248,6 @@ export const [NotificationsProvider, useNotifications] = createContextHook(() =>
       const latestId = String(notificacionesQuery.data[0].id);
       setLastNotificationId(latestId);
       await AsyncStorage.setItem(LAST_NOTIFICATION_ID_KEY, latestId);
-      console.log('✅ All notifications marked as read');
     }
   }, [notificacionesQuery.data]);
 
