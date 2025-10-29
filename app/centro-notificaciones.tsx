@@ -146,6 +146,16 @@ export default function CentroNotificaciones() {
             const hasLink = item.tipo === 'noticia' && item.enlace && item.enlace.trim() !== '';
             const subtitleText = getSubtitleText(item.tipo);
 
+            const getSemaforoColor = () => {
+              if (item.tipo === 'semaforo') {
+                const mensaje = item.mensaje.toLowerCase();
+                if (mensaje.includes('verde')) return '#22c55e';
+                if (mensaje.includes('amarillo')) return '#eab308';
+                if (mensaje.includes('rojo')) return '#ef4444';
+              }
+              return null;
+            };
+
             const renderContent = () => (
               <>
                 <View style={styles.cardHeader}>
@@ -159,7 +169,14 @@ export default function CentroNotificaciones() {
                     </View>
                   </View>
                 </View>
-                <Text style={styles.cardMessage}>{item.mensaje}</Text>
+                <View style={styles.messageContainer}>
+                  {item.tipo === 'semaforo' && getSemaforoColor() && (
+                    <View style={[styles.semaforoIndicator, { backgroundColor: getSemaforoColor() }]} />
+                  )}
+                  <Text style={[styles.cardMessage, item.tipo === 'semaforo' && styles.cardMessageWithIndicator]}>
+                    {item.mensaje}
+                  </Text>
+                </View>
                 {hasLink && (
                   <View style={styles.linkIndicator}>
                     <Text style={styles.linkText}>Toca para abrir ›</Text>
@@ -320,10 +337,23 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#1a1a1a',
   },
+  messageContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  semaforoIndicator: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginRight: 8,
+  },
   cardMessage: {
     fontSize: 14,
     color: '#444',
     lineHeight: 20,
+  },
+  cardMessageWithIndicator: {
+    flex: 1,
   },
   linkIndicator: {
     marginTop: 12,
