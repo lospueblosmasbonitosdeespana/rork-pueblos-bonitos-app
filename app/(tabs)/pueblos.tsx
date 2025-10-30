@@ -276,9 +276,9 @@ export default function PueblosScreen() {
               <Text style={styles.modalTitle}>Selecciona una comunidad</Text>
             </View>
             <ScrollView style={styles.modalScroll}>
-              {COMUNIDADES.map((comunidad) => (
+              {COMUNIDADES.map((comunidad, index) => (
                 <TouchableOpacity
-                  key={comunidad}
+                  key={`comunidad-${index}-${comunidad}`}
                   style={[
                     styles.modalOption,
                     selectedComunidad === comunidad && styles.modalOptionSelected,
