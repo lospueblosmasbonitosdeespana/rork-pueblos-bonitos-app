@@ -313,7 +313,7 @@ const styles = StyleSheet.create({
   summaryContainer: {
     backgroundColor: '#fff',
     paddingHorizontal: 20,
-    paddingTop: 8,
+    paddingTop: 0,
     paddingBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',

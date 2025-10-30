@@ -571,7 +571,8 @@ const styles = StyleSheet.create({
   statsContainer: {
     flexDirection: 'row',
     backgroundColor: '#fff',
-    paddingVertical: 12,
+    paddingTop: 0,
+    paddingBottom: 12,
     paddingHorizontal: 8,
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
