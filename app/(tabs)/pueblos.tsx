@@ -1,20 +1,22 @@
 import { useQuery } from '@tanstack/react-query';
 import * as Location from 'expo-location';
 import { router } from 'expo-router';
-import { MapPin, Search } from 'lucide-react-native';
+import { ChevronDown, MapPin, Search } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
   FlatList,
   Image,
+  Modal,
+  Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
 
 import { COLORS, SHADOWS, SPACING, TYPOGRAPHY } from '@/constants/theme';
 import { useLanguage } from '@/contexts/language';
@@ -131,7 +133,7 @@ export default function PueblosScreen() {
     latitude: number;
     longitude: number;
   } | null>(null);
-  const [renderKey, setRenderKey] = useState<number>(0);
+  const [showComunidadModal, setShowComunidadModal] = useState<boolean>(false);
 
   const lugaresQuery = useQuery({
     queryKey: ['lugares'],
@@ -179,7 +181,7 @@ export default function PueblosScreen() {
     }
 
     return filtered;
-  }, [pueblosAsociacion, selectedComunidad, showNearby, userLocation, renderKey]);
+  }, [pueblosAsociacion, selectedComunidad, showNearby, userLocation]);
   
   const filteredLugares = searchQuery
     ? displayLugares.filter((lugar) =>
@@ -259,28 +261,61 @@ export default function PueblosScreen() {
 
   return (
     <View style={styles.container}>
+      <Modal
+        visible={showComunidadModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowComunidadModal(false)}
+      >
+        <Pressable
+          style={styles.modalOverlay}
+          onPress={() => setShowComunidadModal(false)}
+        >
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Selecciona una comunidad</Text>
+            </View>
+            <ScrollView style={styles.modalScroll}>
+              {COMUNIDADES.map((comunidad) => (
+                <TouchableOpacity
+                  key={comunidad}
+                  style={[
+                    styles.modalOption,
+                    selectedComunidad === comunidad && styles.modalOptionSelected,
+                  ]}
+                  onPress={() => {
+                    setSelectedComunidad(comunidad);
+                    setShowComunidadModal(false);
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.modalOptionText,
+                      selectedComunidad === comunidad && styles.modalOptionTextSelected,
+                    ]}
+                  >
+                    {comunidad}
+                  </Text>
+                  {selectedComunidad === comunidad && (
+                    <View style={styles.checkmark} />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        </Pressable>
+      </Modal>
+
       <View style={styles.searchContainer}>
         <View style={styles.filterRow}>
-          <View style={styles.pickerContainer}>
-            <Picker
-              selectedValue={selectedComunidad}
-              onValueChange={(value: string) => {
-                setSelectedComunidad(value);
-                setTimeout(() => setRenderKey(prev => prev + 1), 50);
-              }}
-              style={styles.picker}
-              dropdownIconColor={COLORS.textSecondary}
-              mode="dropdown"
-            >
-              {COMUNIDADES.map((comunidad) => (
-                <Picker.Item
-                  key={comunidad}
-                  label={comunidad}
-                  value={comunidad}
-                />
-              ))}
-            </Picker>
-          </View>
+          <TouchableOpacity
+            style={styles.pickerButton}
+            onPress={() => setShowComunidadModal(true)}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.pickerButtonText}>{selectedComunidad}</Text>
+            <ChevronDown size={20} color={COLORS.textSecondary} />
+          </TouchableOpacity>
           <TouchableOpacity
             style={[
               styles.locationButton,
@@ -367,15 +402,73 @@ const styles = StyleSheet.create({
     gap: SPACING.sm,
     marginBottom: SPACING.sm,
   },
-  pickerContainer: {
+  pickerButton: {
     flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     backgroundColor: COLORS.background,
     borderRadius: 12,
-    overflow: 'hidden',
-  },
-  picker: {
+    paddingHorizontal: SPACING.md,
     height: 44,
+  },
+  pickerButtonText: {
+    ...TYPOGRAPHY.body,
     color: COLORS.text,
+    flex: 1,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: SPACING.lg,
+  },
+  modalContent: {
+    backgroundColor: COLORS.card,
+    borderRadius: 16,
+    width: '100%',
+    maxHeight: '70%',
+    ...SHADOWS.medium,
+  },
+  modalHeader: {
+    padding: SPACING.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  modalTitle: {
+    ...TYPOGRAPHY.h3,
+    color: COLORS.text,
+    textAlign: 'center',
+  },
+  modalScroll: {
+    maxHeight: 400,
+  },
+  modalOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.md,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  modalOptionSelected: {
+    backgroundColor: COLORS.background,
+  },
+  modalOptionText: {
+    ...TYPOGRAPHY.body,
+    color: COLORS.text,
+  },
+  modalOptionTextSelected: {
+    fontWeight: '600' as const,
+    color: COLORS.primary,
+  },
+  checkmark: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: COLORS.primary,
   },
   locationButton: {
     width: 44,
