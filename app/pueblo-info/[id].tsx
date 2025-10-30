@@ -55,6 +55,7 @@ export default function PuebloInfo() {
         
         const needsClima = !json.clima || !json.clima.temperatura || !json.clima.descripcion;
         const needsLluvia = !json.lluvia_24h;
+        const needsAltitud = !json.altitud && json.coordenadas?.lat && json.coordenadas?.lng;
         
         if (needsClima || needsLluvia) {
           console.log('🌍 Obteniendo datos desde OpenWeather...');
@@ -81,6 +82,26 @@ export default function PuebloInfo() {
           } catch (weatherError) {
             console.log('🌍 Error fetching OpenWeather data:', weatherError);
             if (needsLluvia) json.lluvia_24h = 0;
+          }
+        }
+        
+        if (needsAltitud) {
+          console.log('⛰️ Obteniendo altitud desde Open-Elevation...');
+          try {
+            const elevationRes = await fetch(
+              `https://api.open-elevation.com/api/v1/lookup?locations=${json.coordenadas.lat},${json.coordenadas.lng}`
+            );
+            if (elevationRes.ok) {
+              const elevationData = await elevationRes.json();
+              console.log('⛰️ Open-Elevation data:', JSON.stringify(elevationData, null, 2));
+              
+              if (elevationData.results && elevationData.results.length > 0) {
+                json.altitud = Math.round(elevationData.results[0].elevation);
+                console.log(`⛰️ Altitud calculada: ${json.altitud} m`);
+              }
+            }
+          } catch (elevationError) {
+            console.log('⛰️ Error fetching Open-Elevation data:', elevationError);
           }
         }
         
