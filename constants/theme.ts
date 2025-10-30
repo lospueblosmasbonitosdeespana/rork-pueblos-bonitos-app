@@ -1,19 +1,41 @@
 export const COLORS = {
-  primary: '#A22C22',
-  secondary: '#CBB682',
-  green: '#43a047',
-  yellow: '#fbc02d',
-  red: '#A22C22',
-  background: '#F5F1EA',
-  card: '#ffffff',
-  text: '#3A3A3A',
-  textSecondary: '#666666',
-  border: '#e0e0e0',
-  error: '#A22C22',
-  success: '#43a047',
-  beige: '#F5F1EA',
-  gold: '#CBB682',
+  light: {
+    primary: '#A22C22',
+    secondary: '#CBB682',
+    green: '#43a047',
+    yellow: '#fbc02d',
+    red: '#A22C22',
+    background: '#F5F1EA',
+    card: '#ffffff',
+    text: '#3A3A3A',
+    textSecondary: '#666666',
+    border: '#e0e0e0',
+    error: '#A22C22',
+    success: '#43a047',
+    beige: '#F5F1EA',
+    gold: '#CBB682',
+  },
+  dark: {
+    primary: '#D94D3D',
+    secondary: '#E6D7A3',
+    green: '#66bb6a',
+    yellow: '#fdd835',
+    red: '#D94D3D',
+    background: '#1a1a1a',
+    card: '#2a2a2a',
+    text: '#E8E8E8',
+    textSecondary: '#B0B0B0',
+    border: '#3a3a3a',
+    error: '#D94D3D',
+    success: '#66bb6a',
+    beige: '#2a2520',
+    gold: '#E6D7A3',
+  },
 } as const;
+
+export const useThemeColors = (isDark: boolean) => {
+  return isDark ? COLORS.dark : COLORS.light;
+};
 
 export const SPACING = {
   xs: 4,

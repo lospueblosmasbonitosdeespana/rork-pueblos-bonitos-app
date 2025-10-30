@@ -1,21 +1,24 @@
 import { router, Tabs } from "expo-router";
 import { Bell, Home, MapPin, Compass, Map, User } from "lucide-react-native";
 import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View, useColorScheme } from "react-native";
 
-import { COLORS } from "@/constants/theme";
+import { useThemeColors } from "@/constants/theme";
 import { useLanguage } from "@/contexts/language";
 import { useNotifications } from "@/contexts/notifications";
 
 function NotificationBellButton() {
   const { unreadCount } = useNotifications();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+  const colors = useThemeColors(isDark);
 
   return (
     <TouchableOpacity
       onPress={() => router.push('/centro-notificaciones')}
       style={bellStyles.container}
     >
-      <Bell size={22} color="#800000" strokeWidth={2} />
+      <Bell size={22} color={colors.primary} strokeWidth={2} />
       {unreadCount > 0 && (
         <View style={bellStyles.badge}>
           <Text style={bellStyles.badgeText}>
@@ -29,17 +32,24 @@ function NotificationBellButton() {
 
 export default function TabLayout() {
   const { t } = useLanguage();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+  const colors = useThemeColors(isDark);
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#c1121f',
-        tabBarInactiveTintColor: COLORS.textSecondary,
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textSecondary,
         headerShown: true,
         headerRight: () => <NotificationBellButton />,
+        headerStyle: {
+          backgroundColor: colors.card,
+        },
+        headerTintColor: colors.text,
         tabBarStyle: {
-          backgroundColor: '#ffffff',
-          borderTopColor: COLORS.border,
+          backgroundColor: colors.card,
+          borderTopColor: colors.border,
           borderTopWidth: 1,
         },
         tabBarLabelStyle: {

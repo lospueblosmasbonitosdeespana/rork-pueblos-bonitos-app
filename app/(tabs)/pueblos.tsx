@@ -18,7 +18,8 @@ import {
   View,
 } from 'react-native';
 
-import { COLORS, SHADOWS, SPACING, TYPOGRAPHY } from '@/constants/theme';
+import { SHADOWS, SPACING, TYPOGRAPHY } from '@/constants/theme';
+import { useTheme } from '@/hooks/useTheme';
 import { useLanguage } from '@/contexts/language';
 import { fetchLugares } from '@/services/api';
 import { Lugar } from '@/types/api';
@@ -126,6 +127,7 @@ function calculateDistance(
 
 export default function PueblosScreen() {
   const { t } = useLanguage();
+  const { colors } = useTheme();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedComunidad, setSelectedComunidad] = useState<string>('Todas');
   const [showNearby, setShowNearby] = useState<boolean>(false);
@@ -224,7 +226,7 @@ export default function PueblosScreen() {
   const renderPueblo = ({ item }: { item: Lugar }) => {
     return (
       <TouchableOpacity
-        style={styles.listItem}
+        style={[styles.listItem, { backgroundColor: colors.card, borderBottomColor: colors.border }]}
         onPress={() => router.push(`/pueblo/${item._ID}` as any)}
         activeOpacity={0.7}
       >
@@ -246,10 +248,10 @@ export default function PueblosScreen() {
                   />
                 ) : null;
               })()}
-              <Text style={styles.puebloName}>{item.nombre}</Text>
+              <Text style={[styles.puebloName, { color: colors.text }]}>{item.nombre}</Text>
             </View>
             {item.provincia && (
-              <Text style={styles.puebloLocation}>
+              <Text style={[styles.puebloLocation, { color: colors.textSecondary }]}>
                 {`${item.provincia}${item.comunidad_autonoma ? `, ${item.comunidad_autonoma}` : ''}`}
               </Text>
             )}
@@ -260,7 +262,7 @@ export default function PueblosScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Modal
         visible={showComunidadModal}
         transparent
@@ -271,9 +273,9 @@ export default function PueblosScreen() {
           style={styles.modalOverlay}
           onPress={() => setShowComunidadModal(false)}
         >
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Selecciona una comunidad</Text>
+          <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
+            <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>Selecciona una comunidad</Text>
             </View>
             <ScrollView style={styles.modalScroll}>
               {COMUNIDADES.map((comunidad, index) => (
@@ -281,7 +283,8 @@ export default function PueblosScreen() {
                   key={`comunidad-${index}-${comunidad}`}
                   style={[
                     styles.modalOption,
-                    selectedComunidad === comunidad && styles.modalOptionSelected,
+                    { borderBottomColor: colors.border },
+                    selectedComunidad === comunidad && { backgroundColor: colors.background },
                   ]}
                   onPress={() => {
                     setSelectedComunidad(comunidad);
@@ -291,13 +294,14 @@ export default function PueblosScreen() {
                   <Text
                     style={[
                       styles.modalOptionText,
-                      selectedComunidad === comunidad && styles.modalOptionTextSelected,
+                      { color: colors.text },
+                      selectedComunidad === comunidad && { fontWeight: '600', color: colors.primary },
                     ]}
                   >
                     {comunidad}
                   </Text>
                   {selectedComunidad === comunidad && (
-                    <View style={styles.checkmark} />
+                    <View style={[styles.checkmark, { backgroundColor: colors.primary }]} />
                   )}
                 </TouchableOpacity>
               ))}
@@ -306,36 +310,37 @@ export default function PueblosScreen() {
         </Pressable>
       </Modal>
 
-      <View style={styles.searchContainer}>
+      <View style={[styles.searchContainer, { backgroundColor: colors.card }]}>
         <View style={styles.filterRow}>
           <TouchableOpacity
-            style={styles.pickerButton}
+            style={[styles.pickerButton, { backgroundColor: colors.background }]}
             onPress={() => setShowComunidadModal(true)}
             activeOpacity={0.7}
           >
-            <Text style={styles.pickerButtonText}>{selectedComunidad}</Text>
-            <ChevronDown size={20} color={COLORS.textSecondary} />
+            <Text style={[styles.pickerButtonText, { color: colors.text }]}>{selectedComunidad}</Text>
+            <ChevronDown size={20} color={colors.textSecondary} />
           </TouchableOpacity>
           <TouchableOpacity
             style={[
               styles.locationButton,
-              showNearby && styles.locationButtonActive,
+              { backgroundColor: colors.background },
+              showNearby && { backgroundColor: colors.primary },
             ]}
             onPress={handleLocationPress}
             activeOpacity={0.7}
           >
             <MapPin
               size={20}
-              color={showNearby ? COLORS.card : COLORS.primary}
+              color={showNearby ? colors.card : colors.primary}
             />
           </TouchableOpacity>
         </View>
-        <View style={styles.searchBox}>
-          <Search size={20} color={COLORS.textSecondary} />
+        <View style={[styles.searchBox, { backgroundColor: colors.background }]}>
+          <Search size={20} color={colors.textSecondary} />
           <TextInput
-            style={styles.searchInput}
+            style={[styles.searchInput, { color: colors.text }]}
             placeholder={t.explore.searchPlaceholder}
-            placeholderTextColor={COLORS.textSecondary}
+            placeholderTextColor={colors.textSecondary}
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
@@ -352,28 +357,28 @@ export default function PueblosScreen() {
         ListEmptyComponent={
           lugaresQuery.isLoading ? (
             <View style={styles.emptyContainer}>
-              <ActivityIndicator size="large" color={COLORS.primary} />
-              <Text style={styles.loadingText}>Cargando pueblos...</Text>
-              <Text style={styles.loadingSubtext}>Esto puede tardar unos segundos la primera vez</Text>
+              <ActivityIndicator size="large" color={colors.primary} />
+              <Text style={[styles.loadingText, { color: colors.text }]}>Cargando pueblos...</Text>
+              <Text style={[styles.loadingSubtext, { color: colors.textSecondary }]}>Esto puede tardar unos segundos la primera vez</Text>
             </View>
           ) : lugaresQuery.error ? (
             <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>
+              <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
                 ❌ Error cargando pueblos: {lugaresQuery.error instanceof Error ? lugaresQuery.error.message : 'Error desconocido'}
               </Text>
-              <Text style={styles.errorDetails}>
+              <Text style={[styles.errorDetails, { color: colors.textSecondary }]}>
                 Por favor, verifica tu conexión a internet e inténtalo de nuevo.
               </Text>
               <TouchableOpacity
-                style={styles.retryButton}
+                style={[styles.retryButton, { backgroundColor: colors.primary }]}
                 onPress={() => lugaresQuery.refetch()}
               >
-                <Text style={styles.retryButtonText}>Reintentar</Text>
+                <Text style={[styles.retryButtonText, { color: colors.card }]}>Reintentar</Text>
               </TouchableOpacity>
             </View>
           ) : (
             <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>
+              <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
                 {searchQuery ? 'No se encontraron pueblos con ese nombre' : 'No hay pueblos disponibles'}
               </Text>
             </View>
@@ -387,13 +392,11 @@ export default function PueblosScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   searchContainer: {
     paddingHorizontal: SPACING.lg,
     paddingTop: SPACING.md,
     paddingBottom: SPACING.sm,
-    backgroundColor: COLORS.card,
     ...SHADOWS.small,
   },
   filterRow: {
@@ -407,14 +410,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: COLORS.background,
     borderRadius: 12,
     paddingHorizontal: SPACING.md,
     height: 44,
   },
   pickerButtonText: {
     ...TYPOGRAPHY.body,
-    color: COLORS.text,
     flex: 1,
   },
   modalOverlay: {
@@ -425,7 +426,6 @@ const styles = StyleSheet.create({
     padding: SPACING.lg,
   },
   modalContent: {
-    backgroundColor: COLORS.card,
     borderRadius: 16,
     width: '100%',
     maxHeight: '70%',
@@ -434,11 +434,9 @@ const styles = StyleSheet.create({
   modalHeader: {
     padding: SPACING.lg,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
   },
   modalTitle: {
     ...TYPOGRAPHY.h3,
-    color: COLORS.text,
     textAlign: 'center',
   },
   modalScroll: {
@@ -451,40 +449,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.md,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
-  modalOptionSelected: {
-    backgroundColor: COLORS.background,
   },
   modalOptionText: {
     ...TYPOGRAPHY.body,
-    color: COLORS.text,
-  },
-  modalOptionTextSelected: {
-    fontWeight: '600' as const,
-    color: COLORS.primary,
   },
   checkmark: {
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: COLORS.primary,
   },
   locationButton: {
     width: 44,
     height: 44,
     borderRadius: 12,
-    backgroundColor: COLORS.background,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  locationButtonActive: {
-    backgroundColor: COLORS.primary,
   },
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.background,
     borderRadius: 12,
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.sm,
@@ -493,15 +476,12 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     ...TYPOGRAPHY.body,
-    color: COLORS.text,
   },
   listContent: {
     paddingVertical: SPACING.md,
   },
   listItem: {
-    backgroundColor: COLORS.card,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
   },
   listItemContent: {
     flexDirection: 'row',
@@ -514,47 +494,39 @@ const styles = StyleSheet.create({
   },
   puebloName: {
     ...TYPOGRAPHY.h3,
-    color: COLORS.text,
     marginBottom: SPACING.xs,
   },
   puebloLocation: {
     ...TYPOGRAPHY.caption,
-    color: COLORS.textSecondary,
     marginBottom: SPACING.xs,
   },
-
   emptyContainer: {
     padding: SPACING.xl,
     alignItems: 'center',
   },
   emptyText: {
     ...TYPOGRAPHY.body,
-    color: COLORS.textSecondary,
     textAlign: 'center',
     marginBottom: SPACING.md,
   },
   loadingText: {
     ...TYPOGRAPHY.h3,
-    color: COLORS.text,
     textAlign: 'center',
     marginTop: SPACING.md,
     marginBottom: SPACING.xs,
   },
   loadingSubtext: {
     ...TYPOGRAPHY.caption,
-    color: COLORS.textSecondary,
     textAlign: 'center',
   },
   errorDetails: {
     ...TYPOGRAPHY.caption,
-    color: COLORS.textSecondary,
     textAlign: 'center',
     marginBottom: SPACING.sm,
     paddingHorizontal: SPACING.lg,
   },
   retryButton: {
     marginTop: SPACING.md,
-    backgroundColor: COLORS.primary,
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.sm,
     borderRadius: 8,
@@ -562,6 +534,5 @@ const styles = StyleSheet.create({
   retryButtonText: {
     ...TYPOGRAPHY.body,
     fontWeight: '600' as const,
-    color: COLORS.card,
   },
 });

@@ -1,8 +1,9 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import React from "react";
+import React, { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { useColorScheme, StatusBar } from "react-native";
 
 import { AuthProvider } from "@/contexts/auth";
 import { LanguageProvider } from "@/contexts/language";
@@ -14,8 +15,20 @@ SplashScreen.preventAutoHideAsync();
 const queryClient = new QueryClient();
 
 function RootLayoutNav() {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
+  useEffect(() => {
+    SplashScreen.hideAsync();
+  }, []);
+
   return (
-    <Stack 
+    <>
+      <StatusBar
+        barStyle={isDark ? "light-content" : "dark-content"}
+        backgroundColor={isDark ? "#1a1a1a" : "#F5F1EA"}
+      />
+      <Stack 
       screenOptions={{ 
         headerBackTitle: "Atrás",
         gestureEnabled: true,
@@ -74,7 +87,8 @@ function RootLayoutNav() {
           presentation: "modal",
         }}
       />
-    </Stack>
+      </Stack>
+    </>
   );
 }
 
