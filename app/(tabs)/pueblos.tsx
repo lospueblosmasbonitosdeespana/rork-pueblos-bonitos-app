@@ -49,7 +49,13 @@ export default function PueblosScreen() {
     : pueblosAsociacion;
 
   const renderPueblo = ({ item }: { item: Lugar }) => {
-    const imagenUri = item.imagen_principal || 'https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2024/06/madrid_700x462.jpg';
+    const imagenUri = (item.imagen_principal && item.imagen_principal.startsWith('http'))
+      ? item.imagen_principal
+      : 'https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2024/06/madrid_700x462.jpg';
+    
+    if (parseInt(item._ID, 10) === 1 || parseInt(item._ID, 10) === 2) {
+      console.log('🖼️ Imagen cargada para', item.nombre, '(ID:', item._ID, '):', imagenUri);
+    }
     
     return (
       <TouchableOpacity

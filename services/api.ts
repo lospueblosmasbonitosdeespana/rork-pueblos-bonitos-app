@@ -151,22 +151,19 @@ export async function fetchLugaresStable(): Promise<Lugar[]> {
         continue;
       }
       
-      let imagenUrl = null;
+      const imagenRelativa =
+        item.media_url ||
+        item.url ||
+        (item.media && Array.isArray(item.media) && item.media.length > 0 && item.media[0].url) ||
+        item.imagen ||
+        item.image_url ||
+        item.imagen_principal ||
+        item._jet_cct_media_url ||
+        null;
       
-      if (item.imagen && typeof item.imagen === 'string' && item.imagen.startsWith('http')) {
-        imagenUrl = item.imagen;
-      } else if (item.media_url && typeof item.media_url === 'string' && item.media_url.startsWith('http')) {
-        imagenUrl = item.media_url;
-      } else if (item.url && typeof item.url === 'string' && item.url.startsWith('http')) {
-        imagenUrl = item.url;
-      } else if (item.image_url && typeof item.image_url === 'string' && item.image_url.startsWith('http')) {
-        imagenUrl = item.image_url;
-      } else if (item.imagen_principal && typeof item.imagen_principal === 'string' && item.imagen_principal.startsWith('http')) {
-        imagenUrl = item.imagen_principal;
-      } else if (item.media && Array.isArray(item.media) && item.media.length > 0 && item.media[0].url) {
-        imagenUrl = item.media[0].url;
-      } else if (item._jet_cct_media_url && typeof item._jet_cct_media_url === 'string') {
-        imagenUrl = item._jet_cct_media_url;
+      let imagenUrl = imagenRelativa;
+      if (imagenUrl && !imagenUrl.startsWith('http')) {
+        imagenUrl = `https://lospueblosmasbonitosdeespana.org${imagenUrl}`;
       }
       
       if (pueblos.length === 0) {
@@ -178,7 +175,8 @@ export async function fetchLugaresStable(): Promise<Lugar[]> {
         console.log('📸 item.imagen_principal:', item.imagen_principal);
         console.log('📸 item.media:', item.media);
         console.log('📸 item._jet_cct_media_url:', item._jet_cct_media_url);
-        console.log('📸 imagenUrl FINAL:', imagenUrl);
+        console.log('📸 imagenRelativa:', imagenRelativa);
+        console.log('📸 imagenUrl FINAL (after conversion):', imagenUrl);
         console.log('================================\n');
       }
       
