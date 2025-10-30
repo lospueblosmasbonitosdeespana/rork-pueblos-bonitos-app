@@ -18,8 +18,7 @@ import {
   View,
 } from 'react-native';
 
-import { SHADOWS, SPACING, TYPOGRAPHY } from '@/constants/theme';
-import { useTheme } from '@/hooks/useTheme';
+import { COLORS, SHADOWS, SPACING, TYPOGRAPHY } from '@/constants/theme';
 import { useLanguage } from '@/contexts/language';
 import { fetchLugares } from '@/services/api';
 import { Lugar } from '@/types/api';
@@ -127,7 +126,6 @@ function calculateDistance(
 
 export default function PueblosScreen() {
   const { t } = useLanguage();
-  const { colors } = useTheme();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedComunidad, setSelectedComunidad] = useState<string>('Todas');
   const [showNearby, setShowNearby] = useState<boolean>(false);
@@ -226,7 +224,7 @@ export default function PueblosScreen() {
   const renderPueblo = ({ item }: { item: Lugar }) => {
     return (
       <TouchableOpacity
-        style={[styles.listItem, { backgroundColor: colors.card, borderBottomColor: colors.border }]}
+        style={[styles.listItem, { backgroundColor: COLORS.card, borderBottomColor: COLORS.border }]}
         onPress={() => router.push(`/pueblo/${item._ID}` as any)}
         activeOpacity={0.7}
       >
@@ -248,10 +246,10 @@ export default function PueblosScreen() {
                   />
                 ) : null;
               })()}
-              <Text style={[styles.puebloName, { color: colors.text }]}>{item.nombre}</Text>
+              <Text style={[styles.puebloName, { color: COLORS.text }]}>{item.nombre}</Text>
             </View>
             {item.provincia && (
-              <Text style={[styles.puebloLocation, { color: colors.textSecondary }]}>
+              <Text style={[styles.puebloLocation, { color: COLORS.textSecondary }]}>
                 {`${item.provincia}${item.comunidad_autonoma ? `, ${item.comunidad_autonoma}` : ''}`}
               </Text>
             )}
@@ -262,7 +260,7 @@ export default function PueblosScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[styles.container, { backgroundColor: COLORS.background }]}>
       <Modal
         visible={showComunidadModal}
         transparent
@@ -273,9 +271,9 @@ export default function PueblosScreen() {
           style={styles.modalOverlay}
           onPress={() => setShowComunidadModal(false)}
         >
-          <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
-            <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
-              <Text style={[styles.modalTitle, { color: colors.text }]}>Selecciona una comunidad</Text>
+          <View style={[styles.modalContent, { backgroundColor: COLORS.card }]}>
+            <View style={[styles.modalHeader, { borderBottomColor: COLORS.border }]}>
+              <Text style={[styles.modalTitle, { color: COLORS.text }]}>Selecciona una comunidad</Text>
             </View>
             <ScrollView style={styles.modalScroll}>
               {COMUNIDADES.map((comunidad, index) => (
@@ -283,8 +281,8 @@ export default function PueblosScreen() {
                   key={`comunidad-${index}-${comunidad}`}
                   style={[
                     styles.modalOption,
-                    { borderBottomColor: colors.border },
-                    selectedComunidad === comunidad && { backgroundColor: colors.background },
+                    { borderBottomColor: COLORS.border },
+                    selectedComunidad === comunidad && { backgroundColor: COLORS.background },
                   ]}
                   onPress={() => {
                     setSelectedComunidad(comunidad);
@@ -294,14 +292,14 @@ export default function PueblosScreen() {
                   <Text
                     style={[
                       styles.modalOptionText,
-                      { color: colors.text },
-                      selectedComunidad === comunidad && { fontWeight: '600', color: colors.primary },
+                      { color: COLORS.text },
+                      selectedComunidad === comunidad && { fontWeight: '600', color: COLORS.primary },
                     ]}
                   >
                     {comunidad}
                   </Text>
                   {selectedComunidad === comunidad && (
-                    <View style={[styles.checkmark, { backgroundColor: colors.primary }]} />
+                    <View style={[styles.checkmark, { backgroundColor: COLORS.primary }]} />
                   )}
                 </TouchableOpacity>
               ))}
@@ -310,37 +308,37 @@ export default function PueblosScreen() {
         </Pressable>
       </Modal>
 
-      <View style={[styles.searchContainer, { backgroundColor: colors.card }]}>
+      <View style={[styles.searchContainer, { backgroundColor: COLORS.card }]}>
         <View style={styles.filterRow}>
           <TouchableOpacity
-            style={[styles.pickerButton, { backgroundColor: colors.background }]}
+            style={[styles.pickerButton, { backgroundColor: COLORS.background }]}
             onPress={() => setShowComunidadModal(true)}
             activeOpacity={0.7}
           >
-            <Text style={[styles.pickerButtonText, { color: colors.text }]}>{selectedComunidad}</Text>
-            <ChevronDown size={20} color={colors.textSecondary} />
+            <Text style={[styles.pickerButtonText, { color: COLORS.text }]}>{selectedComunidad}</Text>
+            <ChevronDown size={20} color={COLORS.textSecondary} />
           </TouchableOpacity>
           <TouchableOpacity
             style={[
               styles.locationButton,
-              { backgroundColor: colors.background },
-              showNearby && { backgroundColor: colors.primary },
+              { backgroundColor: COLORS.background },
+              showNearby && { backgroundColor: COLORS.primary },
             ]}
             onPress={handleLocationPress}
             activeOpacity={0.7}
           >
             <MapPin
               size={20}
-              color={showNearby ? colors.card : colors.primary}
+              color={showNearby ? COLORS.card : COLORS.primary}
             />
           </TouchableOpacity>
         </View>
-        <View style={[styles.searchBox, { backgroundColor: colors.background }]}>
-          <Search size={20} color={colors.textSecondary} />
+        <View style={[styles.searchBox, { backgroundColor: COLORS.background }]}>
+          <Search size={20} color={COLORS.textSecondary} />
           <TextInput
-            style={[styles.searchInput, { color: colors.text }]}
+            style={[styles.searchInput, { color: COLORS.text }]}
             placeholder={t.explore.searchPlaceholder}
-            placeholderTextColor={colors.textSecondary}
+            placeholderTextColor={COLORS.textSecondary}
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
@@ -357,28 +355,28 @@ export default function PueblosScreen() {
         ListEmptyComponent={
           lugaresQuery.isLoading ? (
             <View style={styles.emptyContainer}>
-              <ActivityIndicator size="large" color={colors.primary} />
-              <Text style={[styles.loadingText, { color: colors.text }]}>Cargando pueblos...</Text>
-              <Text style={[styles.loadingSubtext, { color: colors.textSecondary }]}>Esto puede tardar unos segundos la primera vez</Text>
+              <ActivityIndicator size="large" color={COLORS.primary} />
+              <Text style={[styles.loadingText, { color: COLORS.text }]}>Cargando pueblos...</Text>
+              <Text style={[styles.loadingSubtext, { color: COLORS.textSecondary }]}>Esto puede tardar unos segundos la primera vez</Text>
             </View>
           ) : lugaresQuery.error ? (
             <View style={styles.emptyContainer}>
-              <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+              <Text style={[styles.emptyText, { color: COLORS.textSecondary }]}>
                 ❌ Error cargando pueblos: {lugaresQuery.error instanceof Error ? lugaresQuery.error.message : 'Error desconocido'}
               </Text>
-              <Text style={[styles.errorDetails, { color: colors.textSecondary }]}>
+              <Text style={[styles.errorDetails, { color: COLORS.textSecondary }]}>
                 Por favor, verifica tu conexión a internet e inténtalo de nuevo.
               </Text>
               <TouchableOpacity
-                style={[styles.retryButton, { backgroundColor: colors.primary }]}
+                style={[styles.retryButton, { backgroundColor: COLORS.primary }]}
                 onPress={() => lugaresQuery.refetch()}
               >
-                <Text style={[styles.retryButtonText, { color: colors.card }]}>Reintentar</Text>
+                <Text style={[styles.retryButtonText, { color: COLORS.card }]}>Reintentar</Text>
               </TouchableOpacity>
             </View>
           ) : (
             <View style={styles.emptyContainer}>
-              <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+              <Text style={[styles.emptyText, { color: COLORS.textSecondary }]}>
                 {searchQuery ? 'No se encontraron pueblos con ese nombre' : 'No hay pueblos disponibles'}
               </Text>
             </View>
