@@ -31,11 +31,22 @@ export default function PueblosScreen() {
 
   const lugares = lugaresQuery.data || [];
 
+  const pueblosAsociacion = lugares.filter((lugar) => {
+    const id = parseInt(lugar._ID, 10);
+    return !isNaN(id) && id <= 200;
+  });
+
+  console.log('🏘️ Total pueblos cargados:', lugares.length);
+  console.log('🏘️ Pueblos asociación (id <= 200):', pueblosAsociacion.length);
+  if (pueblosAsociacion.length > 0) {
+    console.log('🏘️ Primer pueblo:', pueblosAsociacion[0].nombre, 'ID:', pueblosAsociacion[0]._ID, 'Imagen:', pueblosAsociacion[0].imagen_principal?.substring(0, 50));
+  }
+
   const filteredLugares = searchQuery
-    ? lugares.filter((lugar) =>
+    ? pueblosAsociacion.filter((lugar) =>
         lugar.nombre?.toLowerCase().includes(searchQuery.toLowerCase())
       )
-    : lugares;
+    : pueblosAsociacion;
 
   const renderPueblo = ({ item }: { item: Lugar }) => {
     return (
