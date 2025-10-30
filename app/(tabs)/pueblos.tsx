@@ -80,26 +80,28 @@ const normalizar = (nombre = "") =>
     .replace("generalitat de ", "")
     .trim();
 
-const COMUNIDADES = [
-  'Todas',
-  'Andalucía',
-  'Aragón',
-  'Asturias',
-  'Baleares',
-  'Canarias',
-  'Cantabria',
-  'Castilla-La Mancha',
-  'Castilla y León',
-  'Cataluña',
-  'Comunidad Valenciana',
-  'Extremadura',
-  'Galicia',
-  'La Rioja',
-  'Madrid',
-  'Murcia',
-  'Navarra',
-  'País Vasco',
-];
+const COMUNIDADES_MAP: Record<string, string> = {
+  'Todas': 'Todas',
+  'Andalucía': 'andalucia',
+  'Aragón': 'aragon',
+  'Asturias': 'asturias',
+  'Baleares': 'islas baleares',
+  'Canarias': 'canarias',
+  'Cantabria': 'cantabria',
+  'Castilla-La Mancha': 'castilla - la mancha',
+  'Castilla y León': 'castilla y leon',
+  'Cataluña': 'cataluna',
+  'Comunidad Valenciana': 'comunidad valenciana',
+  'Extremadura': 'extremadura',
+  'Galicia': 'galicia',
+  'La Rioja': 'la rioja',
+  'Madrid': 'madrid',
+  'Murcia': 'murcia',
+  'Navarra': 'navarra',
+  'País Vasco': 'pais vasco',
+};
+
+const COMUNIDADES = Object.keys(COMUNIDADES_MAP);
 
 function calculateDistance(
   lat1: number,
@@ -152,10 +154,10 @@ export default function PueblosScreen() {
     let filtered = pueblosAsociacion;
 
     if (selectedComunidad !== 'Todas') {
+      const selectedKey = COMUNIDADES_MAP[selectedComunidad];
       filtered = filtered.filter((lugar) => {
         const key = normalizar(lugar.comunidad_autonoma);
-        const selectedKey = normalizar(selectedComunidad);
-        return key === selectedKey || lugar.comunidad_autonoma === selectedComunidad;
+        return key === selectedKey;
       });
     }
 
@@ -180,7 +182,7 @@ export default function PueblosScreen() {
   
   const filteredLugares = searchQuery
     ? displayLugares.filter((lugar) =>
-        lugar.nombre?.toLowerCase().includes(searchQuery.toLowerCase())
+        normalizar(lugar.nombre || '').includes(normalizar(searchQuery))
       )
     : displayLugares;
 
@@ -228,7 +230,6 @@ export default function PueblosScreen() {
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               {item.comunidad_autonoma && (() => {
                 const key = normalizar(item.comunidad_autonoma);
-                console.log('🏴 Comunidad:', item.comunidad_autonoma, '→ Normalizada:', key);
                 const bandera = banderas[key];
                 return bandera ? (
                   <Image
