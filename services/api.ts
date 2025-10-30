@@ -148,10 +148,7 @@ export async function fetchLugaresStable(): Promise<Lugar[]> {
         continue;
       }
       
-      if (!item.imagen || item.imagen.includes('default-pueblo.jpg')) {
-        console.log(`⏭️ Saltando pueblo sin imagen válida: ${item.nombre}`);
-        continue;
-      }
+
       
       pueblos.push({
         _ID: String(item.id),
