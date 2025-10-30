@@ -69,6 +69,7 @@ export default function PuntosConseguidosScreen() {
       }
 
       const data = await puntosRes.json();
+      console.log('📥 Datos de /lpbe/v1/puntos:', data);
       setPuntosData(data || null);
 
       if (visitadosRes.ok) {
@@ -116,6 +117,10 @@ export default function PuntosConseguidosScreen() {
   const pueblosFavoritos = (puntosData?.favoritos || []).filter(f => f.estrellas === 5);
   const totalEstrellas = (puntosData?.favoritos || []).reduce((acc, p) => acc + (Number(p.estrellas) || 0), 0);
   const promedioEstrellas = totalPueblos > 0 ? (totalEstrellas / totalPueblos).toFixed(1) : '0';
+  
+  console.log(`📊 [Puntos Conseguidos] Total Pueblos: ${totalPueblos}`);
+  console.log(`🎯 [Puntos Conseguidos] Total Puntos: ${totalPuntos}`);
+  console.log(`⭐ [Puntos Conseguidos] Total Estrellas: ${totalEstrellas}`);
 
   if (isLoading) {
     return (

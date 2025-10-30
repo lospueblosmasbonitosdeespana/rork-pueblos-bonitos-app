@@ -234,20 +234,25 @@ export default function PueblosVisitadosScreen() {
       const allSuccessful = results.every(res => res.ok);
 
       if (allSuccessful) {
+        await fetchPueblosVisitados(true);
+        
+        try {
+          const puntosRes = await fetch(`https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/puntos?user_id=${user.id}`, {
+            headers: { 'Content-Type': 'application/json' },
+          });
+          
+          if (puntosRes.ok) {
+            const puntosData = await puntosRes.json();
+            console.log('✅ Puntos sincronizados:', puntosData);
+          }
+        } catch (err) {
+          console.warn('Error al sincronizar puntos:', err);
+        }
+        
         if (Platform.OS === 'web') {
           alert('Cambios guardados con éxito');
         } else {
           Alert.alert('Éxito', 'Cambios guardados con éxito');
-        }
-        
-        await fetchPueblosVisitados(true);
-        
-        try {
-          await fetch(`https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/puntos?user_id=${user.id}`, {
-            headers: { 'Content-Type': 'application/json' },
-          });
-        } catch (err) {
-          console.warn('Error al sincronizar puntos:', err);
         }
       } else {
         throw new Error('Error al guardar algunos cambios');
@@ -309,9 +314,16 @@ export default function PueblosVisitadosScreen() {
 
   const visitados = pueblos.filter(p => p.checked === 1);
   const totalVisitados = visitados.length;
-  const pendientes = 122 - totalVisitados;
-  const totalPuntos = visitados.reduce((sum, p) => sum + (p.puntos || 0), 0);
+  const totalPuntos = visitados.reduce((sum, p) => {
+    const puntosPueblo = p.puntos || 0;
+    console.log(`Pueblo: ${p.nombre} (ID: ${p.pueblo_id}) -> Puntos: ${puntosPueblo}`);
+    return sum + puntosPueblo;
+  }, 0);
   const totalEstrellas = pueblos.reduce((sum, p) => sum + (p.estrellas || 0), 0);
+  
+  console.log(`📊 Total Pueblos Visitados: ${totalVisitados}`);
+  console.log(`🎯 Total Puntos Calculados: ${totalPuntos}`);
+  console.log(`⭐ Total Estrellas: ${totalEstrellas}`);
 
   if (isLoading) {
     return (
