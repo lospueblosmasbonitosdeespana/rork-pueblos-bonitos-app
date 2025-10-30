@@ -1,5 +1,5 @@
 import { router, Tabs } from "expo-router";
-import { Bell, Home, MapPin, Compass, Map } from "lucide-react-native";
+import { Bell, Home, MapPin, Compass, Map, UserCircle } from "lucide-react-native";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
@@ -81,7 +81,14 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <Map size={24} color={color} strokeWidth={1.5} />,
         }}
       />
-
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: "Perfil",
+          headerTitle: "Mi Perfil",
+          tabBarIcon: ({ color }) => <UserCircle size={24} color={color} strokeWidth={1.5} />,
+        }}
+      />
     </Tabs>
   );
 }

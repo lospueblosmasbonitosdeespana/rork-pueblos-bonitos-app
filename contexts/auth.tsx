@@ -1,158 +1,201 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import createContextHook from '@nkzw/create-context-hook';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import * as SecureStore from 'expo-secure-store';
+import { router } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { Platform } from 'react-native';
 
-import { AuthResponse, Usuario } from '@/types/api';
+const API_BASE = 'https://lospueblosmasbonitosdeespana.org/wp-json/um/v2';
+const TOKEN_KEY = 'um_token';
+
+interface UMUser {
+  id: number;
+  name: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  avatar_url?: string;
+}
+
+interface AuthState {
+  user: UMUser | null;
+  token: string | null;
+  isLoading: boolean;
+  isAuthenticated: boolean;
+}
 
 interface LoginCredentials {
   username: string;
   password: string;
 }
 
-const AUTH_TOKEN_KEY = '@lpbe_auth_token';
-const AUTH_USER_KEY = '@lpbe_auth_user';
+interface RegisterData {
+  username: string;
+  email: string;
+  password: string;
+  first_name?: string;
+  last_name?: string;
+}
+
+async function getStoredToken(): Promise<string | null> {
+  if (Platform.OS === 'web') {
+    return localStorage.getItem(TOKEN_KEY);
+  }
+  return await SecureStore.getItemAsync(TOKEN_KEY);
+}
+
+async function setStoredToken(token: string): Promise<void> {
+  if (Platform.OS === 'web') {
+    localStorage.setItem(TOKEN_KEY, token);
+  } else {
+    await SecureStore.setItemAsync(TOKEN_KEY, token);
+  }
+}
+
+async function deleteStoredToken(): Promise<void> {
+  if (Platform.OS === 'web') {
+    localStorage.removeItem(TOKEN_KEY);
+  } else {
+    await SecureStore.deleteItemAsync(TOKEN_KEY);
+  }
+}
 
 export const [AuthProvider, useAuth] = createContextHook(() => {
-  const [isInitialized, setIsInitialized] = useState(false);
-  const queryClient = useQueryClient();
+  const [state, setState] = useState<AuthState>({
+    user: null,
+    token: null,
+    isLoading: true,
+    isAuthenticated: false,
+  });
 
-  const userQuery = useQuery<Usuario | null>({
-    queryKey: ['currentUser'],
-    queryFn: async () => {
-      const storedUser = await AsyncStorage.getItem(AUTH_USER_KEY);
-      if (storedUser) {
-        return JSON.parse(storedUser);
+  const checkAuth = async () => {
+    try {
+      setState(prev => ({ ...prev, isLoading: true }));
+      const token = await getStoredToken();
+
+      if (!token) {
+        setState({ user: null, token: null, isLoading: false, isAuthenticated: false });
+        return;
       }
-      return null;
-    },
-    staleTime: Infinity,
-  });
 
-  const tokenQuery = useQuery<string | null>({
-    queryKey: ['authToken'],
-    queryFn: async () => {
-      const storedToken = await AsyncStorage.getItem(AUTH_TOKEN_KEY);
-      return storedToken;
-    },
-    staleTime: Infinity,
-  });
+      const response = await fetch(`${API_BASE}/me`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        await deleteStoredToken();
+        setState({ user: null, token: null, isLoading: false, isAuthenticated: false });
+        return;
+      }
+
+      const user = await response.json();
+      setState({ user, token, isLoading: false, isAuthenticated: true });
+    } catch (error) {
+      console.error('Error checking auth:', error);
+      await deleteStoredToken();
+      setState({ user: null, token: null, isLoading: false, isAuthenticated: false });
+    }
+  };
+
+  const login = async (credentials: LoginCredentials): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const response = await fetch(`${API_BASE}/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(credentials),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return { success: false, error: data.message || 'Credenciales incorrectas' };
+      }
+
+      const token = data.token || data.access_token;
+      if (!token) {
+        return { success: false, error: 'No se recibió token de autenticación' };
+      }
+
+      await setStoredToken(token);
+
+      const userResponse = await fetch(`${API_BASE}/me`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!userResponse.ok) {
+        await deleteStoredToken();
+        return { success: false, error: 'Error al obtener datos del usuario' };
+      }
+
+      const user = await userResponse.json();
+      setState({ user, token, isLoading: false, isAuthenticated: true });
+
+      return { success: true };
+    } catch (error) {
+      console.error('Login error:', error);
+      return { success: false, error: 'Error de conexión' };
+    }
+  };
+
+  const register = async (data: RegisterData): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const response = await fetch(`${API_BASE}/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        return { success: false, error: result.message || 'Error al registrar usuario' };
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('Register error:', error);
+      return { success: false, error: 'Error de conexión' };
+    }
+  };
+
+  const logout = async () => {
+    try {
+      if (state.token) {
+        await fetch(`${API_BASE}/logout`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${state.token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+      }
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      await deleteStoredToken();
+      setState({ user: null, token: null, isLoading: false, isAuthenticated: false });
+      router.replace('/login');
+    }
+  };
 
   useEffect(() => {
-    if (userQuery.isSuccess && tokenQuery.isSuccess) {
-      setIsInitialized(true);
-    }
-  }, [userQuery.isSuccess, tokenQuery.isSuccess]);
+    checkAuth();
+  }, []);
 
-  const loginMutation = useMutation({
-    mutationFn: async (credentials: LoginCredentials) => {
-      const loginUrl = 'https://lospueblosmasbonitosdeespana.org/wp-login.php';
-
-      try {
-        console.log('🔑 Attempting login with WordPress classic form');
-        console.log('🌐 URL:', loginUrl);
-        console.log('📝 Username:', credentials.username);
-
-        const formData = new FormData();
-        formData.append('log', credentials.username);
-        formData.append('pwd', credentials.password);
-        formData.append('redirect_to', 'https://lospueblosmasbonitosdeespana.org/account-2/');
-        formData.append('wp-submit', 'Log In');
-        formData.append('testcookie', '1');
-
-        const response = await fetch(loginUrl, {
-          method: 'POST',
-          body: formData,
-          credentials: 'include',
-          redirect: 'manual',
-        });
-
-        console.log('📡 Response status:', response.status);
-        const responseText = await response.text();
-        console.log('📦 Response length:', responseText.length);
-
-        const isSuccess = response.status === 200 || 
-                         response.status === 302 || 
-                         responseText.includes('Mi cuenta') || 
-                         responseText.includes('account-2');
-
-        if (!isSuccess) {
-          console.error('❌ Login failed with status:', response.status);
-          throw new Error('Usuario o contraseña incorrectos');
-        }
-
-        const authResponse: AuthResponse = {
-          token: 'cookie-based-auth',
-          user: {
-            id: Date.now(),
-            username: credentials.username,
-            email: '',
-            display_name: credentials.username,
-            roles: ['subscriber'],
-          },
-        };
-        
-        console.log('✅ Login successful!');
-        console.log('👤 User:', authResponse.user.username);
-        return authResponse;
-      } catch (error: any) {
-        console.error('❌ Login error:', error.message);
-        throw error;
-      }
-    },
-    onSuccess: async (data) => {
-      console.log('💾 Storing auth data in AsyncStorage');
-      await AsyncStorage.setItem(AUTH_TOKEN_KEY, data.token);
-      await AsyncStorage.setItem(AUTH_USER_KEY, JSON.stringify(data.user));
-      queryClient.setQueryData(['authToken'], data.token);
-      queryClient.setQueryData(['currentUser'], data.user);
-      console.log('✅ Auth data stored successfully');
-    },
-  });
-
-  const logoutMutation = useMutation({
-    mutationFn: async () => {
-      console.log('🚪 Logging out user');
-      await AsyncStorage.removeItem(AUTH_TOKEN_KEY);
-      await AsyncStorage.removeItem(AUTH_USER_KEY);
-    },
-    onSuccess: () => {
-      queryClient.setQueryData(['authToken'], null);
-      queryClient.setQueryData(['currentUser'], null);
-      queryClient.clear();
-      console.log('✅ Logout successful');
-    },
-  });
-
-  const { mutateAsync: loginAsync } = loginMutation;
-  const { mutateAsync: logoutAsync } = logoutMutation;
-
-  const login = useCallback((credentials: LoginCredentials) => {
-    return loginAsync(credentials);
-  }, [loginAsync]);
-
-  const logout = useCallback(() => {
-    return logoutAsync();
-  }, [logoutAsync]);
-
-  return useMemo(() => ({
-    user: userQuery.data ?? null,
-    token: tokenQuery.data ?? null,
-    isAuthenticated: !!userQuery.data && !!tokenQuery.data,
-    isLoading: !isInitialized || userQuery.isLoading || tokenQuery.isLoading,
+  return {
+    ...state,
     login,
+    register,
     logout,
-    isLoggingIn: loginMutation.isPending,
-    loginError: loginMutation.error,
-  }), [
-    userQuery.data,
-    tokenQuery.data,
-    isInitialized,
-    userQuery.isLoading,
-    tokenQuery.isLoading,
-    login,
-    logout,
-    loginMutation.isPending,
-    loginMutation.error,
-  ]);
+    checkAuth,
+  };
 });

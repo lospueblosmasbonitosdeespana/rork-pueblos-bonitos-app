@@ -4,6 +4,7 @@ import * as SplashScreen from "expo-splash-screen";
 import React from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
+import { AuthProvider } from "@/contexts/auth";
 import { LanguageProvider } from "@/contexts/language";
 import { NotificationsProvider } from "@/contexts/notifications";
 import { trpc, trpcClient } from "@/lib/trpc";
@@ -24,6 +25,22 @@ function RootLayoutNav() {
     >
       <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen 
+        name="login" 
+        options={{ 
+          headerShown: true,
+          headerTitle: "Iniciar Sesión",
+          presentation: "card",
+        }} 
+      />
+      <Stack.Screen 
+        name="register" 
+        options={{ 
+          headerShown: true,
+          headerTitle: "Crear Cuenta",
+          presentation: "card",
+        }} 
+      />
 
 
       <Stack.Screen
@@ -66,11 +83,13 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <trpc.Provider client={trpcClient} queryClient={queryClient}>
         <QueryClientProvider client={queryClient}>
-          <LanguageProvider>
-            <NotificationsProvider>
-              <RootLayoutNav />
-            </NotificationsProvider>
-          </LanguageProvider>
+          <AuthProvider>
+            <LanguageProvider>
+              <NotificationsProvider>
+                <RootLayoutNav />
+              </NotificationsProvider>
+            </LanguageProvider>
+          </AuthProvider>
         </QueryClientProvider>
       </trpc.Provider>
     </GestureHandlerRootView>
