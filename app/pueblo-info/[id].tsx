@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, ActivityIndicator, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { Stack, useLocalSearchParams, router } from 'expo-router';
-import { Wind, CloudRain, Mountain, Users } from 'lucide-react-native';
+import { Wind, Mountain, Users, Thermometer, ArrowUp, ArrowDown } from 'lucide-react-native';
 import { COLORS, SHADOWS, SPACING } from '@/constants/theme';
 import WeatherIcon from '@/components/WeatherIcon';
 
@@ -17,12 +17,17 @@ type PuebloInfo = {
   clima: {
     temperatura: number;
     descripcion: string;
+    feels_like: number;
+    temp_max: number;
+    temp_min: number;
+    humidity: number;
+    pressure: number;
   };
   aire: {
     ica: number;
     estado: string;
   };
-  lluvia_24h: number;
+  viento: number;
   afluencia: {
     estado: string;
     descripcion: string;
@@ -54,10 +59,10 @@ export default function PuebloInfo() {
         console.log('🌍 pueblo-info json:', JSON.stringify(json, null, 2));
         
         const needsClima = !json.clima || !json.clima.temperatura || !json.clima.descripcion;
-        const needsLluvia = !json.lluvia_24h;
+        const needsViento = !json.viento;
         const needsAltitud = !json.altitud && json.coordenadas?.lat && json.coordenadas?.lng;
         
-        if (needsClima || needsLluvia) {
+        if (needsClima || needsViento) {
           console.log('🌍 Obteniendo datos desde OpenWeather...');
           try {
             const weatherRes = await fetch(
@@ -70,18 +75,23 @@ export default function PuebloInfo() {
               if (needsClima) {
                 json.clima = json.clima || {};
                 json.clima.temperatura = json.clima.temperatura || weatherData.main.temp;
+                json.clima.feels_like = weatherData.main.feels_like;
+                json.clima.temp_max = weatherData.main.temp_max;
+                json.clima.temp_min = weatherData.main.temp_min;
+                json.clima.humidity = weatherData.main.humidity;
+                json.clima.pressure = weatherData.main.pressure;
                 json.clima.descripcion = json.clima.descripcion || weatherData.weather[0].description;
                 json.clima.icon = weatherData.weather[0].icon;
               }
               
-              if (needsLluvia) {
-                json.lluvia_24h = weatherData.rain?.['1h'] || weatherData.rain?.['3h'] || 0;
-                console.log(`🌧️ Lluvia: ${json.lluvia_24h} mm`);
+              if (needsViento) {
+                json.viento = Math.round((weatherData.wind?.speed || 0) * 3.6);
+                console.log(`💨 Viento: ${json.viento} km/h`);
               }
             }
           } catch (weatherError) {
             console.log('🌍 Error fetching OpenWeather data:', weatherError);
-            if (needsLluvia) json.lluvia_24h = 0;
+            if (needsViento) json.viento = 0;
           }
         }
         
@@ -206,20 +216,59 @@ export default function PuebloInfo() {
             </TouchableOpacity>
 
             <TouchableOpacity 
-              style={[styles.metricButton, { backgroundColor: '#2196F3' }]}
+              style={[styles.metricButton, { backgroundColor: '#9C27B0' }]}
               activeOpacity={0.9}
             >
               <View style={styles.iconContainer}>
-                <CloudRain size={32} color="#FFFFFF" strokeWidth={2.5} />
+                <Thermometer size={32} color="#FFFFFF" strokeWidth={2.5} />
               </View>
-              <Text style={styles.metricLabel}>Lluvia últimas 24h</Text>
+              <Text style={styles.metricLabel}>Sensación Térmica</Text>
               <Text style={styles.metricValue}>
-                {data.lluvia_24h && data.lluvia_24h > 0 
-                  ? `${data.lluvia_24h.toFixed(1)} mm` 
-                  : 'Sin lluvia'
-                }
+                {data.clima?.feels_like ? `${data.clima.feels_like.toFixed(1)}°C` : '—'}
               </Text>
-              <Text style={styles.metricSubtext}>Últimas 24 horas</Text>
+              <Text style={styles.metricSubtext}>Temperatura percibida</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={[styles.metricButton, { backgroundColor: '#E91E63' }]}
+              activeOpacity={0.9}
+            >
+              <View style={styles.iconContainer}>
+                <ArrowUp size={32} color="#FFFFFF" strokeWidth={2.5} />
+              </View>
+              <Text style={styles.metricLabel}>Temperatura Máxima</Text>
+              <Text style={styles.metricValue}>
+                {data.clima?.temp_max ? `${data.clima.temp_max.toFixed(1)}°C` : '—'}
+              </Text>
+              <Text style={styles.metricSubtext}>Máxima del día</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={[styles.metricButton, { backgroundColor: '#03A9F4' }]}
+              activeOpacity={0.9}
+            >
+              <View style={styles.iconContainer}>
+                <ArrowDown size={32} color="#FFFFFF" strokeWidth={2.5} />
+              </View>
+              <Text style={styles.metricLabel}>Temperatura Mínima</Text>
+              <Text style={styles.metricValue}>
+                {data.clima?.temp_min ? `${data.clima.temp_min.toFixed(1)}°C` : '—'}
+              </Text>
+              <Text style={styles.metricSubtext}>Mínima del día</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={[styles.metricButton, { backgroundColor: '#00BCD4' }]}
+              activeOpacity={0.9}
+            >
+              <View style={styles.iconContainer}>
+                <Wind size={32} color="#FFFFFF" strokeWidth={2.5} />
+              </View>
+              <Text style={styles.metricLabel}>Viento</Text>
+              <Text style={styles.metricValue}>
+                {data.viento ? `${data.viento} km/h` : '—'}
+              </Text>
+              <Text style={styles.metricSubtext}>Velocidad del viento</Text>
             </TouchableOpacity>
 
             <TouchableOpacity 
