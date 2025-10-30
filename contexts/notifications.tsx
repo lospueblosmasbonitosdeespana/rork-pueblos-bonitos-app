@@ -58,6 +58,11 @@ function getDemoNotifications(): Notificacion[] {
 }
 
 async function registerForPushNotificationsAsync() {
+  if (Platform.OS === 'web') {
+    console.log('⚠️ Push notifications are not supported on web');
+    return null;
+  }
+
   if (!Device.isDevice) {
     console.log('⚠️ Push notifications only work on physical devices');
     return null;
