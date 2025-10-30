@@ -126,6 +126,10 @@ export default function PueblosScreen() {
   const renderPueblo = ({ item }: { item: Lugar }) => {
     const imagenUri = item.imagen_principal || 'https://images.unsplash.com/photo-1543783207-ec64e4d95325?w=800';
     
+    if (item.nombre && item._ID && !item.imagen_principal) {
+      console.log(`📸 Pueblo sin imagen: ${item.nombre} (ID: ${item._ID})`);
+    }
+    
     return (
       <TouchableOpacity
         style={styles.listItem}
