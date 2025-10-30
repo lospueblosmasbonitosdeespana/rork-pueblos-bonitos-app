@@ -102,47 +102,18 @@ export async function fetchLugaresStable(): Promise<Lugar[]> {
   }
   lastFetchTime = Date.now();
 
-  console.log('\n🚀 INICIANDO fetchLugaresStable()');
-  
-  const url = 'https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/pueblos-lite';
-  console.log(`🔍 Cargando desde: ${url}`);
+  console.log('\n🚀 INICIANDO fetchLugaresStable() - usando backend proxy');
   
   try {
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-      },
-    });
+    const { trpcClient } = await import('@/lib/trpc');
     
-    console.log('📊 Status:', response.status, 'OK:', response.ok);
+    const data = await trpcClient.pueblos.withImages.query();
     
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('❌ Error response:', errorText.substring(0, 200));
-      throw new Error(`Error ${response.status}: No se pudieron cargar los pueblos`);
+    console.log('📦 Pueblos recibidos del backend:', data.length);
+    
+    if (!Array.isArray(data) || data.length === 0) {
+      throw new Error('No se pudieron cargar los pueblos');
     }
-    
-    const data = await response.json();
-    console.log('📦 Response length:', data.length);
-    
-    if (!Array.isArray(data)) {
-      console.error('❌ Response is not an array:', typeof data);
-      throw new Error('La respuesta no es un array válido');
-    }
-    
-    if (data.length === 0) {
-      console.warn('⚠️ API returned empty array');
-      throw new Error('El servidor devolvió una lista vacía');
-    }
-    
-    console.log('✅ Pueblos recibidos:', data.length);
-    
-    console.log('\n🔍 ====== FASE 1: DIAGNÓSTICO DEL PRIMER PUEBLO ======');
-    if (data.length > 0) {
-      console.log('🔍 Primer pueblo recibido:', JSON.stringify(data[0], null, 2));
-    }
-    console.log('======================================================\n');
     
     const pueblos: Lugar[] = [];
     const nombresVistos = new Set<string>();
@@ -153,15 +124,8 @@ export async function fetchLugaresStable(): Promise<Lugar[]> {
         continue;
       }
       
-      const imagen =
-        item.media_url ||
-        item.url ||
-        (item.multimedia && item.multimedia[0] && item.multimedia[0].url) ||
-        item.imagen ||
-        null;
-      
       if (pueblos.length === 0) {
-        console.log('📸 Imagen detectada para', item.nombre, '→', imagen);
+        console.log('📸 Primera imagen:', item.nombre, '→', item.imagen_principal ? '✅ Tiene' : '❌ Sin imagen');
       }
       
       pueblos.push({
@@ -169,7 +133,7 @@ export async function fetchLugaresStable(): Promise<Lugar[]> {
         nombre: item.nombre,
         provincia: item.provincia,
         comunidad_autonoma: item.comunidad_autonoma,
-        imagen_principal: imagen,
+        imagen_principal: item.imagen_principal,
         descripcion: '',
         multimedia: [],
         latitud: item.latitud || 0,
@@ -188,14 +152,12 @@ export async function fetchLugaresStable(): Promise<Lugar[]> {
       return nombreA.localeCompare(nombreB);
     });
     
-    console.log('✅ Pueblos procesados:', pueblos.length);
-    console.log('✅ Primer pueblo procesado:', pueblos[0]?.nombre);
+    const conImagen = pueblos.filter(p => p.imagen_principal !== null).length;
+    console.log(`✅ Pueblos procesados: ${pueblos.length} (${conImagen} con imagen)`);
     
     return pueblos;
   } catch (error: any) {
     console.error('❌ Error cargando pueblos:', error);
-    console.error('❌ Error name:', error.name);
-    console.error('❌ Error message:', error.message);
     
     if (error.message === 'Load failed' || error.message === 'Network request failed') {
       throw new Error('Error de conexión. Verifica tu conexión a internet e inténtalo de nuevo.');
