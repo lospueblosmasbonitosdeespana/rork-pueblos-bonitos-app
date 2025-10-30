@@ -147,15 +147,18 @@ export async function fetchLugaresStable(): Promise<Lugar[]> {
         console.log(`⏭️ Saltando duplicado: ${item.nombre}`);
         continue;
       }
+      const imagenUrl = item.imagen || item.media_url || null;
       
-
+      if (!imagenUrl) {
+        console.log(`⚠️ Pueblo sin imagen: ${item.nombre} (ID: ${item.id})`);
+      }
       
       pueblos.push({
         _ID: String(item.id),
         nombre: item.nombre,
         provincia: item.provincia,
         comunidad_autonoma: item.comunidad_autonoma,
-        imagen_principal: item.imagen,
+        imagen_principal: imagenUrl,
         descripcion: '',
         multimedia: [],
         latitud: item.latitud || 0,

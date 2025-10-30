@@ -57,7 +57,9 @@ export default function PueblosScreen() {
       >
         <View style={styles.listItemContent}>
           <Image
-            source={{ uri: item.imagen_principal ?? 'https://images.unsplash.com/photo-1543783207-ec64e4d95325?w=800' }}
+            source={{ 
+              uri: item.imagen_principal || 'https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2024/06/madrid_700x462.jpg' 
+            }}
             style={styles.puebloImage}
             contentFit="cover"
           />
