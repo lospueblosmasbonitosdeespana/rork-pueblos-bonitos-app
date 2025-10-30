@@ -138,6 +138,7 @@ export async function fetchLugaresStable(): Promise<Lugar[]> {
     
     console.log('✅ Pueblos recibidos:', data.length);
     console.log('✅ Primer pueblo raw:', JSON.stringify(data[0], null, 2));
+    console.log('🔑 Campos disponibles en primer pueblo:', Object.keys(data[0]));
     
     const pueblos: Lugar[] = [];
     const nombresVistos = new Set<string>();
@@ -148,14 +149,19 @@ export async function fetchLugaresStable(): Promise<Lugar[]> {
         continue;
       }
       
-      const imagenUrl = item.imagen || item.media_url || item.url || item.imagen_principal || null;
+      const imagenUrl = item.imagen || item.media_url || item.url || item.imagen_principal || item.image_url || null;
       
-      console.log(`📸 ${item.nombre} (ID: ${item.id}):`, {
-        imagen: item.imagen?.substring(0, 60),
-        media_url: item.media_url?.substring(0, 60),
-        url: item.url?.substring(0, 60),
-        imagenUrl: imagenUrl?.substring(0, 60)
-      });
+      if (pueblos.length === 0) {
+        console.log(`📸 ${item.nombre} (ID: ${item.id}) - campos disponibles:`, Object.keys(item));
+        console.log(`📸 ${item.nombre} (ID: ${item.id}) - valores:`, {
+          imagen: item.imagen,
+          media_url: item.media_url,
+          url: item.url,
+          image_url: item.image_url,
+          imagen_principal: item.imagen_principal,
+          imagenUrl: imagenUrl
+        });
+      }
       
       pueblos.push({
         _ID: String(item.id),
