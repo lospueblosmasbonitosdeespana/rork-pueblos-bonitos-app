@@ -102,6 +102,15 @@ export default function PuntosConseguidosScreen() {
   const pueblosFavoritos = puntosData?.favoritos || [];
   const totalEstrellas = pueblosFavoritos.reduce((acc, p) => acc + (Number(p.estrellas) || 0), 0);
   const promedioEstrellas = pueblosFavoritos.length > 0 ? (totalEstrellas / pueblosFavoritos.length).toFixed(1) : '0';
+
+  let nextThreshold = 0;
+  if (nivelSiguiente === "Viajero Apasionado") nextThreshold = 300;
+  else if (nivelSiguiente === "Amante de los Pueblos") nextThreshold = 600;
+  else if (nivelSiguiente === "Gran Viajero") nextThreshold = 900;
+  else if (nivelSiguiente === "Leyenda LPBE") nextThreshold = 1200;
+
+  const faltan = Math.max(0, nextThreshold - totalPuntos);
+  const progreso = nextThreshold > 0 ? Math.min(100, (totalPuntos / nextThreshold) * 100) : 100;
   
   console.log('═══════════════════════════════════════');
   console.log('📊 [PUNTOS CONSEGUIDOS - PANTALLA]');
@@ -160,8 +169,25 @@ export default function PuntosConseguidosScreen() {
           <Text style={styles.totalPointsValue}>{totalPuntos}</Text>
           <Text style={styles.totalPointsLabel}>Puntos Totales</Text>
           <View style={styles.nivelContainer}>
-            <Text style={styles.nivelActual}>{nivel}</Text>
-            <Text style={styles.nivelSiguiente}>Siguiente: {nivelSiguiente}</Text>
+            <Text style={styles.nivelActual}>Nivel actual: {nivel}</Text>
+            {nivelSiguiente !== 'N/A' && nextThreshold > 0 && (
+              <>
+                <Text style={styles.nivelSiguiente}>Próximo nivel: {nivelSiguiente}</Text>
+                {faltan > 0 ? (
+                  <Text style={styles.faltanPuntos}>Te faltan {faltan} puntos para alcanzarlo</Text>
+                ) : (
+                  <Text style={styles.faltanPuntos}>¡Has alcanzado el nivel máximo!</Text>
+                )}
+                {faltan > 0 && (
+                  <View style={styles.progresoContainer}>
+                    <View style={styles.progresoBarraFondo}>
+                      <View style={[styles.progresoBarraRelleno, { width: `${progreso}%` }]} />
+                    </View>
+                    <Text style={styles.progresoTexto}>{Math.round(progreso)}%</Text>
+                  </View>
+                )}
+              </>
+            )}
           </View>
         </View>
 
@@ -357,6 +383,7 @@ const styles = StyleSheet.create({
   nivelContainer: {
     marginTop: 12,
     alignItems: 'center',
+    width: '100%',
   },
   nivelActual: {
     fontSize: 18,
@@ -367,6 +394,35 @@ const styles = StyleSheet.create({
   nivelSiguiente: {
     fontSize: 14,
     color: '#666',
+    marginTop: 4,
+  },
+  faltanPuntos: {
+    fontSize: 13,
+    color: '#888',
+    marginTop: 4,
+  },
+  progresoContainer: {
+    width: '100%',
+    marginTop: 12,
+    alignItems: 'center',
+  },
+  progresoBarraFondo: {
+    width: '100%',
+    height: 8,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progresoBarraRelleno: {
+    height: '100%',
+    backgroundColor: LPBE_RED,
+    borderRadius: 4,
+  },
+  progresoTexto: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 6,
+    fontWeight: '600' as const,
   },
   listContent: {
     padding: 16,
