@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { ArrowLeft, Check, Edit3, MapPin, Star, X } from 'lucide-react-native';
+import { ArrowLeft, MapPin, Star } from 'lucide-react-native';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -33,13 +33,23 @@ interface PuebloVisita {
   checked: number;
 }
 
+interface EditChanges {
+  [pueblo_id: string]: {
+    checked: number;
+    tipo: 'auto' | 'manual';
+    estrellas: number;
+  };
+}
+
 export default function PueblosVisitadosScreen() {
   const { user } = useAuth();
   const [pueblos, setPueblos] = useState<PuebloVisita[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [editChanges, setEditChanges] = useState<EditChanges>({});
 
   const fetchPueblosVisitados = useCallback(async (isRefresh = false) => {
     if (!user?.id) return;
@@ -69,14 +79,18 @@ export default function PueblosVisitadosScreen() {
       const pueblosMap = new Map<string, PuebloVisita>();
       
       visitadosData.forEach((pueblo: PuebloVisita) => {
-        const existing = pueblosMap.get(pueblo.pueblo_id);
-        if (!existing || (pueblo.fecha_visita && existing.fecha_visita && pueblo.fecha_visita > existing.fecha_visita)) {
-          pueblosMap.set(pueblo.pueblo_id, pueblo);
+        const puebloId = parseInt(pueblo.pueblo_id);
+        if (puebloId <= 200) {
+          const existing = pueblosMap.get(pueblo.pueblo_id);
+          if (!existing || (pueblo.fecha_visita && existing.fecha_visita && pueblo.fecha_visita > existing.fecha_visita)) {
+            pueblosMap.set(pueblo.pueblo_id, pueblo);
+          }
         }
       });
       
       liteData.forEach((pueblo: any) => {
-        if (!pueblosMap.has(pueblo.id?.toString())) {
+        const puebloId = parseInt(pueblo.id);
+        if (puebloId <= 200 && !pueblosMap.has(pueblo.id?.toString())) {
           pueblosMap.set(pueblo.id?.toString(), {
             _ID: pueblo.id?.toString() || '',
             pueblo_id: pueblo.id?.toString() || '',
@@ -131,113 +145,110 @@ export default function PueblosVisitadosScreen() {
     fetchPueblosVisitados(true);
   };
 
-  const toggleEditMode = () => {
-    setIsEditing(!isEditing);
-  };
-
-  const handleToggleVisita = async (pueblo: PuebloVisita) => {
-    if (!user?.id) return;
-
-    try {
-      const newChecked = pueblo.checked === 1 ? 0 : 1;
-      const newTipo = newChecked === 1 ? 'manual' : pueblo.tipo;
-      
-      const response = await fetch(
-        'https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/visita-update',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            user_id: user.id,
-            pueblo_id: pueblo.pueblo_id,
-            checked: newChecked,
-            tipo: newTipo,
-            estrellas: pueblo.estrellas,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Error al actualizar visita');
-      }
-
-      const result = await response.json();
-      
-      if (result.success) {
-        setPueblos(prevPueblos => {
-          const updated = prevPueblos.map(p =>
-            p.pueblo_id === pueblo.pueblo_id ? { ...p, checked: newChecked, tipo: newTipo } : p
-          );
-          return updated.sort((a, b) => {
-            if (a.checked !== b.checked) {
-              return b.checked - a.checked;
-            }
-            const nameA = a.nombre || '';
-            const nameB = b.nombre || '';
-            return nameA.localeCompare(nameB);
-          });
-        });
-      } else {
-        throw new Error(result.message || 'Error al actualizar visita');
-      }
-    } catch (err) {
-      console.error('Error toggling visita:', err);
-      if (Platform.OS === 'web') {
-        alert('Error al actualizar la visita');
-      } else {
-        Alert.alert('Error', 'No se pudo actualizar la visita');
-      }
+  const toggleEditMode = async () => {
+    if (isEditing) {
+      await saveChanges();
+    } else {
+      setIsEditing(true);
+      setEditChanges({});
     }
   };
 
-  const handleChangeStars = async (pueblo: PuebloVisita, newStars: number) => {
-    if (!user?.id) return;
+  const saveChanges = async () => {
+    if (!user?.id || Object.keys(editChanges).length === 0) {
+      setIsEditing(false);
+      return;
+    }
 
+    setIsSaving(true);
     try {
-      const response = await fetch(
-        'https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/visita-update',
-        {
+      const promises = Object.entries(editChanges).map(([pueblo_id, changes]) => 
+        fetch('https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/visita-update', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             user_id: user.id,
-            pueblo_id: pueblo.pueblo_id,
-            checked: pueblo.checked,
-            tipo: pueblo.tipo,
-            estrellas: newStars,
+            pueblo_id,
+            ...changes,
           }),
-        }
+        })
       );
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Error al actualizar estrellas');
-      }
+      const results = await Promise.all(promises);
+      const allSuccessful = results.every(res => res.ok);
 
-      const result = await response.json();
-      
-      if (result.success) {
-        setPueblos(prevPueblos =>
-          prevPueblos.map(p =>
-            p.pueblo_id === pueblo.pueblo_id ? { ...p, estrellas: newStars } : p
-          )
-        );
+      if (allSuccessful) {
+        if (Platform.OS === 'web') {
+          alert('Cambios guardados con éxito');
+        } else {
+          Alert.alert('Éxito', 'Cambios guardados correctamente');
+        }
+        await fetchPueblosVisitados();
       } else {
-        throw new Error(result.message || 'Error al actualizar estrellas');
+        throw new Error('Error al guardar algunos cambios');
       }
     } catch (err) {
-      console.error('Error changing stars:', err);
+      console.error('Error saving changes:', err);
       if (Platform.OS === 'web') {
-        alert('Error al actualizar las estrellas');
+        alert('Error al guardar los cambios');
       } else {
-        Alert.alert('Error', 'No se pudieron actualizar las estrellas');
+        Alert.alert('Error', 'No se pudieron guardar todos los cambios');
       }
+    } finally {
+      setIsSaving(false);
+      setIsEditing(false);
+      setEditChanges({});
     }
+  };
+
+  const handleToggleVisita = (pueblo: PuebloVisita) => {
+    if (!user?.id || pueblo.tipo === 'auto') return;
+
+    const newChecked = pueblo.checked === 1 ? 0 : 1;
+    const newTipo: 'manual' | 'auto' = newChecked === 1 ? 'manual' : 'manual';
+    
+    setEditChanges(prev => ({
+      ...prev,
+      [pueblo.pueblo_id]: {
+        checked: newChecked,
+        tipo: newTipo,
+        estrellas: editChanges[pueblo.pueblo_id]?.estrellas ?? pueblo.estrellas,
+      },
+    }));
+
+    setPueblos(prevPueblos => {
+      const updated = prevPueblos.map(p =>
+        p.pueblo_id === pueblo.pueblo_id ? { ...p, checked: newChecked, tipo: newTipo } : p
+      );
+      return updated.sort((a, b) => {
+        if (a.checked !== b.checked) {
+          return b.checked - a.checked;
+        }
+        const nameA = a.nombre || '';
+        const nameB = b.nombre || '';
+        return nameA.localeCompare(nameB);
+      });
+    });
+  };
+
+  const handleChangeStars = (pueblo: PuebloVisita, newStars: number) => {
+    if (!user?.id) return;
+
+    const currentChanges = editChanges[pueblo.pueblo_id];
+    setEditChanges(prev => ({
+      ...prev,
+      [pueblo.pueblo_id]: {
+        checked: currentChanges?.checked ?? pueblo.checked,
+        tipo: currentChanges?.tipo ?? pueblo.tipo,
+        estrellas: newStars,
+      },
+    }));
+
+    setPueblos(prevPueblos =>
+      prevPueblos.map(p =>
+        p.pueblo_id === pueblo.pueblo_id ? { ...p, estrellas: newStars } : p
+      )
+    );
   };
 
   const visitados = pueblos.filter(p => p.checked === 1);
@@ -283,11 +294,17 @@ export default function PueblosVisitadosScreen() {
           <ArrowLeft size={24} color={LPBE_RED} strokeWidth={2} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Pueblos Visitados</Text>
-        <TouchableOpacity onPress={toggleEditMode} style={styles.editButton}>
-          {isEditing ? (
-            <X size={24} color={LPBE_RED} strokeWidth={2} />
+        <TouchableOpacity 
+          onPress={toggleEditMode} 
+          style={styles.editButton}
+          disabled={isSaving}
+        >
+          {isSaving ? (
+            <ActivityIndicator size="small" color={LPBE_RED} />
           ) : (
-            <Edit3 size={24} color={LPBE_RED} strokeWidth={2} />
+            <Text style={styles.editButtonText}>
+              {isEditing ? 'Guardar' : 'Editar'}
+            </Text>
           )}
         </TouchableOpacity>
       </View>
@@ -330,8 +347,10 @@ export default function PueblosVisitadosScreen() {
             ? (item.tipo === 'auto' ? styles.puebloGeolocal : styles.puebloManual)
             : styles.puebloPendiente;
           
+          const canToggle = item.tipo !== 'auto';
+          
           return (
-            <View style={[styles.puebloCard, cardStyle]}>
+            <View style={[styles.puebloCard, cardStyle, isEditing && styles.puebloCardEditing]}>
               {item.imagen_principal && (
                 <Image
                   source={{ uri: item.imagen_principal }}
@@ -341,22 +360,29 @@ export default function PueblosVisitadosScreen() {
               )}
               <View style={styles.puebloContent}>
                 <View style={styles.puebloHeader}>
-                  {item.checked === 1 && (
-                    <View style={[styles.tipoBadge, item.tipo === 'auto' ? styles.tipoGeolocal : styles.tipoManualBadge]}>
-                      <Text style={styles.tipoBadgeText}>
-                        {item.tipo === 'auto' ? 'Geolocalizado' : 'Manual'}
-                      </Text>
-                    </View>
-                  )}
-                  {isEditing && (
+                  <View style={styles.badgeContainer}>
+                    {item.checked === 1 && (
+                      <View style={[styles.tipoBadge, item.tipo === 'auto' ? styles.tipoGeolocal : styles.tipoManualBadge]}>
+                        <Text style={styles.tipoBadgeText}>
+                          {item.tipo === 'auto' ? 'Geolocalizado' : 'Manual'}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                  {isEditing && canToggle && (
                     <TouchableOpacity
                       style={[
-                        styles.checkButton,
-                        item.checked === 1 && styles.checkButtonActive,
+                        styles.toggleButton,
+                        item.checked === 1 && styles.toggleButtonActive,
                       ]}
                       onPress={() => handleToggleVisita(item)}
                     >
-                      <Check size={18} color={item.checked === 1 ? '#fff' : '#999'} strokeWidth={3} />
+                      <Text style={[
+                        styles.toggleButtonText,
+                        item.checked === 1 && styles.toggleButtonTextActive,
+                      ]}>
+                        {item.checked === 1 ? 'Visitado' : 'Marcar'}
+                      </Text>
                     </TouchableOpacity>
                   )}
                 </View>
@@ -433,7 +459,16 @@ const styles = StyleSheet.create({
     color: '#1a1a1a',
   },
   editButton: {
-    padding: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    minWidth: 70,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  editButtonText: {
+    fontSize: 16,
+    fontWeight: '600' as const,
+    color: LPBE_RED,
   },
   placeholder: {
     width: 32,
@@ -510,11 +545,16 @@ const styles = StyleSheet.create({
     elevation: 3,
     backgroundColor: '#fff',
   },
+  puebloCardEditing: {
+    borderWidth: 2,
+    borderColor: LPBE_RED,
+    borderStyle: 'dashed' as const,
+  },
   puebloPendiente: {
-    backgroundColor: '#f9f9f9',
+    backgroundColor: '#f5f5f5',
   },
   puebloManual: {
-    backgroundColor: '#dcfce7',
+    backgroundColor: '#d1fae5',
   },
   puebloGeolocal: {
     backgroundColor: '#dbeafe',
@@ -534,6 +574,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 8,
   },
+  badgeContainer: {
+    flexDirection: 'row',
+    gap: 8,
+  },
   puebloInfo: {
     marginBottom: 12,
   },
@@ -547,19 +591,25 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
   },
-  checkButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    borderWidth: 2,
+  toggleButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+    borderWidth: 1,
     borderColor: '#ddd',
     backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
-  checkButtonActive: {
+  toggleButtonActive: {
     backgroundColor: '#22c55e',
     borderColor: '#22c55e',
+  },
+  toggleButtonText: {
+    fontSize: 12,
+    fontWeight: '600' as const,
+    color: '#666',
+  },
+  toggleButtonTextActive: {
+    color: '#fff',
   },
   starsContainer: {
     flexDirection: 'row',
@@ -577,14 +627,14 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   tipoGeolocal: {
-    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+    backgroundColor: 'rgba(59, 130, 246, 0.2)',
   },
   tipoManualBadge: {
-    backgroundColor: 'rgba(34, 197, 94, 0.15)',
+    backgroundColor: 'rgba(34, 197, 94, 0.2)',
   },
   tipoBadgeText: {
     fontSize: 11,
     fontWeight: '600' as const,
-    color: '#1a1a1a',
+    color: '#333',
   },
 });
