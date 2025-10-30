@@ -38,6 +38,7 @@ interface EditChanges {
     checked: number;
     tipo: 'auto' | 'manual';
     estrellas: number;
+    originalChecked?: number;
   };
 }
 
@@ -50,6 +51,7 @@ export default function PueblosVisitadosScreen() {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [editChanges, setEditChanges] = useState<EditChanges>({});
+  const [originalState, setOriginalState] = useState<Map<string, PuebloVisita>>(new Map());
 
   const fetchPueblosVisitados = useCallback(async (isRefresh = false) => {
     if (!user?.id) return;
@@ -82,8 +84,17 @@ export default function PueblosVisitadosScreen() {
         const puebloId = parseInt(pueblo.pueblo_id);
         if (puebloId <= 200) {
           const existing = pueblosMap.get(pueblo.pueblo_id);
-          if (!existing || (pueblo.fecha_visita && existing.fecha_visita && pueblo.fecha_visita > existing.fecha_visita)) {
+          if (!existing) {
             pueblosMap.set(pueblo.pueblo_id, pueblo);
+          } else {
+            const existingDate = existing.fecha_visita ? new Date(existing.fecha_visita).getTime() : 0;
+            const currentDate = pueblo.fecha_visita ? new Date(pueblo.fecha_visita).getTime() : 0;
+            
+            if (currentDate > existingDate) {
+              pueblosMap.set(pueblo.pueblo_id, pueblo);
+            } else if (currentDate === existingDate && pueblo.tipo === 'manual' && existing.tipo === 'auto') {
+              pueblosMap.set(pueblo.pueblo_id, pueblo);
+            }
           }
         }
       });
@@ -151,25 +162,43 @@ export default function PueblosVisitadosScreen() {
     } else {
       setIsEditing(true);
       setEditChanges({});
+      const original = new Map<string, PuebloVisita>();
+      pueblos.forEach(p => original.set(p.pueblo_id, { ...p }));
+      setOriginalState(original);
     }
   };
 
   const saveChanges = async () => {
     if (!user?.id || Object.keys(editChanges).length === 0) {
       setIsEditing(false);
+      setEditChanges({});
       return;
     }
 
     setIsSaving(true);
     try {
-      const promises = Object.entries(editChanges).map(([pueblo_id, changes]) => 
+      const modifiedEntries = Object.entries(editChanges).filter(([pueblo_id, changes]) => {
+        const original = originalState.get(pueblo_id);
+        if (!original) return true;
+        return original.checked !== changes.checked || original.estrellas !== changes.estrellas;
+      });
+
+      if (modifiedEntries.length === 0) {
+        setIsEditing(false);
+        setEditChanges({});
+        return;
+      }
+
+      const promises = modifiedEntries.map(([pueblo_id, changes]) => 
         fetch('https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/visita-update', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             user_id: user.id,
             pueblo_id,
-            ...changes,
+            checked: changes.checked,
+            tipo: 'manual',
+            estrellas: changes.estrellas,
           }),
         })
       );
@@ -181,9 +210,10 @@ export default function PueblosVisitadosScreen() {
         if (Platform.OS === 'web') {
           alert('Cambios guardados con éxito');
         } else {
-          Alert.alert('Éxito', 'Cambios guardados correctamente');
+          Alert.alert('Éxito', 'Cambios guardados con éxito');
         }
-        await fetchPueblosVisitados();
+        
+        await fetchPueblosVisitados(true);
       } else {
         throw new Error('Error al guardar algunos cambios');
       }
@@ -205,30 +235,21 @@ export default function PueblosVisitadosScreen() {
     if (!user?.id || pueblo.tipo === 'auto') return;
 
     const newChecked = pueblo.checked === 1 ? 0 : 1;
-    const newTipo: 'manual' | 'auto' = newChecked === 1 ? 'manual' : 'manual';
     
     setEditChanges(prev => ({
       ...prev,
       [pueblo.pueblo_id]: {
         checked: newChecked,
-        tipo: newTipo,
+        tipo: 'manual',
         estrellas: editChanges[pueblo.pueblo_id]?.estrellas ?? pueblo.estrellas,
       },
     }));
 
-    setPueblos(prevPueblos => {
-      const updated = prevPueblos.map(p =>
-        p.pueblo_id === pueblo.pueblo_id ? { ...p, checked: newChecked, tipo: newTipo } : p
-      );
-      return updated.sort((a, b) => {
-        if (a.checked !== b.checked) {
-          return b.checked - a.checked;
-        }
-        const nameA = a.nombre || '';
-        const nameB = b.nombre || '';
-        return nameA.localeCompare(nameB);
-      });
-    });
+    setPueblos(prevPueblos =>
+      prevPueblos.map(p =>
+        p.pueblo_id === pueblo.pueblo_id ? { ...p, checked: newChecked } : p
+      )
+    );
   };
 
   const handleChangeStars = (pueblo: PuebloVisita, newStars: number) => {
@@ -326,7 +347,7 @@ export default function PueblosVisitadosScreen() {
 
       <FlatList
         data={pueblos}
-        keyExtractor={(item) => item._ID}
+        keyExtractor={(item) => String(item.pueblo_id)}
         contentContainerStyle={styles.listContent}
         refreshControl={
           <RefreshControl
@@ -361,11 +382,9 @@ export default function PueblosVisitadosScreen() {
               <View style={styles.puebloContent}>
                 <View style={styles.puebloHeader}>
                   <View style={styles.badgeContainer}>
-                    {item.checked === 1 && (
-                      <View style={[styles.tipoBadge, item.tipo === 'auto' ? styles.tipoGeolocal : styles.tipoManualBadge]}>
-                        <Text style={styles.tipoBadgeText}>
-                          {item.tipo === 'auto' ? 'Geolocalizado' : 'Manual'}
-                        </Text>
+                    {item.tipo === 'auto' && (
+                      <View style={[styles.tipoBadge, styles.tipoGeolocal]}>
+                        <Text style={styles.tipoBadgeText}>Geolocalizado</Text>
                       </View>
                     )}
                   </View>
@@ -373,15 +392,15 @@ export default function PueblosVisitadosScreen() {
                     <TouchableOpacity
                       style={[
                         styles.toggleButton,
-                        item.checked === 1 && styles.toggleButtonActive,
+                        item.checked === 1 ? styles.toggleButtonBorrar : styles.toggleButtonVisitado,
                       ]}
                       onPress={() => handleToggleVisita(item)}
                     >
                       <Text style={[
                         styles.toggleButtonText,
-                        item.checked === 1 && styles.toggleButtonTextActive,
+                        item.checked === 1 ? styles.toggleButtonTextBorrar : styles.toggleButtonTextVisitado,
                       ]}>
-                        {item.checked === 1 ? 'Visitado' : 'Marcar'}
+                        {item.checked === 1 ? 'Borrar' : 'Visitado'}
                       </Text>
                     </TouchableOpacity>
                   )}
@@ -599,16 +618,23 @@ const styles = StyleSheet.create({
     borderColor: '#ddd',
     backgroundColor: '#fff',
   },
-  toggleButtonActive: {
+  toggleButtonVisitado: {
     backgroundColor: '#22c55e',
     borderColor: '#22c55e',
+  },
+  toggleButtonBorrar: {
+    backgroundColor: '#dc2626',
+    borderColor: '#dc2626',
   },
   toggleButtonText: {
     fontSize: 12,
     fontWeight: '600' as const,
     color: '#666',
   },
-  toggleButtonTextActive: {
+  toggleButtonTextVisitado: {
+    color: '#fff',
+  },
+  toggleButtonTextBorrar: {
     color: '#fff',
   },
   starsContainer: {
