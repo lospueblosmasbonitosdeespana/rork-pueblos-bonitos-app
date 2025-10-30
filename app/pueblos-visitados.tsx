@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { ArrowLeft, Edit3, MapPin, Star, X } from 'lucide-react-native';
+import { ArrowLeft, Check, Edit3, MapPin, Star, X } from 'lucide-react-native';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -64,7 +64,20 @@ export default function PueblosVisitadosScreen() {
       }
 
       const data = await response.json();
-      setPueblos(data || []);
+      
+      // Deduplicar: agrupar por pueblo_id y mantener el más reciente
+      const pueblosMap = new Map<string, PuebloVisita>();
+      data.forEach((pueblo: PuebloVisita) => {
+        const existing = pueblosMap.get(pueblo.pueblo_id);
+        if (!existing || (pueblo.fecha_visita && existing.fecha_visita && pueblo.fecha_visita > existing.fecha_visita)) {
+          pueblosMap.set(pueblo.pueblo_id, pueblo);
+        } else if (!existing) {
+          pueblosMap.set(pueblo.pueblo_id, pueblo);
+        }
+      });
+      
+      const pueblosDeduplicated = Array.from(pueblosMap.values());
+      setPueblos(pueblosDeduplicated || []);
     } catch (err) {
       console.error('Error fetching pueblos visitados:', err);
       setError('No se pudieron cargar los pueblos visitados');
@@ -249,22 +262,32 @@ export default function PueblosVisitadosScreen() {
             )}
             <View style={styles.puebloContent}>
               <View style={styles.puebloHeader}>
-                <View style={styles.puebloInfo}>
-                  <Text style={styles.puebloNombre}>{item.nombre}</Text>
-                  {item.provincia && (
-                    <Text style={styles.puebloLocation}>{item.provincia}</Text>
-                  )}
+                <View style={[styles.tipoBadge, item.tipo === 'auto' ? styles.tipoGeolocal : styles.tipoManualBadge]}>
+                  <Text style={styles.tipoBadgeText}>
+                    {item.tipo === 'auto' ? 'Geolocalizado' : 'Manual'}
+                  </Text>
                 </View>
                 {isEditing && (
                   <TouchableOpacity
                     style={[
-                      styles.checkButton,
-                      item.checked === 1 && styles.checkButtonActive,
+                      styles.visitadoButton,
+                      item.checked === 1 && styles.visitadoButtonActive,
                     ]}
                     onPress={() => handleToggleVisita(item)}
                   >
-                    {item.checked === 1 && <X size={16} color="#fff" strokeWidth={3} />}
+                    {item.checked === 1 ? (
+                      <Check size={18} color="#fff" strokeWidth={3} />
+                    ) : (
+                      <Text style={styles.visitadoButtonText}>Marcar</Text>
+                    )}
                   </TouchableOpacity>
+                )}
+              </View>
+              
+              <View style={styles.puebloInfo}>
+                <Text style={styles.puebloNombre}>{item.nombre}</Text>
+                {item.provincia && (
+                  <Text style={styles.puebloLocation}>{item.provincia}</Text>
                 )}
               </View>
 
@@ -290,15 +313,6 @@ export default function PueblosVisitadosScreen() {
                   Visitado: {new Date(item.fecha_visita).toLocaleDateString('es-ES')}
                 </Text>
               )}
-              
-              <View style={[
-                styles.tipoBadge,
-                item.tipo === 'auto' ? styles.tipoAuto : styles.tipoManual
-              ]}>
-                <Text style={styles.tipoBadgeText}>
-                  {item.tipo === 'auto' ? 'Auto' : 'Manual'}
-                </Text>
-              </View>
             </View>
           </View>
         )}
@@ -408,7 +422,6 @@ const styles = StyleSheet.create({
     fontWeight: '600' as const,
   },
   puebloCard: {
-    backgroundColor: '#fff',
     borderRadius: 12,
     marginBottom: 16,
     overflow: 'hidden',
@@ -419,10 +432,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   puebloPendiente: {
-    opacity: 0.6,
-    borderWidth: 2,
-    borderColor: '#f0f0f0',
-    borderStyle: 'dashed' as const,
+    backgroundColor: '#f5f5f5',
   },
   puebloImage: {
     width: '100%',
@@ -435,11 +445,11 @@ const styles = StyleSheet.create({
   puebloHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 12,
+    alignItems: 'center',
+    marginBottom: 8,
   },
   puebloInfo: {
-    flex: 1,
+    marginBottom: 12,
   },
   puebloNombre: {
     fontSize: 18,
@@ -451,19 +461,24 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
   },
-  checkButton: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    borderWidth: 2,
+  visitadoButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
     borderColor: '#ddd',
+    backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: 12,
   },
-  checkButtonActive: {
-    backgroundColor: LPBE_RED,
-    borderColor: LPBE_RED,
+  visitadoButtonActive: {
+    backgroundColor: '#22c55e',
+    borderColor: '#22c55e',
+  },
+  visitadoButtonText: {
+    fontSize: 12,
+    color: '#666',
+    fontWeight: '600' as const,
   },
   starsContainer: {
     flexDirection: 'row',
@@ -476,17 +491,15 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   tipoBadge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-    marginTop: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 6,
   },
-  tipoAuto: {
+  tipoGeolocal: {
     backgroundColor: '#dcfce7',
   },
-  tipoManual: {
-    backgroundColor: '#fef3c7',
+  tipoManualBadge: {
+    backgroundColor: '#dbeafe',
   },
   tipoBadgeText: {
     fontSize: 11,
