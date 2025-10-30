@@ -137,8 +137,10 @@ export async function fetchLugaresStable(): Promise<Lugar[]> {
     }
     
     console.log('✅ Pueblos recibidos:', data.length);
-    console.log('✅ Primer pueblo raw:', JSON.stringify(data[0], null, 2));
-    console.log('🔑 Campos disponibles en primer pueblo:', Object.keys(data[0]));
+    console.log('\n🔍 ====== ANALIZANDO PRIMER PUEBLO ======');
+    console.log('🔑 Campos disponibles:', Object.keys(data[0]));
+    console.log('📦 Pueblo completo:', JSON.stringify(data[0], null, 2));
+    console.log('==========================================\n');
     
     const pueblos: Lugar[] = [];
     const nombresVistos = new Set<string>();
@@ -149,18 +151,35 @@ export async function fetchLugaresStable(): Promise<Lugar[]> {
         continue;
       }
       
-      const imagenUrl = item.imagen || item.media_url || item.url || item.imagen_principal || item.image_url || null;
+      let imagenUrl = null;
+      
+      if (item.imagen && typeof item.imagen === 'string' && item.imagen.startsWith('http')) {
+        imagenUrl = item.imagen;
+      } else if (item.media_url && typeof item.media_url === 'string' && item.media_url.startsWith('http')) {
+        imagenUrl = item.media_url;
+      } else if (item.url && typeof item.url === 'string' && item.url.startsWith('http')) {
+        imagenUrl = item.url;
+      } else if (item.image_url && typeof item.image_url === 'string' && item.image_url.startsWith('http')) {
+        imagenUrl = item.image_url;
+      } else if (item.imagen_principal && typeof item.imagen_principal === 'string' && item.imagen_principal.startsWith('http')) {
+        imagenUrl = item.imagen_principal;
+      } else if (item.media && Array.isArray(item.media) && item.media.length > 0 && item.media[0].url) {
+        imagenUrl = item.media[0].url;
+      } else if (item._jet_cct_media_url && typeof item._jet_cct_media_url === 'string') {
+        imagenUrl = item._jet_cct_media_url;
+      }
       
       if (pueblos.length === 0) {
-        console.log(`📸 ${item.nombre} (ID: ${item.id}) - campos disponibles:`, Object.keys(item));
-        console.log(`📸 ${item.nombre} (ID: ${item.id}) - valores:`, {
-          imagen: item.imagen,
-          media_url: item.media_url,
-          url: item.url,
-          image_url: item.image_url,
-          imagen_principal: item.imagen_principal,
-          imagenUrl: imagenUrl
-        });
+        console.log(`\n📸 ANÁLISIS DE IMAGEN DEL PRIMER PUEBLO: ${item.nombre} (ID: ${item.id})`);
+        console.log('📸 item.imagen:', item.imagen);
+        console.log('📸 item.media_url:', item.media_url);
+        console.log('📸 item.url:', item.url);
+        console.log('📸 item.image_url:', item.image_url);
+        console.log('📸 item.imagen_principal:', item.imagen_principal);
+        console.log('📸 item.media:', item.media);
+        console.log('📸 item._jet_cct_media_url:', item._jet_cct_media_url);
+        console.log('📸 imagenUrl FINAL:', imagenUrl);
+        console.log('================================\n');
       }
       
       pueblos.push({
