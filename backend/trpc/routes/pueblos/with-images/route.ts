@@ -56,7 +56,17 @@ export const pueblosWithImagesRoute = publicProcedure.query(async () => {
       throw new Error(`Error ${response.status}: No se pudieron cargar los pueblos`);
     }
     
-    const data = await response.json();
+    const text = await response.text();
+    console.log('📦 [Backend] Response length:', text.length);
+    console.log('📦 [Backend] First 200 chars:', text.substring(0, 200));
+    
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (parseError: any) {
+      console.error('❌ [Backend] JSON parse error:', parseError.message);
+      throw new Error('La respuesta del servidor no es JSON válido');
+    }
     
     if (!Array.isArray(data)) {
       throw new Error('La respuesta no es un array válido');
