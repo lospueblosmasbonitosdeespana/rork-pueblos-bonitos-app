@@ -1,9 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
+import * as Location from 'expo-location';
 import { router } from 'expo-router';
-import { Search } from 'lucide-react-native';
-import { useState } from 'react';
+import { MapPin, Search } from 'lucide-react-native';
+import { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   Image,
   StyleSheet,
@@ -12,6 +14,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 
 import { COLORS, SHADOWS, SPACING, TYPOGRAPHY } from '@/constants/theme';
 import { useLanguage } from '@/contexts/language';
@@ -59,6 +62,8 @@ const banderas: Record<string, string> = {
 
   "pais vasco": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_the_Basque_Country.png",
   "país vasco": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_the_Basque_Country.png",
+  "murcia": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_the_Region_of_Murcia.png",
+  "region de murcia": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_the_Region_of_Murcia.png",
 };
 
 const normalizar = (nombre = "") =>
@@ -75,9 +80,55 @@ const normalizar = (nombre = "") =>
     .replace("generalitat de ", "")
     .trim();
 
+const COMUNIDADES = [
+  'Todas',
+  'Andalucía',
+  'Aragón',
+  'Asturias',
+  'Baleares',
+  'Canarias',
+  'Cantabria',
+  'Castilla-La Mancha',
+  'Castilla y León',
+  'Cataluña',
+  'Comunidad Valenciana',
+  'Extremadura',
+  'Galicia',
+  'La Rioja',
+  'Madrid',
+  'Murcia',
+  'Navarra',
+  'País Vasco',
+];
+
+function calculateDistance(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
+): number {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
 export default function PueblosScreen() {
   const { t } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedComunidad, setSelectedComunidad] = useState<string>('Todas');
+  const [showNearby, setShowNearby] = useState<boolean>(false);
+  const [userLocation, setUserLocation] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
 
   const lugaresQuery = useQuery({
     queryKey: ['lugares'],
@@ -95,13 +146,75 @@ export default function PueblosScreen() {
 
 
 
-  const displayLugares = pueblosAsociacion;
+  let displayLugares = pueblosAsociacion;
+
+  displayLugares = useMemo(() => {
+    let filtered = pueblosAsociacion;
+
+    if (selectedComunidad !== 'Todas') {
+      filtered = filtered.filter((lugar) => {
+        const key = normalizar(lugar.comunidad_autonoma);
+        const selectedKey = normalizar(selectedComunidad);
+        return key === selectedKey || lugar.comunidad_autonoma === selectedComunidad;
+      });
+    }
+
+    if (showNearby && userLocation) {
+      const withDistances = filtered
+        .map((lugar) => ({
+          ...lugar,
+          distance: calculateDistance(
+            userLocation.latitude,
+            userLocation.longitude,
+            lugar.latitud,
+            lugar.longitud
+          ),
+        }))
+        .sort((a, b) => a.distance - b.distance)
+        .slice(0, 10);
+      return withDistances;
+    }
+
+    return filtered;
+  }, [pueblosAsociacion, selectedComunidad, showNearby, userLocation]);
   
   const filteredLugares = searchQuery
     ? displayLugares.filter((lugar) =>
         lugar.nombre?.toLowerCase().includes(searchQuery.toLowerCase())
       )
     : displayLugares;
+
+  const handleLocationPress = async () => {
+    try {
+      if (showNearby) {
+        setShowNearby(false);
+        setUserLocation(null);
+        return;
+      }
+
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          'Ubicación requerida',
+          'Activa la ubicación para ver los pueblos más cercanos.'
+        );
+        return;
+      }
+
+      const location = await Location.getCurrentPositionAsync({});
+      setUserLocation({
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+      });
+      setShowNearby(true);
+    } catch (error) {
+      console.error('Error getting location:', error);
+      Alert.alert(
+        'Error',
+        'No se pudo obtener tu ubicación. Por favor, inténtalo de nuevo.'
+      );
+    }
+  };
 
   const renderPueblo = ({ item }: { item: Lugar }) => {
     return (
@@ -145,6 +258,37 @@ export default function PueblosScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.searchContainer}>
+        <View style={styles.filterRow}>
+          <View style={styles.pickerContainer}>
+            <Picker
+              selectedValue={selectedComunidad}
+              onValueChange={(value: string) => setSelectedComunidad(value)}
+              style={styles.picker}
+              dropdownIconColor={COLORS.textSecondary}
+            >
+              {COMUNIDADES.map((comunidad) => (
+                <Picker.Item
+                  key={comunidad}
+                  label={comunidad}
+                  value={comunidad}
+                />
+              ))}
+            </Picker>
+          </View>
+          <TouchableOpacity
+            style={[
+              styles.locationButton,
+              showNearby && styles.locationButtonActive,
+            ]}
+            onPress={handleLocationPress}
+            activeOpacity={0.7}
+          >
+            <MapPin
+              size={20}
+              color={showNearby ? COLORS.card : COLORS.primary}
+            />
+          </TouchableOpacity>
+        </View>
         <View style={styles.searchBox}>
           <Search size={20} color={COLORS.textSecondary} />
           <TextInput
@@ -210,6 +354,33 @@ const styles = StyleSheet.create({
     paddingBottom: SPACING.sm,
     backgroundColor: COLORS.card,
     ...SHADOWS.small,
+  },
+  filterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    marginBottom: SPACING.sm,
+  },
+  pickerContainer: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  picker: {
+    height: 44,
+    color: COLORS.text,
+  },
+  locationButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: COLORS.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  locationButtonActive: {
+    backgroundColor: COLORS.primary,
   },
   searchBox: {
     flexDirection: 'row',
