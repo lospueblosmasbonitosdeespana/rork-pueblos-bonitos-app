@@ -23,14 +23,14 @@ const LPBE_RED = '#c1121f';
 interface PuebloVisita {
   _ID: string;
   pueblo_id: string;
-  nombre_pueblo: string;
+  nombre: string;
   provincia?: string;
   comunidad_autonoma?: string;
   imagen_principal?: string;
   fecha_visita?: string;
   estrellas: number;
   tipo: 'auto' | 'manual';
-  completado: boolean;
+  checked: number;
 }
 
 export default function PueblosVisitadosScreen() {
@@ -97,7 +97,7 @@ export default function PueblosVisitadosScreen() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          completado: !pueblo.completado,
+          checked: pueblo.checked === 1 ? 0 : 1,
         }),
       });
 
@@ -107,7 +107,7 @@ export default function PueblosVisitadosScreen() {
 
       setPueblos(prevPueblos =>
         prevPueblos.map(p =>
-          p._ID === pueblo._ID ? { ...p, completado: !p.completado } : p
+          p._ID === pueblo._ID ? { ...p, checked: p.checked === 1 ? 0 : 1 } : p
         )
       );
     } catch (err) {
@@ -153,9 +153,10 @@ export default function PueblosVisitadosScreen() {
     }
   };
 
-  const visitados = pueblos.filter(p => p.completado);
-  const pendientes = pueblos.filter(p => !p.completado);
-  const totalPuntos = visitados.reduce((sum, p) => sum + (p.estrellas * 10), 0);
+  const visitados = pueblos.filter(p => p.checked === 1);
+  const totalVisitados = visitados.length;
+  const pendientes = 122 - totalVisitados;
+  const totalPuntos = pueblos.reduce((sum, p) => sum + p.estrellas, 0);
 
   if (isLoading) {
     return (
@@ -206,11 +207,11 @@ export default function PueblosVisitadosScreen() {
 
       <View style={styles.statsContainer}>
         <View style={styles.statBox}>
-          <Text style={styles.statValue}>{visitados.length}</Text>
+          <Text style={styles.statValue}>{totalVisitados}</Text>
           <Text style={styles.statLabel}>Visitados</Text>
         </View>
         <View style={styles.statBox}>
-          <Text style={styles.statValue}>{pendientes.length}</Text>
+          <Text style={styles.statValue}>{pendientes}</Text>
           <Text style={styles.statLabel}>Pendientes</Text>
         </View>
         <View style={styles.statBox}>
@@ -238,7 +239,7 @@ export default function PueblosVisitadosScreen() {
           </View>
         )}
         renderItem={({ item }) => (
-          <View style={[styles.puebloCard, !item.completado && styles.puebloPendiente]}>
+          <View style={[styles.puebloCard, item.checked !== 1 && styles.puebloPendiente]}>
             {item.imagen_principal && (
               <Image
                 source={{ uri: item.imagen_principal }}
@@ -249,7 +250,7 @@ export default function PueblosVisitadosScreen() {
             <View style={styles.puebloContent}>
               <View style={styles.puebloHeader}>
                 <View style={styles.puebloInfo}>
-                  <Text style={styles.puebloNombre}>{item.nombre_pueblo}</Text>
+                  <Text style={styles.puebloNombre}>{item.nombre}</Text>
                   {item.provincia && (
                     <Text style={styles.puebloLocation}>{item.provincia}</Text>
                   )}
@@ -258,11 +259,11 @@ export default function PueblosVisitadosScreen() {
                   <TouchableOpacity
                     style={[
                       styles.checkButton,
-                      item.completado && styles.checkButtonActive,
+                      item.checked === 1 && styles.checkButtonActive,
                     ]}
                     onPress={() => handleToggleVisita(item)}
                   >
-                    {item.completado && <X size={16} color="#fff" strokeWidth={3} />}
+                    {item.checked === 1 && <X size={16} color="#fff" strokeWidth={3} />}
                   </TouchableOpacity>
                 )}
               </View>
