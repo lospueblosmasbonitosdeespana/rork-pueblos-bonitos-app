@@ -101,26 +101,45 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
 
   const login = async (credentials: LoginCredentials): Promise<{ success: boolean; error?: string }> => {
     try {
-      const response = await fetch(`${API_BASE}/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          user_login: credentials.username,
-          user_password: credentials.password,
-        }),
-      });
+      const loginValue = credentials.username.trim();
+      const passwordValue = credentials.password.trim();
 
-      if (response.status !== 200) {
-        return { success: false, error: 'Credenciales incorrectas' };
+      const attempts = [
+        { username: loginValue, password: passwordValue },
+        { user_login: loginValue, user_password: passwordValue },
+      ];
+
+      let token: string | null = null;
+      let lastError = 'Credenciales incorrectas o usuario no válido';
+
+      for (const body of attempts) {
+        try {
+          const response = await fetch(`${API_BASE}/login`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(body),
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            token = data.token || data.access_token || data.data?.token;
+            
+            if (token) {
+              break;
+            }
+          } else {
+            const errorData = await response.json().catch(() => ({}));
+            lastError = errorData.message || lastError;
+          }
+        } catch (err) {
+          console.log('Login attempt failed:', err);
+        }
       }
 
-      const data = await response.json();
-
-      const token = data.token || data.access_token;
       if (!token) {
-        return { success: false, error: 'Credenciales incorrectas' };
+        return { success: false, error: lastError };
       }
 
       await setStoredToken(token);
@@ -143,7 +162,7 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
       return { success: true };
     } catch (error) {
       console.error('Login error:', error);
-      return { success: false, error: 'Credenciales incorrectas' };
+      return { success: false, error: 'Error de conexión. Inténtalo de nuevo.' };
     }
   };
 
