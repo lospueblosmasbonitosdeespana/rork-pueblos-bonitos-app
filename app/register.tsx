@@ -77,7 +77,7 @@ export default function RegisterScreen() {
         [
           {
             text: 'Iniciar Sesión',
-            onPress: () => router.back(),
+            onPress: () => router.replace('/login'),
           },
         ]
       );
@@ -90,7 +90,13 @@ export default function RegisterScreen() {
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <TouchableOpacity
         style={styles.backButton}
-        onPress={() => router.back()}
+        onPress={() => {
+          if (router.canGoBack()) {
+            router.back();
+          } else {
+            router.replace('/(tabs)/home');
+          }
+        }}
         activeOpacity={0.7}
       >
         <ArrowLeft size={24} color="#1a1a1a" strokeWidth={2} />
@@ -203,7 +209,7 @@ export default function RegisterScreen() {
               <View style={styles.footer}>
                 <Text style={styles.footerText}>¿Ya tienes cuenta? </Text>
                 <TouchableOpacity
-                  onPress={() => router.back()}
+                  onPress={() => router.push('/login')}
                   disabled={isLoading}
                 >
                   <Text style={styles.linkText}>Inicia Sesión</Text>

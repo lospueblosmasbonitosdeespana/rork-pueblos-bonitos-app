@@ -68,7 +68,13 @@ export default function LoginScreen() {
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <TouchableOpacity
         style={styles.backButton}
-        onPress={() => router.back()}
+        onPress={() => {
+          if (router.canGoBack()) {
+            router.back();
+          } else {
+            router.replace('/(tabs)/home');
+          }
+        }}
         activeOpacity={0.7}
       >
         <ArrowLeft size={24} color="#1a1a1a" strokeWidth={2} />
