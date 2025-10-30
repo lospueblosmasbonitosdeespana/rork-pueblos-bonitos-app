@@ -15,9 +15,9 @@ export default function Index() {
   return (
     <View style={styles.container}>
       <Image
-        source={{ uri: 'https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/logo-lpbe.png' }}
+        source={{ uri: 'https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/tzxi62phfj1t5m9olic0m' }}
         style={styles.splashImage}
-        contentFit="contain"
+        contentFit="cover"
       />
     </View>
   );
