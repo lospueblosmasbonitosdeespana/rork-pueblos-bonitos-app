@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { Image } from 'expo-image';
-import { Building2, Camera, Compass, ShoppingBag, Newspaper } from 'lucide-react-native';
+import { Building2, Camera, Compass, ShoppingBag, Newspaper, UserCircle } from 'lucide-react-native';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { SPACING } from '@/constants/theme';
@@ -77,6 +77,17 @@ export default function HomeScreen() {
             <Camera size={32} color="#FFFFFF" strokeWidth={2} />
           </View>
           <Text style={styles.buttonText}>Escanear</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => router.push('/(tabs)/profile')}
+          activeOpacity={0.8}
+        >
+          <View style={styles.iconContainer}>
+            <UserCircle size={32} color="#FFFFFF" strokeWidth={2} />
+          </View>
+          <Text style={styles.buttonText}>Mi Cuenta</Text>
         </TouchableOpacity>
       </View>
 
