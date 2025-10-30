@@ -3,6 +3,7 @@ import { ArrowLeft, Award, MapPin, Star, TrendingUp } from 'lucide-react-native'
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  AppState,
   FlatList,
   RefreshControl,
   StyleSheet,
@@ -32,9 +33,15 @@ interface PuebloFavorito {
   estrellas: number;
 }
 
+interface PuebloVisitado {
+  pueblo_id: string;
+  checked: number;
+}
+
 export default function PuntosConseguidosScreen() {
   const { user } = useAuth();
   const [puntosData, setPuntosData] = useState<PuntosData | null>(null);
+  const [visitadosCount, setVisitadosCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -48,21 +55,32 @@ export default function PuntosConseguidosScreen() {
       }
       setError(null);
 
-      const response = await fetch(
-        `https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/puntos?user_id=${user.id}`,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+      const [puntosRes, visitadosRes] = await Promise.all([
+        fetch(`https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/puntos?user_id=${user.id}`, {
+          headers: { 'Content-Type': 'application/json' },
+        }),
+        fetch(`https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/pueblos-visitados?user_id=${user.id}`, {
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      ]);
 
-      if (!response.ok) {
+      if (!puntosRes.ok) {
         throw new Error('Error al cargar puntos');
       }
 
-      const data = await response.json();
+      const data = await puntosRes.json();
       setPuntosData(data || null);
+
+      if (visitadosRes.ok) {
+        const visitadosData: PuebloVisitado[] = await visitadosRes.json();
+        const uniqueVisitados = new Set<string>();
+        visitadosData.forEach(v => {
+          if (v.checked === 1) {
+            uniqueVisitados.add(v.pueblo_id);
+          }
+        });
+        setVisitadosCount(uniqueVisitados.size);
+      }
     } catch (err) {
       console.error('Error fetching puntos:', err);
       setError('No se pudieron cargar los datos');
@@ -74,6 +92,16 @@ export default function PuntosConseguidosScreen() {
 
   useEffect(() => {
     fetchPuntos();
+
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
+      if (nextAppState === 'active') {
+        fetchPuntos(true);
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
   }, [fetchPuntos]);
 
   const handleRefresh = () => {
@@ -84,8 +112,8 @@ export default function PuntosConseguidosScreen() {
   const totalPuntos = puntosData?.puntos_totales || 0;
   const nivel = puntosData?.nivel || 'Sin nivel';
   const nivelSiguiente = puntosData?.nivel_siguiente || 'N/A';
-  const totalPueblos = puntosData?.total_pueblos || 0;
-  const pueblosFavoritos = puntosData?.favoritos || [];
+  const totalPueblos = visitadosCount || 0;
+  const pueblosFavoritos = (puntosData?.favoritos || []).filter(f => f.estrellas === 5);
   const totalEstrellas = totalPuntos;
 
   if (isLoading) {
@@ -169,10 +197,12 @@ export default function PuntosConseguidosScreen() {
         </View>
       </View>
 
-      <View style={styles.listHeader}>
-        <Text style={styles.listHeaderTitle}>Pueblos Favoritos</Text>
-        <Text style={styles.listHeaderSubtitle}>Los pueblos con mayor puntuación</Text>
-      </View>
+      {pueblosFavoritos.length > 0 && (
+        <View style={styles.listHeader}>
+          <Text style={styles.listHeaderTitle}>Pueblos Favoritos</Text>
+          <Text style={styles.listHeaderSubtitle}>Pueblos con 5 estrellas</Text>
+        </View>
+      )}
 
       <FlatList
         data={pueblosFavoritos}
@@ -191,7 +221,7 @@ export default function PuntosConseguidosScreen() {
             <Award size={48} color="#ccc" />
             <Text style={styles.emptyText}>Todavía no tienes pueblos favoritos</Text>
             <Text style={styles.emptySubtext}>
-              Visita y valora pueblos para verlos aquí
+              Dale 5 estrellas a tus pueblos preferidos
             </Text>
           </View>
         )}
@@ -204,22 +234,17 @@ export default function PuntosConseguidosScreen() {
                   <Text style={styles.puebloLocation}>{item.provincia}</Text>
                 )}
               </View>
-              <View style={styles.puntosBox}>
-                <Text style={styles.puntosValue}>{item.puntos}</Text>
-                <Text style={styles.puntosLabel}>pts</Text>
+              <View style={styles.estrellas}>
+                {[...Array(5)].map((_, index) => (
+                  <Star
+                    key={index}
+                    size={20}
+                    color="#FFD700"
+                    fill="#FFD700"
+                    strokeWidth={2}
+                  />
+                ))}
               </View>
-            </View>
-
-            <View style={styles.estrellas}>
-              {[...Array(5)].map((_, index) => (
-                <Star
-                  key={index}
-                  size={18}
-                  color={index < item.estrellas ? '#FFD700' : '#ddd'}
-                  fill={index < item.estrellas ? '#FFD700' : 'transparent'}
-                  strokeWidth={2}
-                />
-              ))}
             </View>
           </View>
         )}
@@ -406,11 +431,11 @@ const styles = StyleSheet.create({
   puntoHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 12,
+    alignItems: 'center',
   },
   puntoInfo: {
     flex: 1,
+    marginRight: 12,
   },
   puebloNombre: {
     fontSize: 16,
@@ -422,28 +447,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
   },
-  puntosBox: {
-    backgroundColor: '#fff5f5',
-    borderRadius: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    alignItems: 'center',
-    marginLeft: 12,
-  },
-  puntosValue: {
-    fontSize: 20,
-    fontWeight: '700' as const,
-    color: LPBE_RED,
-  },
-  puntosLabel: {
-    fontSize: 11,
-    color: '#999',
-    fontWeight: '600' as const,
-  },
   estrellas: {
     flexDirection: 'row',
-    gap: 6,
-    marginBottom: 8,
+    gap: 4,
   },
 
 });
