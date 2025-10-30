@@ -118,7 +118,15 @@ export default function PueblosVisitadosScreen() {
       
       const pueblosList = Array.from(pueblosMap.values());
       
-      const sorted = pueblosList.sort((a, b) => {
+      const listaSinDuplicados = Object.values(
+        pueblosList.reduce((acc: { [key: string]: PuebloVisita }, item) => {
+          const key = item.pueblo_id || item._ID;
+          if (!acc[key]) acc[key] = item;
+          return acc;
+        }, {})
+      );
+      
+      const sorted = listaSinDuplicados.sort((a, b) => {
         if (a.checked !== b.checked) {
           return b.checked - a.checked;
         }
@@ -347,7 +355,7 @@ export default function PueblosVisitadosScreen() {
 
       <FlatList
         data={pueblos}
-        keyExtractor={(item) => String(item.pueblo_id)}
+        keyExtractor={(item, index) => String(item.pueblo_id || item._ID || index)}
         contentContainerStyle={styles.listContent}
         refreshControl={
           <RefreshControl
@@ -419,6 +427,7 @@ export default function PueblosVisitadosScreen() {
                       key={star}
                       onPress={() => isEditing && handleChangeStars(item, star)}
                       disabled={!isEditing}
+                      style={{ marginRight: 8 }}
                     >
                       <Star
                         size={24}
@@ -595,7 +604,6 @@ const styles = StyleSheet.create({
   },
   badgeContainer: {
     flexDirection: 'row',
-    gap: 8,
   },
   puebloInfo: {
     marginBottom: 12,
@@ -639,7 +647,6 @@ const styles = StyleSheet.create({
   },
   starsContainer: {
     flexDirection: 'row',
-    gap: 8,
     marginBottom: 12,
   },
   fechaVisita: {
