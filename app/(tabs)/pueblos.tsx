@@ -51,8 +51,10 @@ export default function PueblosScreen() {
     : displayLugares;
 
   const renderPueblo = ({ item }: { item: Lugar }) => {
-    const fallbackImage = 'https://lospueblosmasbonitosdeespana.org/wp-content/uploads/media/galerias/madrid.jpg';
-    const imagenUri = item.imagen_principal || fallbackImage;
+    const fallbackImage = 'https://images.unsplash.com/photo-1543783207-ec64e4d95325?w=800&q=80';
+    const imagenUri = (item.imagen_principal && item.imagen_principal.startsWith('http')) 
+      ? item.imagen_principal 
+      : fallbackImage;
     
     return (
       <TouchableOpacity
