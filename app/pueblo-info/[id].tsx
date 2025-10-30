@@ -73,19 +73,39 @@ export default function PuebloInfo() {
         }
 
         if (!json.lluvia_24h) {
-          console.log('🌧️ Obteniendo datos de precipitación desde Open-Meteo...');
+          console.log('🌧️ Obteniendo datos de precipitación desde AEMET OpenData...');
           try {
-            const rainRes = await fetch(
-              `https://api.open-meteo.com/v1/forecast?latitude=${json.coordenadas.lat}&longitude=${json.coordenadas.lng}&daily=precipitation_sum&timezone=auto`
-            );
-            if (rainRes.ok) {
-              const rainData = await rainRes.json();
-              console.log('🌧️ Open-Meteo rain data:', JSON.stringify(rainData, null, 2));
-              const lluvia24h = rainData.daily?.precipitation_sum?.[0] ?? 0;
-              json.lluvia_24h = lluvia24h;
+            const aemetUrl = 'https://opendata.aemet.es/opendata/api/observacion/convencional/todas/?api_key=eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJsb3NwdWVibG9zbWFzYm9uaXRvc2RlZXNwYW5hQGdtYWlsLmNvbSIsImp0aSI6ImZhYWM1NzRkLWNlMGItNDEzMi1iOTM2LWMxNTM4Y2EzZDI1YSIsImlzcyI6IkFFTUVUIiwiaWF0IjoxNzYxNzI0MDc2LCJ1c2VySWQiOiJmYWFjNTc0ZC1jZTBiLTQxMzItYjkzNi1jMTUzOGNhM2QyNWEiLCJyb2xlIjoiIn0.MzCfv7virwFAKAiND87V8N5dMgRTpHuWnlQADU3FIfM';
+            const aemetRes = await fetch(aemetUrl);
+            
+            if (aemetRes.ok) {
+              const aemetData = await aemetRes.json();
+              console.log('🌧️ AEMET response:', JSON.stringify(aemetData, null, 2));
+              
+              if (aemetData.datos) {
+                const dataRes = await fetch(aemetData.datos);
+                if (dataRes.ok) {
+                  const stations = await dataRes.json();
+                  console.log('🌧️ AEMET stations data:', JSON.stringify(stations.slice(0, 3), null, 2));
+                  
+                  const nombrePueblo = json.nombre.toLowerCase();
+                  const estacion = stations.find((e: any) => 
+                    e.ubi && e.ubi.toLowerCase().includes(nombrePueblo)
+                  );
+                  
+                  if (estacion && estacion.prec) {
+                    const prec = parseFloat(estacion.prec.replace(',', '.'));
+                    json.lluvia_24h = isNaN(prec) ? 0 : prec;
+                    console.log(`🌧️ Lluvia encontrada para ${json.nombre}: ${json.lluvia_24h} mm`);
+                  } else {
+                    json.lluvia_24h = 0;
+                    console.log(`🌧️ No se encontró estación para ${json.nombre}`);
+                  }
+                }
+              }
             }
           } catch (rainError) {
-            console.log('🌧️ Error fetching Open-Meteo rain data:', rainError);
+            console.log('🌧️ Error fetching AEMET rain data:', rainError);
             json.lluvia_24h = 0;
           }
         }
