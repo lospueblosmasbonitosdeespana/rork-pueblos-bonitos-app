@@ -31,6 +31,7 @@ interface PuebloVisita {
   estrellas: number;
   tipo: 'auto' | 'manual';
   checked: number;
+  puntos: number;
 }
 
 interface EditChanges {
@@ -62,38 +63,54 @@ export default function PueblosVisitadosScreen() {
       }
       setError(null);
 
-      const [visitadosRes, liteRes] = await Promise.all([
+      const [visitadosRes, liteRes, puntosLugaresRes] = await Promise.all([
         fetch(`https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/pueblos-visitados?user_id=${user.id}`, {
           headers: { 'Content-Type': 'application/json' },
         }),
         fetch(`https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/pueblos-lite`, {
           headers: { 'Content-Type': 'application/json' },
         }),
+        fetch(`https://lospueblosmasbonitosdeespana.org/wp-json/jet-cct/lugar`, {
+          headers: { 'Content-Type': 'application/json' },
+        }),
       ]);
 
-      if (!visitadosRes.ok || !liteRes.ok) {
+      if (!visitadosRes.ok || !liteRes.ok || !puntosLugaresRes.ok) {
         throw new Error('Error al cargar pueblos visitados');
       }
 
       const visitadosData = await visitadosRes.json();
       const liteData = await liteRes.json();
+      const puntosLugaresData = await puntosLugaresRes.json();
+      
+      const puntosMap = new Map<string, number>();
+      if (Array.isArray(puntosLugaresData)) {
+        puntosLugaresData.forEach((lugar: any) => {
+          if (lugar._ID && lugar.puntos) {
+            puntosMap.set(String(lugar._ID), Number(lugar.puntos) || 0);
+          }
+        });
+      }
       
       const pueblosMap = new Map<string, PuebloVisita>();
       
       visitadosData.forEach((pueblo: PuebloVisita) => {
         const puebloId = parseInt(pueblo.pueblo_id);
         if (puebloId <= 200) {
+          const puntosDelPueblo = puntosMap.get(pueblo.pueblo_id) || 0;
+          const puebloConPuntos = { ...pueblo, puntos: puntosDelPueblo };
+          
           const existing = pueblosMap.get(pueblo.pueblo_id);
           if (!existing) {
-            pueblosMap.set(pueblo.pueblo_id, pueblo);
+            pueblosMap.set(pueblo.pueblo_id, puebloConPuntos);
           } else {
             const existingDate = existing.fecha_visita ? new Date(existing.fecha_visita).getTime() : 0;
             const currentDate = pueblo.fecha_visita ? new Date(pueblo.fecha_visita).getTime() : 0;
             
             if (currentDate > existingDate) {
-              pueblosMap.set(pueblo.pueblo_id, pueblo);
+              pueblosMap.set(pueblo.pueblo_id, puebloConPuntos);
             } else if (currentDate === existingDate && pueblo.tipo === 'manual' && existing.tipo === 'auto') {
-              pueblosMap.set(pueblo.pueblo_id, pueblo);
+              pueblosMap.set(pueblo.pueblo_id, puebloConPuntos);
             }
           }
         }
@@ -102,6 +119,7 @@ export default function PueblosVisitadosScreen() {
       liteData.forEach((pueblo: any) => {
         const puebloId = parseInt(pueblo.id);
         if (puebloId <= 200 && !pueblosMap.has(pueblo.id?.toString())) {
+          const puntosDelPueblo = puntosMap.get(pueblo.id?.toString()) || 0;
           pueblosMap.set(pueblo.id?.toString(), {
             _ID: pueblo.id?.toString() || '',
             pueblo_id: pueblo.id?.toString() || '',
@@ -112,6 +130,7 @@ export default function PueblosVisitadosScreen() {
             estrellas: 0,
             tipo: 'manual',
             checked: 0,
+            puntos: puntosDelPueblo,
           });
         }
       });
@@ -291,7 +310,8 @@ export default function PueblosVisitadosScreen() {
   const visitados = pueblos.filter(p => p.checked === 1);
   const totalVisitados = visitados.length;
   const pendientes = 122 - totalVisitados;
-  const totalPuntos = pueblos.reduce((sum, p) => sum + p.estrellas, 0);
+  const totalPuntos = visitados.reduce((sum, p) => sum + (p.puntos || 0), 0);
+  const totalEstrellas = pueblos.reduce((sum, p) => sum + (p.estrellas || 0), 0);
 
   if (isLoading) {
     return (
@@ -352,12 +372,12 @@ export default function PueblosVisitadosScreen() {
           <Text style={styles.statLabel}>Visitados</Text>
         </View>
         <View style={styles.statBox}>
-          <Text style={styles.statValue}>{pendientes}</Text>
-          <Text style={styles.statLabel}>Pendientes</Text>
-        </View>
-        <View style={styles.statBox}>
           <Text style={styles.statValue}>{totalPuntos}</Text>
           <Text style={styles.statLabel}>Puntos</Text>
+        </View>
+        <View style={styles.statBox}>
+          <Text style={styles.statValue}>{totalEstrellas}</Text>
+          <Text style={styles.statLabel}>Estrellas</Text>
         </View>
       </View>
 

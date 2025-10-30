@@ -115,6 +115,7 @@ export default function PuntosConseguidosScreen() {
   const totalPueblos = visitadosCount || 0;
   const pueblosFavoritos = (puntosData?.favoritos || []).filter(f => f.estrellas === 5);
   const totalEstrellas = (puntosData?.favoritos || []).reduce((acc, p) => acc + (Number(p.estrellas) || 0), 0);
+  const promedioEstrellas = totalPueblos > 0 ? (totalEstrellas / totalPueblos).toFixed(1) : '0';
 
   if (isLoading) {
     return (
@@ -189,9 +190,7 @@ export default function PuntosConseguidosScreen() {
             <View style={styles.statIconContainer}>
               <TrendingUp size={24} color="#22c55e" strokeWidth={2} />
             </View>
-            <Text style={styles.statValue}>
-              {totalPueblos > 0 ? (totalEstrellas / totalPueblos).toFixed(1) : '0'}
-            </Text>
+            <Text style={styles.statValue}>{promedioEstrellas}</Text>
             <Text style={styles.statLabel}>Promedio</Text>
           </View>
         </View>
@@ -292,7 +291,7 @@ const styles = StyleSheet.create({
   summaryContainer: {
     backgroundColor: '#fff',
     paddingHorizontal: 20,
-    paddingTop: 0,
+    paddingTop: 20,
     paddingBottom: 20,
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
