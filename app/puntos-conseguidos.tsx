@@ -33,15 +33,9 @@ interface PuebloFavorito {
   estrellas: number;
 }
 
-interface PuebloVisitado {
-  pueblo_id: string;
-  checked: number;
-}
-
 export default function PuntosConseguidosScreen() {
   const { user } = useAuth();
   const [puntosData, setPuntosData] = useState<PuntosData | null>(null);
-  const [visitadosCount, setVisitadosCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -55,14 +49,10 @@ export default function PuntosConseguidosScreen() {
       }
       setError(null);
 
-      const [puntosRes, visitadosRes] = await Promise.all([
-        fetch(`https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/puntos?user_id=${user.id}`, {
-          headers: { 'Content-Type': 'application/json' },
-        }),
-        fetch(`https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/pueblos-visitados?user_id=${user.id}`, {
-          headers: { 'Content-Type': 'application/json' },
-        }),
-      ]);
+      const puntosRes = await fetch(
+        `https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/puntos?user_id=${user.id}`,
+        { headers: { 'Content-Type': 'application/json' } }
+      );
 
       if (!puntosRes.ok) {
         throw new Error('Error al cargar puntos');
@@ -77,17 +67,6 @@ export default function PuntosConseguidosScreen() {
         favoritos_count: data.favoritos?.length || 0
       });
       setPuntosData(data || null);
-
-      if (visitadosRes.ok) {
-        const visitadosData: PuebloVisitado[] = await visitadosRes.json();
-        const uniqueVisitados = new Set<string>();
-        visitadosData.forEach(v => {
-          if (v.checked === 1) {
-            uniqueVisitados.add(v.pueblo_id);
-          }
-        });
-        setVisitadosCount(uniqueVisitados.size);
-      }
     } catch (err) {
       console.error('Error fetching puntos:', err);
       setError('No se pudieron cargar los datos');
@@ -119,10 +98,10 @@ export default function PuntosConseguidosScreen() {
   const totalPuntos = puntosData?.puntos_totales || 0;
   const nivel = puntosData?.nivel || 'Sin nivel';
   const nivelSiguiente = puntosData?.nivel_siguiente || 'N/A';
-  const totalPueblos = visitadosCount || 0;
-  const pueblosFavoritos = (puntosData?.favoritos || []).filter(f => f.estrellas === 5);
-  const totalEstrellas = (puntosData?.favoritos || []).reduce((acc, p) => acc + (Number(p.estrellas) || 0), 0);
-  const promedioEstrellas = totalPueblos > 0 ? (totalEstrellas / totalPueblos).toFixed(1) : '0';
+  const totalPueblos = puntosData?.total_pueblos || 0;
+  const pueblosFavoritos = puntosData?.favoritos || [];
+  const totalEstrellas = pueblosFavoritos.reduce((acc, p) => acc + (Number(p.estrellas) || 0), 0);
+  const promedioEstrellas = pueblosFavoritos.length > 0 ? (totalEstrellas / pueblosFavoritos.length).toFixed(1) : '0';
   
   console.log('═══════════════════════════════════════');
   console.log('📊 [PUNTOS CONSEGUIDOS - PANTALLA]');
