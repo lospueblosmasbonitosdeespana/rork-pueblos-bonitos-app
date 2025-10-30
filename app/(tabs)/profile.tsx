@@ -6,6 +6,7 @@ import {
   Alert,
   Animated,
   Image,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -37,24 +38,31 @@ export default function ProfileScreen() {
   }, [isLoading, isAuthenticated, user]);
 
   const handleLogout = () => {
-    Alert.alert(
-      'Cerrar Sesión',
-      '¿Estás seguro que deseas finalizar sesión?',
-      [
-        {
-          text: 'No',
-          style: 'cancel',
-        },
-        {
-          text: 'Sí',
-          style: 'destructive',
-          onPress: async () => {
-            await logout();
+    if (Platform.OS === 'web') {
+      const confirmed = window.confirm('¿Estás seguro que deseas finalizar sesión?');
+      if (confirmed) {
+        logout();
+      }
+    } else {
+      Alert.alert(
+        'Cerrar Sesión',
+        '¿Estás seguro que deseas finalizar sesión?',
+        [
+          {
+            text: 'No',
+            style: 'cancel',
           },
-        },
-      ],
-      { cancelable: false }
-    );
+          {
+            text: 'Sí',
+            style: 'destructive',
+            onPress: async () => {
+              await logout();
+            },
+          },
+        ],
+        { cancelable: false }
+      );
+    }
   };
 
   if (isLoading) {
