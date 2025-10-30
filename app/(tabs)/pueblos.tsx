@@ -49,6 +49,8 @@ export default function PueblosScreen() {
     : pueblosAsociacion;
 
   const renderPueblo = ({ item }: { item: Lugar }) => {
+    const imagenUri = item.imagen_principal || 'https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2024/06/madrid_700x462.jpg';
+    
     return (
       <TouchableOpacity
         style={styles.listItem}
@@ -57,11 +59,11 @@ export default function PueblosScreen() {
       >
         <View style={styles.listItemContent}>
           <Image
-            source={{ 
-              uri: item.imagen_principal || 'https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2024/06/madrid_700x462.jpg' 
-            }}
+            source={{ uri: imagenUri }}
             style={styles.puebloImage}
             contentFit="cover"
+            placeholder={{ blurhash: 'L6PZfSi_.AyE_3t7t7R**0o#DgR4' }}
+            transition={200}
           />
           <View style={styles.puebloInfo}>
             <Text style={styles.puebloName}>{item.nombre}</Text>

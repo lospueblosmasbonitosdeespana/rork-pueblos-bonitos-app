@@ -147,11 +147,15 @@ export async function fetchLugaresStable(): Promise<Lugar[]> {
         console.log(`⏭️ Saltando duplicado: ${item.nombre}`);
         continue;
       }
-      const imagenUrl = item.imagen || item.media_url || null;
       
-      if (!imagenUrl) {
-        console.log(`⚠️ Pueblo sin imagen: ${item.nombre} (ID: ${item.id})`);
-      }
+      const imagenUrl = item.imagen || item.media_url || item.url || item.imagen_principal || null;
+      
+      console.log(`📸 ${item.nombre} (ID: ${item.id}):`, {
+        imagen: item.imagen?.substring(0, 60),
+        media_url: item.media_url?.substring(0, 60),
+        url: item.url?.substring(0, 60),
+        imagenUrl: imagenUrl?.substring(0, 60)
+      });
       
       pueblos.push({
         _ID: String(item.id),
