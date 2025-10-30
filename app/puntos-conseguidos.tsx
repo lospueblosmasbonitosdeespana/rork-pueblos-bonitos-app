@@ -21,7 +21,10 @@ interface PuntosData {
   puntos_totales: number;
   nivel: string;
   nivel_siguiente: string;
+  puntos_siguiente_nivel: number;
   total_pueblos: number;
+  promedio_estrellas: number;
+  pueblos_restantes: number;
   favoritos: PuebloFavorito[];
 }
 
@@ -100,17 +103,10 @@ export default function PuntosConseguidosScreen() {
   const nivelSiguiente = puntosData?.nivel_siguiente || 'N/A';
   const totalPueblos = puntosData?.total_pueblos || 0;
   const pueblosFavoritos = puntosData?.favoritos || [];
-  const totalEstrellas = pueblosFavoritos.reduce((acc, p) => acc + (Number(p.estrellas) || 0), 0);
-  const pueblosValorados = pueblosFavoritos.filter(p => p.estrellas > 0).length;
-  const promedioEstrellas = pueblosValorados > 0 ? (totalEstrellas / pueblosValorados).toFixed(1) : '0.0';
-  const pueblosRestantes = Math.max(0, 122 - totalPueblos);
+  const promedioEstrellas = (puntosData?.promedio_estrellas || 0).toFixed(1);
+  const pueblosRestantes = puntosData?.pueblos_restantes || Math.max(0, 122 - totalPueblos);
 
-  let nextThreshold = 0;
-  if (nivelSiguiente === "Viajero Apasionado") nextThreshold = 300;
-  else if (nivelSiguiente === "Amante de los Pueblos") nextThreshold = 600;
-  else if (nivelSiguiente === "Gran Viajero") nextThreshold = 900;
-  else if (nivelSiguiente === "Leyenda LPBE") nextThreshold = 1200;
-
+  const nextThreshold = puntosData?.puntos_siguiente_nivel || 0;
   const faltan = Math.max(0, nextThreshold - totalPuntos);
   const progreso = nextThreshold > 0 ? Math.min(100, (totalPuntos / nextThreshold) * 100) : 100;
   
@@ -119,10 +115,11 @@ export default function PuntosConseguidosScreen() {
   console.log('═══════════════════════════════════════');
   console.log(`🏘️  Pueblos visitados: ${totalPueblos}`);
   console.log(`🎯 Puntos totales: ${totalPuntos}`);
-  console.log(`⭐ Promedio estrellas: ${promedioEstrellas} (${pueblosValorados} pueblos valorados)`);
+  console.log(`⭐ Promedio estrellas: ${promedioEstrellas}`);
   console.log(`🗺️  Pueblos restantes: ${pueblosRestantes}`);
   console.log(`🏆 Nivel actual: ${nivel}`);
-  console.log(`🎖️  Siguiente nivel: ${nivelSiguiente}`);
+  console.log(`🎖️  Siguiente nivel: ${nivelSiguiente} (${nextThreshold} pts)`);
+  console.log(`📈 Faltan ${faltan} puntos - Progreso: ${Math.round(progreso)}%`);
   console.log('═══════════════════════════════════════');
 
   if (isLoading) {
@@ -224,7 +221,7 @@ export default function PuntosConseguidosScreen() {
       {pueblosFavoritos.length > 0 && (
         <View style={styles.listHeader}>
           <Text style={styles.listHeaderTitle}>Pueblos Favoritos</Text>
-          <Text style={styles.listHeaderSubtitle}>Pueblos con 5 estrellas</Text>
+          <Text style={styles.listHeaderSubtitle}>Tus pueblos mejor valorados</Text>
         </View>
       )}
 
