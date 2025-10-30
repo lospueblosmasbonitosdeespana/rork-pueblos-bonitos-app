@@ -21,24 +21,43 @@ import { Lugar } from '@/types/api';
 const banderas: Record<string, string> = {
   "andalucia": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_Andalucia.png",
   "andalucía": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_Andalucia.png",
+
   "aragon": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Bandera_Aragon_escudo.png",
+
+  "principado de asturias": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_Asturias.png",
   "asturias": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_Asturias.png",
+
+  "islas baleares": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_the_Balearic_Islands.png",
+
+  "canarias": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_the_Canary_Islands.png",
+
   "cantabria": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_Cantabria.png",
+
   "castilla y leon": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_Castile_and_Leon.png",
+
   "castilla - la mancha": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_Castile-La_Mancha.png",
+
   "cataluña": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_Catalonia.png",
   "cataluna": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_Catalonia.png",
   "catalunya": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_Catalonia.png",
-  "extremadura": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_Extremadura__Spain__with_coat_of_arms_.png",
-  "galicia": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_Galicia.png",
-  "la rioja": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_La_Rioja.png",
-  "islas baleares": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_the_Balearic_Islands.png",
-  "pais vasco": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_the_Basque_Country.png",
-  "canarias": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_the_Canary_Islands.png",
-  "comunidad de madrid": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_the_Community_of_Madrid.png",
-  "navarra": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Bandera_de_Navarra.png",
+
   "comunidad valenciana": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_Valencian_Community.png",
   "valencia": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_Valencian_Community.png",
+
+  "extremadura": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_Extremadura__Spain__with_coat_of_arms_.png",
+
+  "galicia": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_Galicia.png",
+
+  "la rioja": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_La_Rioja.png",
+
+  "comunidad de madrid": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_the_Community_of_Madrid.png",
+  "madrid": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_the_Community_of_Madrid.png",
+
+  "navarra": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Bandera_de_Navarra.png",
+  "comunidad foral de navarra": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Bandera_de_Navarra.png",
+
+  "pais vasco": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_the_Basque_Country.png",
+  "país vasco": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_the_Basque_Country.png",
 };
 
 const normalizar = (nombre = "") =>
