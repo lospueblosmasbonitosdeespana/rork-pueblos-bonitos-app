@@ -101,7 +101,9 @@ export default function PuntosConseguidosScreen() {
   const totalPueblos = puntosData?.total_pueblos || 0;
   const pueblosFavoritos = puntosData?.favoritos || [];
   const totalEstrellas = pueblosFavoritos.reduce((acc, p) => acc + (Number(p.estrellas) || 0), 0);
-  const promedioEstrellas = pueblosFavoritos.length > 0 ? (totalEstrellas / pueblosFavoritos.length).toFixed(1) : '0';
+  const pueblosValorados = pueblosFavoritos.filter(p => p.estrellas > 0).length;
+  const promedioEstrellas = pueblosValorados > 0 ? (totalEstrellas / pueblosValorados).toFixed(1) : '0.0';
+  const pueblosRestantes = Math.max(0, 122 - totalPueblos);
 
   let nextThreshold = 0;
   if (nivelSiguiente === "Viajero Apasionado") nextThreshold = 300;
@@ -117,7 +119,8 @@ export default function PuntosConseguidosScreen() {
   console.log('═══════════════════════════════════════');
   console.log(`🏘️  Pueblos visitados: ${totalPueblos}`);
   console.log(`🎯 Puntos totales: ${totalPuntos}`);
-  console.log(`⭐ Estrellas totales: ${totalEstrellas}`);
+  console.log(`⭐ Promedio estrellas: ${promedioEstrellas} (${pueblosValorados} pueblos valorados)`);
+  console.log(`🗺️  Pueblos restantes: ${pueblosRestantes}`);
   console.log(`🏆 Nivel actual: ${nivel}`);
   console.log(`🎖️  Siguiente nivel: ${nivelSiguiente}`);
   console.log('═══════════════════════════════════════');
@@ -197,23 +200,23 @@ export default function PuntosConseguidosScreen() {
               <MapPin size={24} color={LPBE_RED} strokeWidth={2} />
             </View>
             <Text style={styles.statValue}>{totalPueblos}</Text>
-            <Text style={styles.statLabel}>Pueblos</Text>
+            <Text style={styles.statLabel}>Visitados</Text>
           </View>
 
           <View style={styles.statCard}>
             <View style={styles.statIconContainer}>
               <Star size={24} color="#FFD700" fill="#FFD700" strokeWidth={2} />
             </View>
-            <Text style={styles.statValue}>{totalEstrellas}</Text>
-            <Text style={styles.statLabel}>Estrellas</Text>
+            <Text style={styles.statValue}>{promedioEstrellas}</Text>
+            <Text style={styles.statLabel}>Promedio</Text>
           </View>
 
           <View style={styles.statCard}>
             <View style={styles.statIconContainer}>
               <TrendingUp size={24} color="#22c55e" strokeWidth={2} />
             </View>
-            <Text style={styles.statValue}>{promedioEstrellas}</Text>
-            <Text style={styles.statLabel}>Promedio</Text>
+            <Text style={styles.statValue}>{pueblosRestantes}</Text>
+            <Text style={styles.statLabel}>Restantes</Text>
           </View>
         </View>
       </View>
@@ -313,18 +316,18 @@ const styles = StyleSheet.create({
   summaryContainer: {
     backgroundColor: '#fff',
     paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 20,
+    paddingTop: 8,
+    paddingBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
   },
   totalPointsCard: {
     alignItems: 'center',
-    paddingVertical: 24,
+    paddingVertical: 20,
     paddingHorizontal: 16,
     backgroundColor: '#fff5f5',
     borderRadius: 16,
-    marginBottom: 20,
+    marginBottom: 16,
   },
   totalPointsValue: {
     fontSize: 48,

@@ -322,21 +322,23 @@ export default function PueblosVisitadosScreen() {
 
   const visitados = pueblos.filter(p => p.checked === 1);
   const totalVisitados = visitados.length;
+  const geolocalizados = visitados.filter(p => p.tipo === 'auto').length;
+  const manuales = visitados.filter(p => p.tipo === 'manual').length;
   const totalPuntos = visitados.reduce((sum, p) => {
     const puntosPueblo = p.puntos || 0;
     return sum + puntosPueblo;
   }, 0);
-  const totalEstrellas = pueblos.reduce((sum, p) => sum + (p.estrellas || 0), 0);
   
   console.log('═══════════════════════════════════════');
   console.log('📊 [PUEBLOS VISITADOS - CÁLCULO LOCAL]');
   console.log('═══════════════════════════════════════');
   console.log(`🏘️  Total pueblos visitados: ${totalVisitados}`);
+  console.log(`📍 Geolocalizados: ${geolocalizados}`);
+  console.log(`✍️  Manuales: ${manuales}`);
   console.log(`🎯 Total puntos (suma real): ${totalPuntos}`);
-  console.log(`⭐ Total estrellas: ${totalEstrellas}`);
   console.log('\n🔍 Detalle por pueblo:');
   visitados.forEach(p => {
-    console.log(`  - ${p.nombre} (ID: ${p.pueblo_id}): ${p.puntos || 0} pts`);
+    console.log(`  - ${p.nombre} (ID: ${p.pueblo_id}): ${p.puntos || 0} pts [${p.tipo}]`);
   });
   console.log('═══════════════════════════════════════');
 
@@ -399,12 +401,12 @@ export default function PueblosVisitadosScreen() {
           <Text style={styles.statLabel}>Visitados</Text>
         </View>
         <View style={styles.statBox}>
-          <Text style={styles.statValue}>{totalPuntos}</Text>
-          <Text style={styles.statLabel}>Puntos</Text>
+          <Text style={styles.statValue}>{geolocalizados}</Text>
+          <Text style={styles.statLabel}>Geolocalizados</Text>
         </View>
         <View style={styles.statBox}>
-          <Text style={styles.statValue}>{totalEstrellas}</Text>
-          <Text style={styles.statLabel}>Estrellas</Text>
+          <Text style={styles.statValue}>{manuales}</Text>
+          <Text style={styles.statLabel}>Manuales</Text>
         </View>
       </View>
 
@@ -559,7 +561,7 @@ const styles = StyleSheet.create({
   statsContainer: {
     flexDirection: 'row',
     backgroundColor: '#fff',
-    paddingVertical: 16,
+    paddingVertical: 12,
     paddingHorizontal: 8,
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
