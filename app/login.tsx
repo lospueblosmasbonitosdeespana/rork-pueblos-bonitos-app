@@ -26,6 +26,7 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const fadeAnim = useState(new Animated.Value(0))[0];
+  const passwordInputRef = React.useRef<TextInput>(null);
 
   React.useEffect(() => {
     Animated.timing(fadeAnim, {
@@ -36,13 +37,16 @@ export default function LoginScreen() {
   }, []);
 
   const handleLogin = async () => {
-    if (!username.trim() || !password.trim()) {
+    const trimmedUsername = username.trim();
+    const trimmedPassword = password.trim();
+
+    if (!trimmedUsername || !trimmedPassword) {
       Alert.alert('Error', 'Por favor completa todos los campos');
       return;
     }
 
     setIsLoading(true);
-    const result = await login({ username, password });
+    const result = await login({ username: trimmedUsername, password: trimmedPassword });
     setIsLoading(false);
 
     if (result.success) {
@@ -56,7 +60,7 @@ export default function LoginScreen() {
         router.replace('/(tabs)/profile');
       });
     } else {
-      Alert.alert('Error', 'Credenciales incorrectas');
+      Alert.alert('Error', result.error || 'Credenciales incorrectas o usuario no encontrado');
     }
   };
 
@@ -91,23 +95,25 @@ export default function LoginScreen() {
 
             <View style={styles.form}>
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Email o Usuario</Text>
+                <Text style={styles.label}>Email o usuario</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="tu@email.com"
+                  placeholder="Email o usuario"
                   placeholderTextColor="#999"
                   value={username}
                   onChangeText={setUsername}
                   autoCapitalize="none"
                   autoCorrect={false}
-                  keyboardType="email-address"
+                  returnKeyType="next"
                   editable={!isLoading}
+                  onSubmitEditing={() => passwordInputRef.current?.focus()}
                 />
               </View>
 
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Contraseña</Text>
                 <TextInput
+                  ref={passwordInputRef}
                   style={styles.input}
                   placeholder="••••••••"
                   placeholderTextColor="#999"
@@ -116,14 +122,16 @@ export default function LoginScreen() {
                   secureTextEntry
                   autoCapitalize="none"
                   autoCorrect={false}
+                  returnKeyType="done"
                   editable={!isLoading}
+                  onSubmitEditing={handleLogin}
                 />
               </View>
 
               <TouchableOpacity
-                style={[styles.button, isLoading && styles.buttonDisabled]}
+                style={[styles.button, (isLoading || !username.trim() || !password.trim()) && styles.buttonDisabled]}
                 onPress={handleLogin}
-                disabled={isLoading}
+                disabled={isLoading || !username.trim() || !password.trim()}
                 activeOpacity={0.8}
               >
                 {isLoading ? (
