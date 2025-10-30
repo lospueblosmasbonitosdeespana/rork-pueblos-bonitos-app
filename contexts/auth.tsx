@@ -158,11 +158,33 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
 
   const logout = async () => {
     try {
+      // Borrar TODAS las claves de autenticación posibles
       await deleteStoredUserId();
+      
+      // También limpiar otras posibles claves del usuario
+      const keysToDelete = ['um_token', 'lpbe_token', 'user_data', 'auth_token'];
+      for (const key of keysToDelete) {
+        try {
+          if (Platform.OS === 'web') {
+            localStorage.removeItem(key);
+          } else {
+            await SecureStore.deleteItemAsync(key);
+          }
+        } catch (e) {
+          // Ignorar errores si la clave no existe
+        }
+      }
+      
+      // Limpiar estado local
       setState({ user: null, userId: null, isLoading: false, isAuthenticated: false });
+      
+      // Redirigir a login
       router.replace('/login');
     } catch (error) {
       console.error('Logout error:', error);
+      // Incluso si hay error, limpiar estado y redirigir
+      setState({ user: null, userId: null, isLoading: false, isAuthenticated: false });
+      router.replace('/login');
     }
   };
 
