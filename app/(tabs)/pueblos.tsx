@@ -131,6 +131,7 @@ export default function PueblosScreen() {
     latitude: number;
     longitude: number;
   } | null>(null);
+  const [renderKey, setRenderKey] = useState<number>(0);
 
   const lugaresQuery = useQuery({
     queryKey: ['lugares'],
@@ -178,7 +179,7 @@ export default function PueblosScreen() {
     }
 
     return filtered;
-  }, [pueblosAsociacion, selectedComunidad, showNearby, userLocation]);
+  }, [pueblosAsociacion, selectedComunidad, showNearby, userLocation, renderKey]);
   
   const filteredLugares = searchQuery
     ? displayLugares.filter((lugar) =>
@@ -263,9 +264,13 @@ export default function PueblosScreen() {
           <View style={styles.pickerContainer}>
             <Picker
               selectedValue={selectedComunidad}
-              onValueChange={(value: string) => setSelectedComunidad(value)}
+              onValueChange={(value: string) => {
+                setSelectedComunidad(value);
+                setTimeout(() => setRenderKey(prev => prev + 1), 50);
+              }}
               style={styles.picker}
               dropdownIconColor={COLORS.textSecondary}
+              mode="dropdown"
             >
               {COMUNIDADES.map((comunidad) => (
                 <Picker.Item
