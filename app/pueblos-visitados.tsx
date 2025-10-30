@@ -243,10 +243,18 @@ export default function PueblosVisitadosScreen() {
           
           if (puntosRes.ok) {
             const puntosData = await puntosRes.json();
-            console.log('✅ Puntos sincronizados:', puntosData);
+            console.log('═══════════════════════════════════════');
+            console.log('✅ [SINCRONIZACIÓN POST-GUARDADO]');
+            console.log('═══════════════════════════════════════');
+            console.log('📥 Datos del endpoint /lpbe/v1/puntos:');
+            console.log(`  🎯 Puntos totales: ${puntosData.puntos_totales}`);
+            console.log(`  🏘️  Total pueblos: ${puntosData.total_pueblos}`);
+            console.log(`  🏆 Nivel: ${puntosData.nivel}`);
+            console.log(`  🎖️  Siguiente: ${puntosData.nivel_siguiente}`);
+            console.log('═══════════════════════════════════════');
           }
         } catch (err) {
-          console.warn('Error al sincronizar puntos:', err);
+          console.warn('⚠️  Error al sincronizar puntos:', err);
         }
         
         if (Platform.OS === 'web') {
@@ -316,14 +324,21 @@ export default function PueblosVisitadosScreen() {
   const totalVisitados = visitados.length;
   const totalPuntos = visitados.reduce((sum, p) => {
     const puntosPueblo = p.puntos || 0;
-    console.log(`Pueblo: ${p.nombre} (ID: ${p.pueblo_id}) -> Puntos: ${puntosPueblo}`);
     return sum + puntosPueblo;
   }, 0);
   const totalEstrellas = pueblos.reduce((sum, p) => sum + (p.estrellas || 0), 0);
   
-  console.log(`📊 Total Pueblos Visitados: ${totalVisitados}`);
-  console.log(`🎯 Total Puntos Calculados: ${totalPuntos}`);
-  console.log(`⭐ Total Estrellas: ${totalEstrellas}`);
+  console.log('═══════════════════════════════════════');
+  console.log('📊 [PUEBLOS VISITADOS - CÁLCULO LOCAL]');
+  console.log('═══════════════════════════════════════');
+  console.log(`🏘️  Total pueblos visitados: ${totalVisitados}`);
+  console.log(`🎯 Total puntos (suma real): ${totalPuntos}`);
+  console.log(`⭐ Total estrellas: ${totalEstrellas}`);
+  console.log('\n🔍 Detalle por pueblo:');
+  visitados.forEach(p => {
+    console.log(`  - ${p.nombre} (ID: ${p.pueblo_id}): ${p.puntos || 0} pts`);
+  });
+  console.log('═══════════════════════════════════════');
 
   if (isLoading) {
     return (

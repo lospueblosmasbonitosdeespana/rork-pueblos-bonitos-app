@@ -69,7 +69,13 @@ export default function PuntosConseguidosScreen() {
       }
 
       const data = await puntosRes.json();
-      console.log('📥 Datos de /lpbe/v1/puntos:', data);
+      console.log('📥 [PUNTOS ENDPOINT] Datos recibidos:', {
+        puntos_totales: data.puntos_totales,
+        total_pueblos: data.total_pueblos,
+        nivel: data.nivel,
+        nivel_siguiente: data.nivel_siguiente,
+        favoritos_count: data.favoritos?.length || 0
+      });
       setPuntosData(data || null);
 
       if (visitadosRes.ok) {
@@ -118,9 +124,15 @@ export default function PuntosConseguidosScreen() {
   const totalEstrellas = (puntosData?.favoritos || []).reduce((acc, p) => acc + (Number(p.estrellas) || 0), 0);
   const promedioEstrellas = totalPueblos > 0 ? (totalEstrellas / totalPueblos).toFixed(1) : '0';
   
-  console.log(`📊 [Puntos Conseguidos] Total Pueblos: ${totalPueblos}`);
-  console.log(`🎯 [Puntos Conseguidos] Total Puntos: ${totalPuntos}`);
-  console.log(`⭐ [Puntos Conseguidos] Total Estrellas: ${totalEstrellas}`);
+  console.log('═══════════════════════════════════════');
+  console.log('📊 [PUNTOS CONSEGUIDOS - PANTALLA]');
+  console.log('═══════════════════════════════════════');
+  console.log(`🏘️  Pueblos visitados: ${totalPueblos}`);
+  console.log(`🎯 Puntos totales: ${totalPuntos}`);
+  console.log(`⭐ Estrellas totales: ${totalEstrellas}`);
+  console.log(`🏆 Nivel actual: ${nivel}`);
+  console.log(`🎖️  Siguiente nivel: ${nivelSiguiente}`);
+  console.log('═══════════════════════════════════════');
 
   if (isLoading) {
     return (
