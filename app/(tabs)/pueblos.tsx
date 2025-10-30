@@ -51,7 +51,7 @@ export default function PueblosScreen() {
   const renderPueblo = ({ item }: { item: Lugar }) => {
     const imagenUri = (item.imagen_principal && item.imagen_principal.startsWith('http'))
       ? item.imagen_principal
-      : 'https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2024/06/logo_lpbe_600x400.jpg';
+      : 'https://images.unsplash.com/photo-1544550285-f813152fb2fd?w=400&h=300&fit=crop';
     
     if (parseInt(item._ID, 10) === 1 || parseInt(item._ID, 10) === 2) {
       console.log('🖼️ Imagen cargada para', item.nombre, '(ID:', item._ID, '):', imagenUri);
