@@ -76,10 +76,12 @@ export default function PuebloInfo() {
           requests.push(weatherPromise);
           
           if (!json.altitud) {
-            const elevationPromise = fetch(
-              `https://api.open-elevation.com/api/v1/lookup?locations=${json.coordenadas.lat},${json.coordenadas.lng}`
-            )
-              .then(res => res.ok ? res.json() : null)
+            const elevationPromise = Promise.race([
+              fetch(
+                `https://api.open-elevation.com/api/v1/lookup?locations=${json.coordenadas.lat},${json.coordenadas.lng}`
+              ).then(res => res.ok ? res.json() : null),
+              new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000))
+            ])
               .catch(err => {
                 console.log('⛰️ Error fetching Open-Elevation:', err);
                 return null;
@@ -109,16 +111,16 @@ export default function PuebloInfo() {
             if (elevationData?.results?.[0]?.elevation != null) {
               const elevation = elevationData.results[0].elevation;
               console.log('⛰️ Elevation value:', elevation, 'type:', typeof elevation);
-              if (typeof elevation === 'number' && !isNaN(elevation)) {
+              if (typeof elevation === 'number' && !isNaN(elevation) && elevation > 0) {
                 json.altitud = Math.round(elevation);
                 console.log(`⛰️ Altitud calculada: ${json.altitud} m`);
               } else {
-                console.log('⛰️ Altitud inválida:', elevation);
-                json.altitud = 0;
+                console.log('⛰️ Altitud inválida o cero:', elevation);
+                json.altitud = null;
               }
             } else {
-              console.log('⛰️ No se pudo obtener altitud de Open-Elevation');
-              json.altitud = 0;
+              console.log('⛰️ No se pudo obtener altitud de Open-Elevation (timeout o error)');
+              json.altitud = null;
             }
           } else {
             console.log(`⛰️ Altitud desde JSON: ${json.altitud} m`);
@@ -268,7 +270,7 @@ export default function PuebloInfo() {
                 <Mountain size={32} color="#FFFFFF" strokeWidth={2.5} />
               </View>
               <Text style={styles.metricLabel}>Altitud</Text>
-              <Text style={styles.metricValue}>{data.altitud && data.altitud > 0 ? `${data.altitud} m` : '– m'}</Text>
+              <Text style={styles.metricValue}>{data.altitud != null && data.altitud > 0 ? `${data.altitud} m` : '-- m'}</Text>
               <Text style={styles.metricSubtext}>sobre el nivel del mar</Text>
             </TouchableOpacity>
 
