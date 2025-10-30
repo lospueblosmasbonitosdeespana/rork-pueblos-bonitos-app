@@ -66,13 +66,27 @@ export default function PuebloInfo() {
               json.clima.temperatura = json.clima.temperatura || weatherData.main.temp;
               json.clima.descripcion = json.clima.descripcion || weatherData.weather[0].description;
               json.clima.icon = weatherData.weather[0].icon;
-              
-              if (!json.lluvia_24h && weatherData.rain) {
-                json.lluvia_24h = weatherData.rain['1h'] || weatherData.rain['3h'] || 0;
-              }
             }
           } catch (weatherError) {
             console.log('🌍 Error fetching OpenWeather data:', weatherError);
+          }
+        }
+
+        if (!json.lluvia_24h) {
+          console.log('🌧️ Obteniendo datos de precipitación desde Open-Meteo...');
+          try {
+            const rainRes = await fetch(
+              `https://api.open-meteo.com/v1/forecast?latitude=${json.coordenadas.lat}&longitude=${json.coordenadas.lng}&daily=precipitation_sum&timezone=auto`
+            );
+            if (rainRes.ok) {
+              const rainData = await rainRes.json();
+              console.log('🌧️ Open-Meteo rain data:', JSON.stringify(rainData, null, 2));
+              const lluvia24h = rainData.daily?.precipitation_sum?.[0] ?? 0;
+              json.lluvia_24h = lluvia24h;
+            }
+          } catch (rainError) {
+            console.log('🌧️ Error fetching Open-Meteo rain data:', rainError);
+            json.lluvia_24h = 0;
           }
         }
         
@@ -184,7 +198,12 @@ export default function PuebloInfo() {
                 <CloudRain size={32} color="#FFFFFF" strokeWidth={2.5} />
               </View>
               <Text style={styles.metricLabel}>Lluvia últimas 24h</Text>
-              <Text style={styles.metricValue}>{data.lluvia_24h ?? '0'} mm</Text>
+              <Text style={styles.metricValue}>
+                {data.lluvia_24h && data.lluvia_24h > 0 
+                  ? `${data.lluvia_24h.toFixed(1)} mm` 
+                  : 'Sin lluvia'
+                }
+              </Text>
               <Text style={styles.metricSubtext}>Últimas 24 horas</Text>
             </TouchableOpacity>
 
