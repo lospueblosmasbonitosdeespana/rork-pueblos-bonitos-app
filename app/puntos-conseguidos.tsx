@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { ArrowLeft, Award, MapPin, Star, TrendingUp } from 'lucide-react-native';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
@@ -28,7 +28,6 @@ interface PuebloFavorito {
   pueblo_id: string;
   nombre: string;
   provincia?: string;
-  puntos: number;
   estrellas: number;
 }
 
@@ -76,6 +75,12 @@ export default function PuntosConseguidosScreen() {
     fetchPuntos();
   }, [fetchPuntos]);
 
+  useFocusEffect(
+    useCallback(() => {
+      fetchPuntos(true);
+    }, [fetchPuntos])
+  );
+
   const handleRefresh = () => {
     setIsRefreshing(true);
     fetchPuntos(true);
@@ -86,7 +91,6 @@ export default function PuntosConseguidosScreen() {
   const nivelSiguiente = puntosData?.nivel_siguiente || 'N/A';
   const totalPueblos = puntosData?.total_pueblos || 0;
   const pueblosFavoritos = puntosData?.favoritos || [];
-  const totalEstrellas = totalPuntos;
 
   if (isLoading) {
     return (
@@ -153,7 +157,7 @@ export default function PuntosConseguidosScreen() {
             <View style={styles.statIconContainer}>
               <Star size={24} color="#FFD700" fill="#FFD700" strokeWidth={2} />
             </View>
-            <Text style={styles.statValue}>{totalEstrellas}</Text>
+            <Text style={styles.statValue}>{totalPuntos}</Text>
             <Text style={styles.statLabel}>Estrellas</Text>
           </View>
 
@@ -162,7 +166,7 @@ export default function PuntosConseguidosScreen() {
               <TrendingUp size={24} color="#22c55e" strokeWidth={2} />
             </View>
             <Text style={styles.statValue}>
-              {totalPueblos > 0 ? (totalEstrellas / totalPueblos).toFixed(1) : '0'}
+              {totalPueblos > 0 ? (totalPuntos / totalPueblos).toFixed(1) : '0'}
             </Text>
             <Text style={styles.statLabel}>Promedio</Text>
           </View>
@@ -205,8 +209,8 @@ export default function PuntosConseguidosScreen() {
                 )}
               </View>
               <View style={styles.puntosBox}>
-                <Text style={styles.puntosValue}>{item.puntos}</Text>
-                <Text style={styles.puntosLabel}>pts</Text>
+                <Text style={styles.puntosValue}>{item.estrellas}</Text>
+                <Text style={styles.puntosLabel}>⭐</Text>
               </View>
             </View>
 

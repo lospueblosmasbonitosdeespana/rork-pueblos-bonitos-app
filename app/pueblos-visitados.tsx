@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { ArrowLeft, Check, Edit3, MapPin, Star, X } from 'lucide-react-native';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
@@ -15,13 +15,12 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { API_BASE_URL } from '@/constants/api';
 import { useAuth } from '@/contexts/auth';
 
 const LPBE_RED = '#c1121f';
 
 interface PuebloVisita {
-  _ID: string;
+  _ID?: string;
   pueblo_id: string;
   nombre: string;
   provincia?: string;
@@ -31,6 +30,13 @@ interface PuebloVisita {
   estrellas: number;
   tipo: 'auto' | 'manual';
   checked: number;
+}
+
+interface PuebloLite {
+  ID: string;
+  post_title: string;
+  provincia?: string;
+  imagen_principal?: string;
 }
 
 export default function PueblosVisitadosScreen() {
@@ -50,36 +56,58 @@ export default function PueblosVisitadosScreen() {
       }
       setError(null);
 
-      const response = await fetch(
-        `https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/pueblos-visitados?user_id=${user.id}`,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+      const [visitadosResponse, liteResponse] = await Promise.all([
+        fetch(
+          `https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/pueblos-visitados?user_id=${user.id}`,
+          { headers: { 'Content-Type': 'application/json' } }
+        ),
+        fetch(
+          `https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/pueblos-lite`,
+          { headers: { 'Content-Type': 'application/json' } }
+        ),
+      ]);
 
-      if (!response.ok) {
-        throw new Error('Error al cargar pueblos visitados');
+      if (!visitadosResponse.ok || !liteResponse.ok) {
+        throw new Error('Error al cargar pueblos');
       }
 
-      const data = await response.json();
-      
-      // Deduplicar: agrupar por pueblo_id y mantener el más reciente
+      const visitadosData: PuebloVisita[] = await visitadosResponse.json();
+      const liteData: PuebloLite[] = await liteResponse.json();
+
       const pueblosMap = new Map<string, PuebloVisita>();
-      data.forEach((pueblo: PuebloVisita) => {
+      
+      visitadosData.forEach((pueblo: PuebloVisita) => {
         const existing = pueblosMap.get(pueblo.pueblo_id);
         if (!existing || (pueblo.fecha_visita && existing.fecha_visita && pueblo.fecha_visita > existing.fecha_visita)) {
           pueblosMap.set(pueblo.pueblo_id, pueblo);
-        } else if (!existing) {
-          pueblosMap.set(pueblo.pueblo_id, pueblo);
         }
       });
-      
-      const pueblosDeduplicated = Array.from(pueblosMap.values());
-      setPueblos(pueblosDeduplicated || []);
+
+      liteData.forEach((puebloLite: PuebloLite) => {
+        if (!pueblosMap.has(puebloLite.ID)) {
+          pueblosMap.set(puebloLite.ID, {
+            pueblo_id: puebloLite.ID,
+            nombre: puebloLite.post_title,
+            provincia: puebloLite.provincia,
+            imagen_principal: puebloLite.imagen_principal,
+            estrellas: 0,
+            tipo: 'manual',
+            checked: 0,
+          });
+        }
+      });
+
+      const pueblosList = Array.from(pueblosMap.values());
+      pueblosList.sort((a, b) => {
+        if (a.checked === b.checked) {
+          return a.nombre.localeCompare(b.nombre);
+        }
+        return b.checked - a.checked;
+      });
+
+      setPueblos(pueblosList);
     } catch (err) {
-      console.error('Error fetching pueblos visitados:', err);
+      console.error('Error fetching pueblos:', err);
       setError('No se pudieron cargar los pueblos visitados');
     } finally {
       setIsLoading(false);
@@ -91,6 +119,14 @@ export default function PueblosVisitadosScreen() {
     fetchPueblosVisitados();
   }, [fetchPueblosVisitados]);
 
+  useFocusEffect(
+    useCallback(() => {
+      if (!isLoading) {
+        fetchPueblosVisitados(true);
+      }
+    }, [fetchPueblosVisitados, isLoading])
+  );
+
   const handleRefresh = () => {
     setIsRefreshing(true);
     fetchPueblosVisitados(true);
@@ -101,28 +137,43 @@ export default function PueblosVisitadosScreen() {
   };
 
   const handleToggleVisita = async (pueblo: PuebloVisita) => {
+    if (!user?.id) return;
+
+    const newChecked = pueblo.checked === 1 ? 0 : 1;
+
     try {
-      const endpoint = `${API_BASE_URL}/jet-cct/visita/${pueblo._ID}`;
-      
-      const response = await fetch(endpoint, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          checked: pueblo.checked === 1 ? 0 : 1,
-        }),
-      });
+      const response = await fetch(
+        `https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/visita-update`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            user_id: user.id,
+            pueblo_id: pueblo.pueblo_id,
+            checked: newChecked,
+            tipo: 'manual',
+            estrellas: pueblo.estrellas,
+          }),
+        }
+      );
 
       if (!response.ok) {
         throw new Error('Error al actualizar visita');
       }
 
-      setPueblos(prevPueblos =>
-        prevPueblos.map(p =>
-          p._ID === pueblo._ID ? { ...p, checked: p.checked === 1 ? 0 : 1 } : p
-        )
-      );
+      const result = await response.json();
+
+      if (result.success) {
+        setPueblos((prevPueblos) =>
+          prevPueblos.map((p) =>
+            p.pueblo_id === pueblo.pueblo_id ? { ...p, checked: newChecked } : p
+          )
+        );
+      } else {
+        throw new Error(result.message || 'Error desconocido');
+      }
     } catch (err) {
       console.error('Error toggling visita:', err);
       if (Platform.OS === 'web') {
@@ -134,28 +185,41 @@ export default function PueblosVisitadosScreen() {
   };
 
   const handleChangeStars = async (pueblo: PuebloVisita, newStars: number) => {
+    if (!user?.id) return;
+
     try {
-      const endpoint = `${API_BASE_URL}/jet-cct/visita/${pueblo._ID}`;
-      
-      const response = await fetch(endpoint, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          estrellas: newStars,
-        }),
-      });
+      const response = await fetch(
+        `https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/visita-update`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            user_id: user.id,
+            pueblo_id: pueblo.pueblo_id,
+            checked: pueblo.checked,
+            tipo: pueblo.tipo,
+            estrellas: newStars,
+          }),
+        }
+      );
 
       if (!response.ok) {
         throw new Error('Error al actualizar estrellas');
       }
 
-      setPueblos(prevPueblos =>
-        prevPueblos.map(p =>
-          p._ID === pueblo._ID ? { ...p, estrellas: newStars } : p
-        )
-      );
+      const result = await response.json();
+
+      if (result.success) {
+        setPueblos((prevPueblos) =>
+          prevPueblos.map((p) =>
+            p.pueblo_id === pueblo.pueblo_id ? { ...p, estrellas: newStars } : p
+          )
+        );
+      } else {
+        throw new Error(result.message || 'Error desconocido');
+      }
     } catch (err) {
       console.error('Error changing stars:', err);
       if (Platform.OS === 'web') {
@@ -235,7 +299,7 @@ export default function PueblosVisitadosScreen() {
 
       <FlatList
         data={pueblos}
-        keyExtractor={(item) => item._ID}
+        keyExtractor={(item) => item.pueblo_id}
         contentContainerStyle={styles.listContent}
         refreshControl={
           <RefreshControl
@@ -251,71 +315,88 @@ export default function PueblosVisitadosScreen() {
             <Text style={styles.emptyText}>Aún no has visitado ningún pueblo</Text>
           </View>
         )}
-        renderItem={({ item }) => (
-          <View style={[styles.puebloCard, item.checked !== 1 && styles.puebloPendiente]}>
-            {item.imagen_principal && (
-              <Image
-                source={{ uri: item.imagen_principal }}
-                style={styles.puebloImage}
-                resizeMode="cover"
-              />
-            )}
-            <View style={styles.puebloContent}>
-              <View style={styles.puebloHeader}>
-                <View style={[styles.tipoBadge, item.tipo === 'auto' ? styles.tipoGeolocal : styles.tipoManualBadge]}>
-                  <Text style={styles.tipoBadgeText}>
-                    {item.tipo === 'auto' ? 'Geolocalizado' : 'Manual'}
-                  </Text>
-                </View>
-                {isEditing && (
-                  <TouchableOpacity
-                    style={[
-                      styles.visitadoButton,
-                      item.checked === 1 && styles.visitadoButtonActive,
-                    ]}
-                    onPress={() => handleToggleVisita(item)}
-                  >
-                    {item.checked === 1 ? (
-                      <Check size={18} color="#fff" strokeWidth={3} />
-                    ) : (
-                      <Text style={styles.visitadoButtonText}>Marcar</Text>
-                    )}
-                  </TouchableOpacity>
-                )}
-              </View>
-              
-              <View style={styles.puebloInfo}>
-                <Text style={styles.puebloNombre}>{item.nombre}</Text>
-                {item.provincia && (
-                  <Text style={styles.puebloLocation}>{item.provincia}</Text>
-                )}
-              </View>
+        renderItem={({ item }) => {
+          const bgColor = item.checked === 1
+            ? item.tipo === 'auto'
+              ? '#dcfce7'
+              : '#dbeafe'
+            : '#ffffff';
 
-              <View style={styles.starsContainer}>
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <TouchableOpacity
-                    key={star}
-                    onPress={() => isEditing && handleChangeStars(item, star)}
-                    disabled={!isEditing}
-                  >
-                    <Star
-                      size={24}
-                      color={star <= item.estrellas ? '#FFD700' : '#ddd'}
-                      fill={star <= item.estrellas ? '#FFD700' : 'transparent'}
-                      strokeWidth={2}
-                    />
-                  </TouchableOpacity>
-                ))}
-              </View>
-
-              {item.fecha_visita && (
-                <Text style={styles.fechaVisita}>
-                  Visitado: {new Date(item.fecha_visita).toLocaleDateString('es-ES')}
-                </Text>
+          return (
+            <View style={[styles.puebloCard, { backgroundColor: bgColor }]}>
+              {item.imagen_principal && (
+                <Image
+                  source={{ uri: item.imagen_principal }}
+                  style={styles.puebloImage}
+                  resizeMode="cover"
+                />
               )}
+              <View style={styles.puebloContent}>
+                <View style={styles.puebloHeader}>
+                  {item.checked === 1 && (
+                    <View
+                      style={[
+                        styles.tipoBadge,
+                        item.tipo === 'auto'
+                          ? styles.tipoGeolocal
+                          : styles.tipoManualBadge,
+                      ]}
+                    >
+                      <Text style={styles.tipoBadgeText}>
+                        {item.tipo === 'auto' ? 'Geolocalizado' : 'Manual'}
+                      </Text>
+                    </View>
+                  )}
+                  {isEditing && (
+                    <TouchableOpacity
+                      style={[
+                        styles.visitadoButton,
+                        item.checked === 1 && styles.visitadoButtonActive,
+                      ]}
+                      onPress={() => handleToggleVisita(item)}
+                    >
+                      {item.checked === 1 ? (
+                        <Check size={18} color="#fff" strokeWidth={3} />
+                      ) : (
+                        <Text style={styles.visitadoButtonText}>Marcar</Text>
+                      )}
+                    </TouchableOpacity>
+                  )}
+                </View>
+
+                <View style={styles.puebloInfo}>
+                  <Text style={styles.puebloNombre}>{item.nombre}</Text>
+                  {item.provincia && (
+                    <Text style={styles.puebloLocation}>{item.provincia}</Text>
+                  )}
+                </View>
+
+                <View style={styles.starsContainer}>
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <TouchableOpacity
+                      key={star}
+                      onPress={() => isEditing && handleChangeStars(item, star)}
+                      disabled={!isEditing}
+                    >
+                      <Star
+                        size={24}
+                        color={star <= item.estrellas ? '#FFD700' : '#ddd'}
+                        fill={star <= item.estrellas ? '#FFD700' : 'transparent'}
+                        strokeWidth={2}
+                      />
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                {item.fecha_visita && (
+                  <Text style={styles.fechaVisita}>
+                    Visitado: {new Date(item.fecha_visita).toLocaleDateString('es-ES')}
+                  </Text>
+                )}
+              </View>
             </View>
-          </View>
-        )}
+          );
+        }}
       />
     </SafeAreaView>
   );
@@ -430,9 +511,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 4,
     elevation: 3,
-  },
-  puebloPendiente: {
-    backgroundColor: '#f5f5f5',
   },
   puebloImage: {
     width: '100%',
