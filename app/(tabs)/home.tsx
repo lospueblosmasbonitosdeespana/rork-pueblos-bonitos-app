@@ -1,24 +1,21 @@
 import { router } from 'expo-router';
 import { Image } from 'expo-image';
 import { Building2, Camera, Compass, ShoppingBag, Newspaper, UserCircle } from 'lucide-react-native';
-import { StyleSheet, Text, TouchableOpacity, View, useColorScheme } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-import { SPACING, useThemeColors } from '@/constants/theme';
+import { COLORS, SPACING } from '@/constants/theme';
 import { useLanguage } from '@/contexts/language';
 
 export default function HomeScreen() {
   const { t } = useLanguage();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
-  const colors = useThemeColors(isDark);
 
   const openQRScanner = () => {
     router.push('/qr-scanner' as any);
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.logoSection, { backgroundColor: colors.card }]}>
+    <View style={styles.container}>
+      <View style={styles.logoSection}>
         <Image
           source={{ uri: 'https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/logo-lpbe.png' }}
           style={styles.logo}
@@ -108,10 +105,12 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: COLORS.background,
   },
   logoSection: {
     paddingVertical: SPACING.xl,
     alignItems: 'center',
+    backgroundColor: COLORS.card,
   },
   logo: {
     width: 238,
