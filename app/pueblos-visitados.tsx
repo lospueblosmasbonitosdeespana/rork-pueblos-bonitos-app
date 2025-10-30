@@ -51,7 +51,7 @@ export default function PueblosVisitadosScreen() {
       setError(null);
 
       const response = await fetch(
-        `${API_BASE_URL}/jet-cct/visita?user_id=${user.id}&per_page=100`,
+        `https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/pueblos-visitados?user_id=${user.id}`,
         {
           headers: {
             'Content-Type': 'application/json',

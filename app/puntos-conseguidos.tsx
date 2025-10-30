@@ -12,24 +12,29 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { API_BASE_URL } from '@/constants/api';
 import { useAuth } from '@/contexts/auth';
 
 const LPBE_RED = '#c1121f';
 
-interface PuntoDetalle {
-  _ID: string;
-  pueblo_nombre: string;
+interface PuntosData {
+  puntos_totales: number;
+  nivel: string;
+  nivel_siguiente: string;
+  pueblos: PuebloFavorito[];
+}
+
+interface PuebloFavorito {
+  pueblo_id: string;
+  nombre: string;
   provincia?: string;
-  estrellas: number;
   puntos: number;
-  fecha_visita?: string;
-  tipo: 'visita' | 'manual' | 'qr';
+  estrellas: number;
+  imagen_url?: string;
 }
 
 export default function PuntosConseguidosScreen() {
   const { user } = useAuth();
-  const [puntos, setPuntos] = useState<PuntoDetalle[]>([]);
+  const [puntosData, setPuntosData] = useState<PuntosData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -44,7 +49,7 @@ export default function PuntosConseguidosScreen() {
       setError(null);
 
       const response = await fetch(
-        `${API_BASE_URL}/jet-cct/visita?user_id=${user.id}&completado=true&per_page=100`,
+        `https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/puntos?user_id=${user.id}`,
         {
           headers: {
             'Content-Type': 'application/json',
@@ -57,18 +62,7 @@ export default function PuntosConseguidosScreen() {
       }
 
       const data = await response.json();
-      
-      const puntosData: PuntoDetalle[] = data.map((item: any) => ({
-        _ID: item._ID,
-        pueblo_nombre: item.nombre_pueblo,
-        provincia: item.provincia,
-        estrellas: item.estrellas || 0,
-        puntos: (item.estrellas || 0) * 10,
-        fecha_visita: item.fecha_visita,
-        tipo: item.manual ? 'manual' : item.via_qr ? 'qr' : 'visita',
-      }));
-
-      setPuntos(puntosData);
+      setPuntosData(data);
     } catch (err) {
       console.error('Error fetching puntos:', err);
       setError('No se pudieron cargar los puntos');
@@ -87,9 +81,12 @@ export default function PuntosConseguidosScreen() {
     fetchPuntos(true);
   };
 
-  const totalPuntos = puntos.reduce((sum, p) => sum + p.puntos, 0);
-  const totalEstrellas = puntos.reduce((sum, p) => sum + p.estrellas, 0);
-  const totalPueblos = puntos.length;
+  const totalPuntos = puntosData?.puntos_totales || 0;
+  const pueblos = puntosData?.pueblos || [];
+  const totalEstrellas = pueblos.reduce((sum, p) => sum + p.estrellas, 0);
+  const totalPueblos = pueblos.length;
+  const nivel = puntosData?.nivel || 'Nivel 1';
+  const nivelSiguiente = puntosData?.nivel_siguiente || 'Nivel 2';
 
   if (isLoading) {
     return (
@@ -137,6 +134,10 @@ export default function PuntosConseguidosScreen() {
           <Award size={48} color={LPBE_RED} strokeWidth={2} />
           <Text style={styles.totalPointsValue}>{totalPuntos}</Text>
           <Text style={styles.totalPointsLabel}>Puntos Totales</Text>
+          <View style={styles.nivelContainer}>
+            <Text style={styles.nivelActual}>{nivel}</Text>
+            <Text style={styles.nivelSiguiente}>Siguiente: {nivelSiguiente}</Text>
+          </View>
         </View>
 
         <View style={styles.statsRow}>
@@ -169,12 +170,13 @@ export default function PuntosConseguidosScreen() {
       </View>
 
       <View style={styles.listHeader}>
-        <Text style={styles.listHeaderTitle}>Detalle de Puntos</Text>
+        <Text style={styles.listHeaderTitle}>Pueblos Favoritos</Text>
+        <Text style={styles.listHeaderSubtitle}>Los pueblos con mayor puntuación</Text>
       </View>
 
       <FlatList
-        data={puntos}
-        keyExtractor={(item) => item._ID}
+        data={pueblos}
+        keyExtractor={(item) => item.pueblo_id}
         contentContainerStyle={styles.listContent}
         refreshControl={
           <RefreshControl
@@ -197,13 +199,13 @@ export default function PuntosConseguidosScreen() {
           <View style={styles.puntoCard}>
             <View style={styles.puntoHeader}>
               <View style={styles.puntoInfo}>
-                <Text style={styles.puebloNombre}>{item.pueblo_nombre}</Text>
+                <Text style={styles.puebloNombre}>{item.nombre}</Text>
                 {item.provincia && (
                   <Text style={styles.puebloLocation}>{item.provincia}</Text>
                 )}
               </View>
               <View style={styles.puntosBox}>
-                <Text style={styles.puntosValue}>+{item.puntos}</Text>
+                <Text style={styles.puntosValue}>{item.puntos}</Text>
                 <Text style={styles.puntosLabel}>pts</Text>
               </View>
             </View>
@@ -218,22 +220,6 @@ export default function PuntosConseguidosScreen() {
                   strokeWidth={2}
                 />
               ))}
-            </View>
-
-            {item.fecha_visita && (
-              <Text style={styles.fecha}>
-                {new Date(item.fecha_visita).toLocaleDateString('es-ES', {
-                  day: 'numeric',
-                  month: 'long',
-                  year: 'numeric',
-                })}
-              </Text>
-            )}
-
-            <View style={styles.tipoBadge}>
-              <Text style={styles.tipoBadgeText}>
-                {item.tipo === 'manual' ? 'Manual' : item.tipo === 'qr' ? 'QR' : 'Visita'}
-              </Text>
             </View>
           </View>
         )}
@@ -341,6 +327,25 @@ const styles = StyleSheet.create({
     fontWeight: '700' as const,
     color: '#1a1a1a',
   },
+  listHeaderSubtitle: {
+    fontSize: 13,
+    color: '#666',
+    marginTop: 4,
+  },
+  nivelContainer: {
+    marginTop: 12,
+    alignItems: 'center',
+  },
+  nivelActual: {
+    fontSize: 18,
+    fontWeight: '700' as const,
+    color: '#1a1a1a',
+    marginBottom: 4,
+  },
+  nivelSiguiente: {
+    fontSize: 14,
+    color: '#666',
+  },
   listContent: {
     padding: 16,
     paddingBottom: 32,
@@ -440,21 +445,5 @@ const styles = StyleSheet.create({
     gap: 6,
     marginBottom: 8,
   },
-  fecha: {
-    fontSize: 12,
-    color: '#999',
-    marginBottom: 8,
-  },
-  tipoBadge: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#f0f0f0',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-  },
-  tipoBadgeText: {
-    fontSize: 11,
-    color: '#666',
-    fontWeight: '600' as const,
-  },
+
 });
