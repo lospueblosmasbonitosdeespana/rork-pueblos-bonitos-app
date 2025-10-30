@@ -19,22 +19,35 @@ import { fetchLugares } from '@/services/api';
 import { Lugar } from '@/types/api';
 
 const banderas: Record<string, string> = {
-  "Andalucía": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_Andalucía.png",
-  "Aragón": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Bandera_Aragon_escudo.png",
-  "Asturias": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_Asturias.png",
-  "Cantabria": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_Cantabria.png",
-  "Castilla y León": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_Castile_and_Leon.png",
-  "Castilla - La Mancha": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_Castile-La_Mancha.png",
-  "Cataluña": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_Catalonia.png",
-  "Extremadura": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_Extremadura__Spain__with_coat_of_arms_.png",
-  "Galicia": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_Galicia.png",
-  "La Rioja": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_La_Rioja.png",
-  "Islas Baleares": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_the_Balearic_Islands.png",
-  "País Vasco": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_the_Basque_Country.png",
-  "Canarias": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_the_Canary_Islands.png",
-  "Comunidad de Madrid": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_the_Community_of_Madrid.png",
-  "Navarra": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Bandera_de_Navarra.png",
+  "andalucia": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_Andalucía.png",
+  "aragon": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Bandera_Aragon_escudo.png",
+  "asturias": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_Asturias.png",
+  "cantabria": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_Cantabria.png",
+  "castilla y leon": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_Castile_and_Leon.png",
+  "castilla - la mancha": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_Castile-La_Mancha.png",
+  "cataluña": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_Catalonia.png",
+  "extremadura": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_Extremadura__Spain__with_coat_of_arms_.png",
+  "galicia": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_Galicia.png",
+  "la rioja": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_La_Rioja.png",
+  "islas baleares": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_the_Balearic_Islands.png",
+  "pais vasco": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_the_Basque_Country.png",
+  "canarias": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_the_Canary_Islands.png",
+  "comunidad de madrid": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_the_Community_of_Madrid.png",
+  "navarra": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Bandera_de_Navarra.png",
+  "comunidad valenciana": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_Catalonia.png",
 };
+
+const normalizar = (nombre = "") =>
+  nombre
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace("principado de ", "")
+    .replace("comunidad de ", "")
+    .replace("comunidad autonoma de ", "")
+    .replace("comunidad foral de ", "")
+    .replace("region de ", "")
+    .trim();
 
 export default function PueblosScreen() {
   const { t } = useLanguage();
@@ -74,17 +87,21 @@ export default function PueblosScreen() {
         <View style={styles.listItemContent}>
           <View style={styles.puebloInfo}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              {item.comunidad_autonoma && banderas[item.comunidad_autonoma] && (
-                <Image
-                  source={{ uri: banderas[item.comunidad_autonoma] }}
-                  style={{
-                    width: 28,
-                    height: 18,
-                    borderRadius: 2,
-                    marginRight: 10,
-                  }}
-                />
-              )}
+              {item.comunidad_autonoma && (() => {
+                const key = normalizar(item.comunidad_autonoma);
+                const bandera = banderas[key];
+                return bandera ? (
+                  <Image
+                    source={{ uri: bandera }}
+                    style={{
+                      width: 28,
+                      height: 18,
+                      borderRadius: 2,
+                      marginRight: 10,
+                    }}
+                  />
+                ) : null;
+              })()}
               <Text style={styles.puebloName}>{item.nombre}</Text>
             </View>
             {item.provincia && (
