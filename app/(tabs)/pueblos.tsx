@@ -89,6 +89,7 @@ export default function PueblosScreen() {
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               {item.comunidad_autonoma && (() => {
                 const key = normalizar(item.comunidad_autonoma);
+                console.log('🏴 Comunidad:', item.comunidad_autonoma, '→ Normalizada:', key);
                 const bandera = banderas[key];
                 return bandera ? (
                   <Image
