@@ -1,6 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import { Image } from 'expo-image';
 import { Search } from 'lucide-react-native';
 import { useState } from 'react';
 import {
@@ -36,11 +35,7 @@ export default function PueblosScreen() {
     return !isNaN(id) && id <= 200;
   });
 
-  console.log('🏘️ Total pueblos cargados:', lugares.length);
-  console.log('🏘️ Pueblos asociación (id <= 200):', pueblosAsociacion.length);
-  if (pueblosAsociacion.length > 0) {
-    console.log('🏘️ Primer pueblo:', pueblosAsociacion[0].nombre, 'ID:', pueblosAsociacion[0]._ID, 'Imagen:', pueblosAsociacion[0].imagen_principal?.substring(0, 50));
-  }
+
 
   const displayLugares = pueblosAsociacion;
   
@@ -51,11 +46,6 @@ export default function PueblosScreen() {
     : displayLugares;
 
   const renderPueblo = ({ item }: { item: Lugar }) => {
-    const fallbackImage = 'https://images.unsplash.com/photo-1543783207-ec64e4d95325?w=800&q=80';
-    const imagenUri = (item.imagen_principal && item.imagen_principal.startsWith('http')) 
-      ? item.imagen_principal 
-      : fallbackImage;
-    
     return (
       <TouchableOpacity
         style={styles.listItem}
@@ -63,13 +53,6 @@ export default function PueblosScreen() {
         activeOpacity={0.7}
       >
         <View style={styles.listItemContent}>
-          <Image
-            source={{ uri: imagenUri }}
-            style={styles.puebloImage}
-            contentFit="cover"
-            placeholder={{ blurhash: 'L6PZfSi_.AyE_3t7t7R**0o#DgR4' }}
-            transition={200}
-          />
           <View style={styles.puebloInfo}>
             <Text style={styles.puebloName}>{item.nombre}</Text>
             {item.provincia && (
@@ -179,13 +162,6 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     paddingVertical: SPACING.md,
     paddingHorizontal: SPACING.lg,
-    gap: SPACING.md,
-  },
-  puebloImage: {
-    width: 64,
-    height: 64,
-    borderRadius: 8,
-    backgroundColor: COLORS.beige,
   },
   puebloInfo: {
     flex: 1,

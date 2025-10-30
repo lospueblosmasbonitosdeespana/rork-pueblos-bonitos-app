@@ -102,14 +102,21 @@ export async function fetchLugaresStable(): Promise<Lugar[]> {
   }
   lastFetchTime = Date.now();
 
-  console.log('\n🚀 INICIANDO fetchLugaresStable() - usando backend proxy');
+  const url = 'https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/pueblos-lite';
   
   try {
-    const { trpcClient } = await import('@/lib/trpc');
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+      },
+    });
     
-    const data = await trpcClient.pueblos.withImages.query();
+    if (!response.ok) {
+      throw new Error(`Error ${response.status}: No se pudieron cargar los pueblos`);
+    }
     
-    console.log('📦 Pueblos recibidos del backend:', data.length);
+    const data = await response.json();
     
     if (!Array.isArray(data) || data.length === 0) {
       throw new Error('No se pudieron cargar los pueblos');
@@ -120,12 +127,7 @@ export async function fetchLugaresStable(): Promise<Lugar[]> {
     
     for (const item of data) {
       if (nombresVistos.has(item.nombre)) {
-        console.log(`⏭️ Saltando duplicado: ${item.nombre}`);
         continue;
-      }
-      
-      if (pueblos.length === 0) {
-        console.log('📸 Primera imagen:', item.nombre, '→', item.imagen_principal ? '✅ Tiene' : '❌ Sin imagen');
       }
       
       pueblos.push({
@@ -133,7 +135,7 @@ export async function fetchLugaresStable(): Promise<Lugar[]> {
         nombre: item.nombre,
         provincia: item.provincia,
         comunidad_autonoma: item.comunidad_autonoma,
-        imagen_principal: item.imagen_principal,
+        imagen_principal: null,
         descripcion: '',
         multimedia: [],
         latitud: item.latitud || 0,
@@ -151,9 +153,6 @@ export async function fetchLugaresStable(): Promise<Lugar[]> {
       const nombreB = b.nombre || '';
       return nombreA.localeCompare(nombreB);
     });
-    
-    const conImagen = pueblos.filter(p => p.imagen_principal !== null).length;
-    console.log(`✅ Pueblos procesados: ${pueblos.length} (${conImagen} con imagen)`);
     
     return pueblos;
   } catch (error: any) {
