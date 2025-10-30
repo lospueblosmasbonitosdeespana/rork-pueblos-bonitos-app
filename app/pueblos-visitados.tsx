@@ -15,7 +15,6 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { API_BASE_URL } from '@/constants/api';
 import { useAuth } from '@/contexts/auth';
 
 const LPBE_RED = '#c1121f';
@@ -101,28 +100,44 @@ export default function PueblosVisitadosScreen() {
   };
 
   const handleToggleVisita = async (pueblo: PuebloVisita) => {
+    if (!user?.id) return;
+
     try {
-      const endpoint = `${API_BASE_URL}/jet-cct/visita/${pueblo._ID}`;
+      const newChecked = pueblo.checked === 1 ? 0 : 1;
       
-      const response = await fetch(endpoint, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          checked: pueblo.checked === 1 ? 0 : 1,
-        }),
-      });
+      const response = await fetch(
+        'https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/visita-update',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            user_id: user.id,
+            pueblo_id: pueblo.pueblo_id,
+            checked: newChecked,
+            tipo: pueblo.tipo,
+            estrellas: pueblo.estrellas,
+          }),
+        }
+      );
 
       if (!response.ok) {
-        throw new Error('Error al actualizar visita');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Error al actualizar visita');
       }
 
-      setPueblos(prevPueblos =>
-        prevPueblos.map(p =>
-          p._ID === pueblo._ID ? { ...p, checked: p.checked === 1 ? 0 : 1 } : p
-        )
-      );
+      const result = await response.json();
+      
+      if (result.success) {
+        setPueblos(prevPueblos =>
+          prevPueblos.map(p =>
+            p.pueblo_id === pueblo.pueblo_id ? { ...p, checked: newChecked } : p
+          )
+        );
+      } else {
+        throw new Error(result.message || 'Error al actualizar visita');
+      }
     } catch (err) {
       console.error('Error toggling visita:', err);
       if (Platform.OS === 'web') {
@@ -134,28 +149,42 @@ export default function PueblosVisitadosScreen() {
   };
 
   const handleChangeStars = async (pueblo: PuebloVisita, newStars: number) => {
+    if (!user?.id) return;
+
     try {
-      const endpoint = `${API_BASE_URL}/jet-cct/visita/${pueblo._ID}`;
-      
-      const response = await fetch(endpoint, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          estrellas: newStars,
-        }),
-      });
+      const response = await fetch(
+        'https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/visita-update',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            user_id: user.id,
+            pueblo_id: pueblo.pueblo_id,
+            checked: pueblo.checked,
+            tipo: pueblo.tipo,
+            estrellas: newStars,
+          }),
+        }
+      );
 
       if (!response.ok) {
-        throw new Error('Error al actualizar estrellas');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Error al actualizar estrellas');
       }
 
-      setPueblos(prevPueblos =>
-        prevPueblos.map(p =>
-          p._ID === pueblo._ID ? { ...p, estrellas: newStars } : p
-        )
-      );
+      const result = await response.json();
+      
+      if (result.success) {
+        setPueblos(prevPueblos =>
+          prevPueblos.map(p =>
+            p.pueblo_id === pueblo.pueblo_id ? { ...p, estrellas: newStars } : p
+          )
+        );
+      } else {
+        throw new Error(result.message || 'Error al actualizar estrellas');
+      }
     } catch (err) {
       console.error('Error changing stars:', err);
       if (Platform.OS === 'web') {
