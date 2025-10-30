@@ -105,19 +105,23 @@ export default function PuebloInfo() {
           }
           
           if (!json.altitud) {
+            console.log('⛰️ Open-Elevation response:', JSON.stringify(elevationData, null, 2));
             if (elevationData?.results?.[0]?.elevation != null) {
               const elevation = elevationData.results[0].elevation;
-              if (typeof elevation === 'number' && !isNaN(elevation) && elevation > 0) {
+              console.log('⛰️ Elevation value:', elevation, 'type:', typeof elevation);
+              if (typeof elevation === 'number' && !isNaN(elevation)) {
                 json.altitud = Math.round(elevation);
                 console.log(`⛰️ Altitud calculada: ${json.altitud} m`);
               } else {
                 console.log('⛰️ Altitud inválida:', elevation);
-                json.altitud = null;
+                json.altitud = 0;
               }
             } else {
               console.log('⛰️ No se pudo obtener altitud de Open-Elevation');
-              json.altitud = null;
+              json.altitud = 0;
             }
+          } else {
+            console.log(`⛰️ Altitud desde JSON: ${json.altitud} m`);
           }
         }
         
@@ -264,7 +268,7 @@ export default function PuebloInfo() {
                 <Mountain size={32} color="#FFFFFF" strokeWidth={2.5} />
               </View>
               <Text style={styles.metricLabel}>Altitud</Text>
-              <Text style={styles.metricValue}>{data.altitud != null && data.altitud > 0 ? `${data.altitud} m` : '– m'}</Text>
+              <Text style={styles.metricValue}>{data.altitud && data.altitud > 0 ? `${data.altitud} m` : '– m'}</Text>
               <Text style={styles.metricSubtext}>sobre el nivel del mar</Text>
             </TouchableOpacity>
 
