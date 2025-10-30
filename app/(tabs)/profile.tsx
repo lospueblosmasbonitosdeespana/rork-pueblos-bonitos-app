@@ -26,16 +26,17 @@ export default function ProfileScreen() {
       if (!isAuthenticated || !user) {
         router.replace('/login');
       } else {
-        Animated.timing(fadeAnim, {
+        Animated.spring(fadeAnim, {
           toValue: 1,
-          duration: 600,
+          friction: 8,
+          tension: 40,
           useNativeDriver: true,
         }).start();
       }
     }
   }, [isLoading, isAuthenticated, user]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     Alert.alert(
       'Cerrar Sesión',
       '¿Estás seguro de que deseas cerrar sesión?',
@@ -47,7 +48,9 @@ export default function ProfileScreen() {
         {
           text: 'Cerrar Sesión',
           style: 'destructive',
-          onPress: logout,
+          onPress: async () => {
+            await logout();
+          },
         },
       ]
     );

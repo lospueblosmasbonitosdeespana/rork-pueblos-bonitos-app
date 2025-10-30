@@ -106,18 +106,21 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(credentials),
+        body: JSON.stringify({
+          user_login: credentials.username,
+          user_password: credentials.password,
+        }),
       });
+
+      if (response.status !== 200) {
+        return { success: false, error: 'Credenciales incorrectas' };
+      }
 
       const data = await response.json();
 
-      if (!response.ok) {
-        return { success: false, error: data.message || 'Credenciales incorrectas' };
-      }
-
       const token = data.token || data.access_token;
       if (!token) {
-        return { success: false, error: 'No se recibió token de autenticación' };
+        return { success: false, error: 'Credenciales incorrectas' };
       }
 
       await setStoredToken(token);
@@ -140,7 +143,7 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
       return { success: true };
     } catch (error) {
       console.error('Login error:', error);
-      return { success: false, error: 'Error de conexión' };
+      return { success: false, error: 'Credenciales incorrectas' };
     }
   };
 
