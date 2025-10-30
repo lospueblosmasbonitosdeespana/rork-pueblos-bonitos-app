@@ -43,6 +43,13 @@ interface EditChanges {
   };
 }
 
+interface PuntosData {
+  puntos_totales: number;
+  total_pueblos: number;
+  nivel: string;
+  nivel_siguiente: string;
+}
+
 export default function PueblosVisitadosScreen() {
   const { user } = useAuth();
   const [pueblos, setPueblos] = useState<PuebloVisita[]>([]);
@@ -53,6 +60,7 @@ export default function PueblosVisitadosScreen() {
   const [error, setError] = useState<string | null>(null);
   const [editChanges, setEditChanges] = useState<EditChanges>({});
   const [originalState, setOriginalState] = useState<Map<string, PuebloVisita>>(new Map());
+  const [puntosData, setPuntosData] = useState<PuntosData | null>(null);
 
   const fetchPueblosVisitados = useCallback(async (isRefresh = false) => {
     if (!user?.id) return;
@@ -62,6 +70,16 @@ export default function PueblosVisitadosScreen() {
         setIsLoading(true);
       }
       setError(null);
+
+      const puntosRes = await fetch(`https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/puntos?user_id=${user.id}`, {
+        headers: { 'Content-Type': 'application/json' },
+      });
+      
+      if (puntosRes.ok) {
+        const puntosDataFromAPI = await puntosRes.json();
+        setPuntosData(puntosDataFromAPI);
+        console.log('🎯 [PUEBLOS VISITADOS] Datos de puntos actualizados:', puntosDataFromAPI);
+      }
 
       const [visitadosRes, liteRes, puntosLugaresRes] = await Promise.all([
         fetch(`https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/pueblos-visitados?user_id=${user.id}`, {
@@ -321,25 +339,17 @@ export default function PueblosVisitadosScreen() {
   };
 
   const visitados = pueblos.filter(p => p.checked === 1);
-  const totalVisitados = visitados.length;
   const geolocalizados = visitados.filter(p => p.tipo === 'auto').length;
   const manuales = visitados.filter(p => p.tipo === 'manual').length;
-  const totalPuntos = visitados.reduce((sum, p) => {
-    const puntosPueblo = p.puntos || 0;
-    return sum + puntosPueblo;
-  }, 0);
+  
+  const totalVisitados = puntosData?.total_pueblos || visitados.length;
   
   console.log('═══════════════════════════════════════');
-  console.log('📊 [PUEBLOS VISITADOS - CÁLCULO LOCAL]');
+  console.log('📊 [PUEBLOS VISITADOS - SINCRONIZADO]');
   console.log('═══════════════════════════════════════');
-  console.log(`🏘️  Total pueblos visitados: ${totalVisitados}`);
-  console.log(`📍 Geolocalizados: ${geolocalizados}`);
-  console.log(`✍️  Manuales: ${manuales}`);
-  console.log(`🎯 Total puntos (suma real): ${totalPuntos}`);
-  console.log('\n🔍 Detalle por pueblo:');
-  visitados.forEach(p => {
-    console.log(`  - ${p.nombre} (ID: ${p.pueblo_id}): ${p.puntos || 0} pts [${p.tipo}]`);
-  });
+  console.log(`🏘️  Total pueblos visitados (del endpoint): ${totalVisitados}`);
+  console.log(`📍 Geolocalizados (lista local): ${geolocalizados}`);
+  console.log(`✍️  Manuales (lista local): ${manuales}`);
   console.log('═══════════════════════════════════════');
 
   if (isLoading) {
