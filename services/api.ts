@@ -137,9 +137,14 @@ export async function fetchLugaresStable(): Promise<Lugar[]> {
     }
     
     console.log('✅ Pueblos recibidos:', data.length);
-    console.log('\n🔍 ====== ANALIZANDO PRIMER PUEBLO ======');
-    console.log('🔑 Campos disponibles:', Object.keys(data[0]));
-    console.log('📦 Pueblo completo:', JSON.stringify(data[0], null, 2));
+    console.log('\n🔍 ====== ANALIZANDO PRIMEROS 3 PUEBLOS ======');
+    for (let i = 0; i < Math.min(3, data.length); i++) {
+      console.log(`\n📦 PUEBLO ${i + 1}:`);
+      console.log('Nombre:', data[i].nombre);
+      console.log('ID:', data[i].id);
+      console.log('Campos disponibles:', Object.keys(data[i]));
+      console.log('JSON completo:', JSON.stringify(data[i], null, 2));
+    }
     console.log('==========================================\n');
     
     const pueblos: Lugar[] = [];
