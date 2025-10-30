@@ -171,7 +171,11 @@ export async function fetchLugaresStable(): Promise<Lugar[]> {
       nombresVistos.add(item.nombre);
     }
     
-    pueblos.sort((a, b) => a.nombre.localeCompare(b.nombre));
+    pueblos.sort((a, b) => {
+      const nombreA = a.nombre || '';
+      const nombreB = b.nombre || '';
+      return nombreA.localeCompare(nombreB);
+    });
     
     console.log('✅ Pueblos procesados:', pueblos.length);
     console.log('✅ Primer pueblo procesado:', pueblos[0]?.nombre);
