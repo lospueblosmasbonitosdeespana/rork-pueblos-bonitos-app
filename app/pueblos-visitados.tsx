@@ -222,6 +222,14 @@ export default function PueblosVisitadosScreen() {
         }
         
         await fetchPueblosVisitados(true);
+        
+        try {
+          await fetch(`https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/puntos?user_id=${user.id}`, {
+            headers: { 'Content-Type': 'application/json' },
+          });
+        } catch (err) {
+          console.warn('Error al sincronizar puntos:', err);
+        }
       } else {
         throw new Error('Error al guardar algunos cambios');
       }

@@ -114,7 +114,7 @@ export default function PuntosConseguidosScreen() {
   const nivelSiguiente = puntosData?.nivel_siguiente || 'N/A';
   const totalPueblos = visitadosCount || 0;
   const pueblosFavoritos = (puntosData?.favoritos || []).filter(f => f.estrellas === 5);
-  const totalEstrellas = totalPuntos;
+  const totalEstrellas = (puntosData?.favoritos || []).reduce((acc, p) => acc + (Number(p.estrellas) || 0), 0);
 
   if (isLoading) {
     return (
@@ -291,7 +291,9 @@ const styles = StyleSheet.create({
   },
   summaryContainer: {
     backgroundColor: '#fff',
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingTop: 0,
+    paddingBottom: 20,
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
   },
