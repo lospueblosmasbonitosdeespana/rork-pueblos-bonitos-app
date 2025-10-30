@@ -4,21 +4,23 @@ import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 
-const API_BASE = 'https://lospueblosmasbonitosdeespana.org/wp-json/um/v2';
-const TOKEN_KEY = 'um_token';
+const API_BASE = 'https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1';
+const USER_ID_KEY = 'lpbe_user_id';
 
-interface UMUser {
+interface LPBEUser {
   id: number;
-  name: string;
-  first_name: string;
-  last_name: string;
+  username: string;
   email: string;
+  name: string;
+  role: string;
+  first_name?: string;
+  last_name?: string;
   avatar_url?: string;
 }
 
 interface AuthState {
-  user: UMUser | null;
-  token: string | null;
+  user: LPBEUser | null;
+  userId: string | null;
   isLoading: boolean;
   isAuthenticated: boolean;
 }
@@ -36,33 +38,33 @@ interface RegisterData {
   last_name?: string;
 }
 
-async function getStoredToken(): Promise<string | null> {
+async function getStoredUserId(): Promise<string | null> {
   if (Platform.OS === 'web') {
-    return localStorage.getItem(TOKEN_KEY);
+    return localStorage.getItem(USER_ID_KEY);
   }
-  return await SecureStore.getItemAsync(TOKEN_KEY);
+  return await SecureStore.getItemAsync(USER_ID_KEY);
 }
 
-async function setStoredToken(token: string): Promise<void> {
+async function setStoredUserId(userId: string): Promise<void> {
   if (Platform.OS === 'web') {
-    localStorage.setItem(TOKEN_KEY, token);
+    localStorage.setItem(USER_ID_KEY, userId);
   } else {
-    await SecureStore.setItemAsync(TOKEN_KEY, token);
+    await SecureStore.setItemAsync(USER_ID_KEY, userId);
   }
 }
 
-async function deleteStoredToken(): Promise<void> {
+async function deleteStoredUserId(): Promise<void> {
   if (Platform.OS === 'web') {
-    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_ID_KEY);
   } else {
-    await SecureStore.deleteItemAsync(TOKEN_KEY);
+    await SecureStore.deleteItemAsync(USER_ID_KEY);
   }
 }
 
 export const [AuthProvider, useAuth] = createContextHook(() => {
   const [state, setState] = useState<AuthState>({
     user: null,
-    token: null,
+    userId: null,
     isLoading: true,
     isAuthenticated: false,
   });
@@ -70,94 +72,59 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
   const checkAuth = async () => {
     try {
       setState(prev => ({ ...prev, isLoading: true }));
-      const token = await getStoredToken();
+      const userId = await getStoredUserId();
 
-      if (!token) {
-        setState({ user: null, token: null, isLoading: false, isAuthenticated: false });
+      if (!userId) {
+        setState({ user: null, userId: null, isLoading: false, isAuthenticated: false });
         return;
       }
 
-      const response = await fetch(`${API_BASE}/me`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await fetch(`${API_BASE}/user/${userId}`);
 
       if (!response.ok) {
-        await deleteStoredToken();
-        setState({ user: null, token: null, isLoading: false, isAuthenticated: false });
+        await deleteStoredUserId();
+        setState({ user: null, userId: null, isLoading: false, isAuthenticated: false });
         return;
       }
 
       const user = await response.json();
-      setState({ user, token, isLoading: false, isAuthenticated: true });
+      setState({ user, userId, isLoading: false, isAuthenticated: true });
     } catch (error) {
       console.error('Error checking auth:', error);
-      await deleteStoredToken();
-      setState({ user: null, token: null, isLoading: false, isAuthenticated: false });
+      await deleteStoredUserId();
+      setState({ user: null, userId: null, isLoading: false, isAuthenticated: false });
     }
   };
 
   const login = async (credentials: LoginCredentials): Promise<{ success: boolean; error?: string }> => {
     try {
-      const loginValue = credentials.username.trim();
-      const passwordValue = credentials.password.trim();
-
-      const attempts = [
-        { username: loginValue, password: passwordValue },
-        { user_login: loginValue, user_password: passwordValue },
-      ];
-
-      let token: string | null = null;
-      let lastError = 'Credenciales incorrectas o usuario no válido';
-
-      for (const body of attempts) {
-        try {
-          const response = await fetch(`${API_BASE}/login`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(body),
-          });
-
-          if (response.ok) {
-            const data = await response.json();
-            token = data.token || data.access_token || data.data?.token;
-            
-            if (token) {
-              break;
-            }
-          } else {
-            const errorData = await response.json().catch(() => ({}));
-            lastError = errorData.message || lastError;
-          }
-        } catch (err) {
-          console.log('Login attempt failed:', err);
-        }
-      }
-
-      if (!token) {
-        return { success: false, error: lastError };
-      }
-
-      await setStoredToken(token);
-
-      const userResponse = await fetch(`${API_BASE}/me`, {
+      const response = await fetch(`${API_BASE}/login`, {
+        method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
+        body: JSON.stringify({
+          username: credentials.username.trim(),
+          password: credentials.password.trim(),
+        }),
       });
 
-      if (!userResponse.ok) {
-        await deleteStoredToken();
-        return { success: false, error: 'Error al obtener datos del usuario' };
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        return { 
+          success: false, 
+          error: errorData.message || 'Credenciales incorrectas o usuario no válido' 
+        };
       }
 
-      const user = await userResponse.json();
-      setState({ user, token, isLoading: false, isAuthenticated: true });
+      const user = await response.json();
+
+      if (!user.id || !user.username || !user.email || !user.name || !user.role) {
+        return { success: false, error: 'Respuesta del servidor inválida' };
+      }
+
+      await setStoredUserId(user.id.toString());
+      setState({ user, userId: user.id.toString(), isLoading: false, isAuthenticated: true });
 
       return { success: true };
     } catch (error) {
@@ -191,21 +158,11 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
 
   const logout = async () => {
     try {
-      if (state.token) {
-        await fetch(`${API_BASE}/logout`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${state.token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-      }
+      await deleteStoredUserId();
+      setState({ user: null, userId: null, isLoading: false, isAuthenticated: false });
+      router.replace('/login');
     } catch (error) {
       console.error('Logout error:', error);
-    } finally {
-      await deleteStoredToken();
-      setState({ user: null, token: null, isLoading: false, isAuthenticated: false });
-      router.replace('/login');
     }
   };
 
