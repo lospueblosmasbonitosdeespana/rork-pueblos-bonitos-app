@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, ActivityIndicator, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { Stack, useLocalSearchParams, router } from 'expo-router';
-import { Wind, Mountain, Users, Thermometer, ArrowUp, ArrowDown } from 'lucide-react-native';
+import { Wind, Mountain, Users, Thermometer } from 'lucide-react-native';
 import { COLORS, SHADOWS, SPACING } from '@/constants/theme';
 import WeatherIcon from '@/components/WeatherIcon';
 
@@ -18,8 +18,6 @@ type PuebloInfo = {
     temperatura: number;
     descripcion: string;
     feels_like: number;
-    temp_max: number;
-    temp_min: number;
     humidity: number;
     pressure: number;
   };
@@ -63,60 +61,58 @@ export default function PuebloInfo() {
         console.log('🌍 pueblo-info json:', JSON.stringify(json, null, 2));
         
         if (json.coordenadas?.lat && json.coordenadas?.lng) {
-          console.log('🌍 Obteniendo datos climáticos desde OpenWeather...');
-          try {
-            const weatherRes = await fetch(
-              `https://api.openweathermap.org/data/2.5/weather?lat=${json.coordenadas.lat}&lon=${json.coordenadas.lng}&appid=${OPENWEATHER_API_KEY}&units=metric&lang=es`
-            );
-            if (weatherRes.ok) {
-              const weatherData = await weatherRes.json();
-              console.log('🌍 OpenWeather data:', JSON.stringify(weatherData, null, 2));
-              
-              json.clima = json.clima || {};
-              json.clima.temperatura = weatherData.main?.temp ?? json.clima.temperatura ?? null;
-              json.clima.feels_like = weatherData.main?.feels_like ?? null;
-              json.clima.temp_max = weatherData.main?.temp_max ?? null;
-              json.clima.temp_min = weatherData.main?.temp_min ?? null;
-              json.clima.humidity = weatherData.main?.humidity ?? json.clima.humidity ?? null;
-              json.clima.pressure = weatherData.main?.pressure ?? json.clima.pressure ?? null;
-              json.clima.descripcion = weatherData.weather?.[0]?.description ?? json.clima.descripcion ?? null;
-              json.clima.icon = weatherData.weather?.[0]?.icon ?? null;
-              
-              json.viento = weatherData.wind?.speed ? Math.round(weatherData.wind.speed * 3.6) : 0;
-              console.log(`💨 Viento: ${json.viento} km/h`);
-              console.log(`🌡️ Feels like: ${json.clima.feels_like}°C`);
-              console.log(`🌡️ Max: ${json.clima.temp_max}°C, Min: ${json.clima.temp_min}°C`);
-            }
-          } catch (weatherError) {
-            console.log('🌍 Error fetching OpenWeather data:', weatherError);
-          }
-        }
-        
-        if (!json.altitud && json.coordenadas?.lat && json.coordenadas?.lng) {
-          console.log('⛰️ Obteniendo altitud desde Open-Elevation...');
-          try {
-            const elevationRes = await fetch(
+          console.log('🌍 Obteniendo datos en paralelo...');
+          
+          const requests = [];
+          
+          const weatherPromise = fetch(
+            `https://api.openweathermap.org/data/2.5/weather?lat=${json.coordenadas.lat}&lon=${json.coordenadas.lng}&appid=${OPENWEATHER_API_KEY}&units=metric&lang=es`
+          )
+            .then(res => res.ok ? res.json() : null)
+            .catch(err => {
+              console.log('🌍 Error fetching OpenWeather:', err);
+              return null;
+            });
+          requests.push(weatherPromise);
+          
+          if (!json.altitud) {
+            const elevationPromise = fetch(
               `https://api.open-elevation.com/api/v1/lookup?locations=${json.coordenadas.lat},${json.coordenadas.lng}`
-            );
-            if (elevationRes.ok) {
-              const elevationData = await elevationRes.json();
-              console.log('⛰️ Open-Elevation data:', JSON.stringify(elevationData, null, 2));
-              
-              if (elevationData.results && elevationData.results.length > 0) {
-                json.altitud = Math.round(elevationData.results[0].elevation);
-                console.log(`⛰️ Altitud calculada: ${json.altitud} m`);
-              }
-            }
-          } catch (elevationError) {
-            console.log('⛰️ Error fetching Open-Elevation data:', elevationError);
+            )
+              .then(res => res.ok ? res.json() : null)
+              .catch(err => {
+                console.log('⛰️ Error fetching Open-Elevation:', err);
+                return null;
+              });
+            requests.push(elevationPromise);
+          }
+          
+          const [weatherData, elevationData] = await Promise.all(requests);
+          
+          if (weatherData) {
+            console.log('🌍 OpenWeather data:', JSON.stringify(weatherData, null, 2));
+            json.clima = json.clima || {};
+            json.clima.temperatura = weatherData.main?.temp ?? json.clima.temperatura ?? null;
+            json.clima.feels_like = weatherData.main?.feels_like ?? null;
+            json.clima.humidity = weatherData.main?.humidity ?? json.clima.humidity ?? null;
+            json.clima.pressure = weatherData.main?.pressure ?? json.clima.pressure ?? null;
+            json.clima.descripcion = weatherData.weather?.[0]?.description ?? json.clima.descripcion ?? null;
+            json.clima.icon = weatherData.weather?.[0]?.icon ?? null;
+            
+            json.viento = weatherData.wind?.speed ? Math.round(weatherData.wind.speed * 3.6) : 0;
+            console.log(`💨 Viento: ${json.viento} km/h`);
+            console.log(`🌡️ Feels like: ${json.clima.feels_like}°C`);
+          }
+          
+          if (!json.altitud && elevationData?.results?.[0]) {
+            json.altitud = Math.round(elevationData.results[0].elevation);
+            console.log(`⛰️ Altitud calculada: ${json.altitud} m`);
           }
         }
         
         console.log('✅ Datos finales para pueblo:', JSON.stringify({
           temperatura: json.clima?.temperatura,
           feels_like: json.clima?.feels_like,
-          temp_max: json.clima?.temp_max,
-          temp_min: json.clima?.temp_min,
           viento: json.viento,
           altitud: json.altitud
         }, null, 2));
@@ -233,34 +229,6 @@ export default function PuebloInfo() {
                 {data.clima?.feels_like != null ? `${data.clima.feels_like.toFixed(1)}°C` : '--'}
               </Text>
               <Text style={styles.metricSubtext}>Temperatura percibida</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={[styles.metricButton, { backgroundColor: '#E91E63' }]}
-              activeOpacity={0.9}
-            >
-              <View style={styles.iconContainer}>
-                <ArrowUp size={32} color="#FFFFFF" strokeWidth={2.5} />
-              </View>
-              <Text style={styles.metricLabel}>Temperatura Máxima</Text>
-              <Text style={styles.metricValue}>
-                {data.clima?.temp_max != null ? `${data.clima.temp_max.toFixed(1)}°C` : '--'}
-              </Text>
-              <Text style={styles.metricSubtext}>Máxima del día</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={[styles.metricButton, { backgroundColor: '#03A9F4' }]}
-              activeOpacity={0.9}
-            >
-              <View style={styles.iconContainer}>
-                <ArrowDown size={32} color="#FFFFFF" strokeWidth={2.5} />
-              </View>
-              <Text style={styles.metricLabel}>Temperatura Mínima</Text>
-              <Text style={styles.metricValue}>
-                {data.clima?.temp_min != null ? `${data.clima.temp_min.toFixed(1)}°C` : '--'}
-              </Text>
-              <Text style={styles.metricSubtext}>Mínima del día</Text>
             </TouchableOpacity>
 
             <TouchableOpacity 
