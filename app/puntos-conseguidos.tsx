@@ -11,7 +11,6 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuth } from '@/contexts/auth';
 
@@ -124,18 +123,18 @@ export default function PuntosConseguidosScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <View style={styles.container}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={LPBE_RED} />
           <Text style={styles.loadingText}>Cargando puntos...</Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   if (error) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <ArrowLeft size={24} color={LPBE_RED} strokeWidth={2} />
@@ -149,12 +148,12 @@ export default function PuntosConseguidosScreen() {
             <Text style={styles.retryButtonText}>Reintentar</Text>
           </TouchableOpacity>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <ArrowLeft size={24} color={LPBE_RED} strokeWidth={2} />
@@ -270,7 +269,7 @@ export default function PuntosConseguidosScreen() {
           </View>
         )}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -313,8 +312,7 @@ const styles = StyleSheet.create({
   summaryContainer: {
     backgroundColor: '#fff',
     paddingHorizontal: 20,
-    paddingTop: 0,
-    paddingBottom: 16,
+    paddingVertical: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
   },

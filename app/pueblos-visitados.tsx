@@ -14,7 +14,6 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuth } from '@/contexts/auth';
 
@@ -354,18 +353,18 @@ export default function PueblosVisitadosScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <View style={styles.container}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={LPBE_RED} />
           <Text style={styles.loadingText}>Cargando pueblos visitados...</Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   if (error) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <ArrowLeft size={24} color={LPBE_RED} strokeWidth={2} />
@@ -379,12 +378,12 @@ export default function PueblosVisitadosScreen() {
             <Text style={styles.retryButtonText}>Reintentar</Text>
           </TouchableOpacity>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <ArrowLeft size={24} color={LPBE_RED} strokeWidth={2} />
@@ -516,7 +515,7 @@ export default function PueblosVisitadosScreen() {
           );
         }}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -571,8 +570,7 @@ const styles = StyleSheet.create({
   statsContainer: {
     flexDirection: 'row',
     backgroundColor: '#fff',
-    paddingTop: 0,
-    paddingBottom: 12,
+    paddingVertical: 12,
     paddingHorizontal: 8,
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
