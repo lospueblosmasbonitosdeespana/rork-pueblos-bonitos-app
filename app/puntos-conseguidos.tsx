@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { ArrowLeft, Award, MapPin, Star, TrendingUp } from 'lucide-react-native';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -16,11 +16,17 @@ import { useAuth } from '@/contexts/auth';
 
 const LPBE_RED = '#c1121f';
 
-interface PuntosData {
-  puntos_totales: number;
-  nivel: string;
-  nivel_siguiente: string;
-  pueblos: PuebloFavorito[];
+interface PuebloVisita {
+  _ID: string;
+  pueblo_id: string;
+  nombre_pueblo: string;
+  provincia?: string;
+  comunidad_autonoma?: string;
+  imagen_principal?: string;
+  fecha_visita?: string;
+  estrellas: number;
+  tipo: 'auto' | 'manual';
+  completado: boolean;
 }
 
 interface PuebloFavorito {
@@ -29,17 +35,16 @@ interface PuebloFavorito {
   provincia?: string;
   puntos: number;
   estrellas: number;
-  imagen_url?: string;
 }
 
 export default function PuntosConseguidosScreen() {
   const { user } = useAuth();
-  const [puntosData, setPuntosData] = useState<PuntosData | null>(null);
+  const [pueblosVisitados, setPueblosVisitados] = useState<PuebloVisita[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchPuntos = useCallback(async (isRefresh = false) => {
+  const fetchPueblos = useCallback(async (isRefresh = false) => {
     if (!user?.id) return;
 
     try {
@@ -49,7 +54,7 @@ export default function PuntosConseguidosScreen() {
       setError(null);
 
       const response = await fetch(
-        `https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/puntos?user_id=${user.id}`,
+        `https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/pueblos-visitados?user_id=${user.id}`,
         {
           headers: {
             'Content-Type': 'application/json',
@@ -58,14 +63,14 @@ export default function PuntosConseguidosScreen() {
       );
 
       if (!response.ok) {
-        throw new Error('Error al cargar puntos');
+        throw new Error('Error al cargar datos');
       }
 
       const data = await response.json();
-      setPuntosData(data);
+      setPueblosVisitados(data || []);
     } catch (err) {
-      console.error('Error fetching puntos:', err);
-      setError('No se pudieron cargar los puntos');
+      console.error('Error fetching pueblos:', err);
+      setError('No se pudieron cargar los datos');
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -73,20 +78,56 @@ export default function PuntosConseguidosScreen() {
   }, [user?.id]);
 
   useEffect(() => {
-    fetchPuntos();
-  }, [fetchPuntos]);
+    fetchPueblos();
+  }, [fetchPueblos]);
 
   const handleRefresh = () => {
     setIsRefreshing(true);
-    fetchPuntos(true);
+    fetchPueblos(true);
   };
 
-  const totalPuntos = puntosData?.puntos_totales || 0;
-  const pueblos = puntosData?.pueblos || [];
-  const totalEstrellas = pueblos.reduce((sum, p) => sum + p.estrellas, 0);
-  const totalPueblos = pueblos.length;
-  const nivel = puntosData?.nivel || 'Nivel 1';
-  const nivelSiguiente = puntosData?.nivel_siguiente || 'Nivel 2';
+  const totalEstrellas = useMemo(() => {
+    return pueblosVisitados
+      .filter(p => p.completado)
+      .reduce((sum, p) => sum + p.estrellas, 0);
+  }, [pueblosVisitados]);
+
+  const totalPuntos = totalEstrellas;
+
+  const pueblosFavoritos: PuebloFavorito[] = useMemo(() => {
+    return pueblosVisitados
+      .filter(p => p.completado && p.estrellas > 0)
+      .sort((a, b) => b.estrellas - a.estrellas)
+      .slice(0, 5)
+      .map(p => ({
+        pueblo_id: p.pueblo_id,
+        nombre: p.nombre_pueblo,
+        provincia: p.provincia,
+        puntos: p.estrellas,
+        estrellas: p.estrellas,
+      }));
+  }, [pueblosVisitados]);
+
+  const totalPueblos = pueblosVisitados.filter(p => p.completado).length;
+
+  const getNivel = (puntos: number): string => {
+    if (puntos < 10) return 'Principiante';
+    if (puntos < 25) return 'Explorador';
+    if (puntos < 50) return 'Aventurero';
+    if (puntos < 100) return 'Experto';
+    return 'Maestro Viajero';
+  };
+
+  const getSiguienteNivel = (puntos: number): string => {
+    if (puntos < 10) return 'Explorador (10 pts)';
+    if (puntos < 25) return 'Aventurero (25 pts)';
+    if (puntos < 50) return 'Experto (50 pts)';
+    if (puntos < 100) return 'Maestro Viajero (100 pts)';
+    return 'Nivel Máximo';
+  };
+
+  const nivel = getNivel(totalPuntos);
+  const nivelSiguiente = getSiguienteNivel(totalPuntos);
 
   if (isLoading) {
     return (
@@ -111,7 +152,7 @@ export default function PuntosConseguidosScreen() {
         </View>
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={() => fetchPuntos()}>
+          <TouchableOpacity style={styles.retryButton} onPress={() => fetchPueblos()}>
             <Text style={styles.retryButtonText}>Reintentar</Text>
           </TouchableOpacity>
         </View>
@@ -175,7 +216,7 @@ export default function PuntosConseguidosScreen() {
       </View>
 
       <FlatList
-        data={pueblos}
+        data={pueblosFavoritos}
         keyExtractor={(item) => item.pueblo_id}
         contentContainerStyle={styles.listContent}
         refreshControl={
@@ -189,7 +230,7 @@ export default function PuntosConseguidosScreen() {
         ListEmptyComponent={() => (
           <View style={styles.emptyContainer}>
             <Award size={48} color="#ccc" />
-            <Text style={styles.emptyText}>No tienes puntos acumulados todavía</Text>
+            <Text style={styles.emptyText}>Todavía no tienes puntos acumulados</Text>
             <Text style={styles.emptySubtext}>
               Visita pueblos y gana estrellas para acumular puntos
             </Text>

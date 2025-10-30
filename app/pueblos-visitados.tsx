@@ -29,7 +29,7 @@ interface PuebloVisita {
   imagen_principal?: string;
   fecha_visita?: string;
   estrellas: number;
-  manual: boolean;
+  tipo: 'auto' | 'manual';
   completado: boolean;
 }
 
@@ -234,7 +234,7 @@ export default function PueblosVisitadosScreen() {
         ListEmptyComponent={() => (
           <View style={styles.emptyContainer}>
             <MapPin size={48} color="#ccc" />
-            <Text style={styles.emptyText}>No tienes pueblos visitados todavía</Text>
+            <Text style={styles.emptyText}>Aún no has visitado ningún pueblo</Text>
           </View>
         )}
         renderItem={({ item }) => (
@@ -290,11 +290,14 @@ export default function PueblosVisitadosScreen() {
                 </Text>
               )}
               
-              {item.manual && (
-                <View style={styles.manualBadge}>
-                  <Text style={styles.manualBadgeText}>Manual</Text>
-                </View>
-              )}
+              <View style={[
+                styles.tipoBadge,
+                item.tipo === 'auto' ? styles.tipoAuto : styles.tipoManual
+              ]}>
+                <Text style={styles.tipoBadgeText}>
+                  {item.tipo === 'auto' ? 'Auto' : 'Manual'}
+                </Text>
+              </View>
             </View>
           </View>
         )}
@@ -471,17 +474,22 @@ const styles = StyleSheet.create({
     color: '#999',
     marginTop: 4,
   },
-  manualBadge: {
+  tipoBadge: {
     alignSelf: 'flex-start',
-    backgroundColor: '#f0f0f0',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 4,
     marginTop: 8,
   },
-  manualBadgeText: {
+  tipoAuto: {
+    backgroundColor: '#dcfce7',
+  },
+  tipoManual: {
+    backgroundColor: '#fef3c7',
+  },
+  tipoBadgeText: {
     fontSize: 11,
-    color: '#666',
     fontWeight: '600' as const,
+    color: '#1a1a1a',
   },
 });
