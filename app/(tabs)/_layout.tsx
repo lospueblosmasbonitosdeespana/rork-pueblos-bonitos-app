@@ -1,24 +1,21 @@
 import { router, Tabs } from "expo-router";
 import { Bell, Home, MapPin, Compass, Map, User } from "lucide-react-native";
 import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View, useColorScheme } from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
-import { useThemeColors } from "@/constants/theme";
+import { COLORS } from "@/constants/theme";
 import { useLanguage } from "@/contexts/language";
 import { useNotifications } from "@/contexts/notifications";
 
 function NotificationBellButton() {
   const { unreadCount } = useNotifications();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
-  const colors = useThemeColors(isDark);
 
   return (
     <TouchableOpacity
       onPress={() => router.push('/centro-notificaciones')}
       style={bellStyles.container}
     >
-      <Bell size={22} color={colors.primary} strokeWidth={2} />
+      <Bell size={22} color={COLORS.primary} strokeWidth={2} />
       {unreadCount > 0 && (
         <View style={bellStyles.badge}>
           <Text style={bellStyles.badgeText}>
@@ -32,24 +29,21 @@ function NotificationBellButton() {
 
 export default function TabLayout() {
   const { t } = useLanguage();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
-  const colors = useThemeColors(isDark);
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textSecondary,
+        tabBarActiveTintColor: COLORS.primary,
+        tabBarInactiveTintColor: COLORS.textSecondary,
         headerShown: true,
         headerRight: () => <NotificationBellButton />,
         headerStyle: {
-          backgroundColor: colors.card,
+          backgroundColor: COLORS.card,
         },
-        headerTintColor: colors.text,
+        headerTintColor: COLORS.text,
         tabBarStyle: {
-          backgroundColor: colors.card,
-          borderTopColor: colors.border,
+          backgroundColor: COLORS.card,
+          borderTopColor: COLORS.border,
           borderTopWidth: 1,
         },
         tabBarLabelStyle: {

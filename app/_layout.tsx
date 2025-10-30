@@ -3,7 +3,7 @@ import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { useColorScheme, StatusBar } from "react-native";
+import { StatusBar } from "react-native";
 
 import { AuthProvider } from "@/contexts/auth";
 import { LanguageProvider } from "@/contexts/language";
@@ -15,9 +15,6 @@ SplashScreen.preventAutoHideAsync();
 const queryClient = new QueryClient();
 
 function RootLayoutNav() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
-
   useEffect(() => {
     SplashScreen.hideAsync();
   }, []);
@@ -25,8 +22,8 @@ function RootLayoutNav() {
   return (
     <>
       <StatusBar
-        barStyle={isDark ? "light-content" : "dark-content"}
-        backgroundColor={isDark ? "#1a1a1a" : "#F5F1EA"}
+        barStyle="dark-content"
+        backgroundColor="#F5F1EA"
       />
       <Stack 
       screenOptions={{ 
