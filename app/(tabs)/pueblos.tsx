@@ -49,13 +49,10 @@ export default function PueblosScreen() {
     : pueblosAsociacion;
 
   const renderPueblo = ({ item }: { item: Lugar }) => {
-    const imagenUri = (item.imagen_principal && item.imagen_principal.startsWith('http'))
-      ? item.imagen_principal
-      : 'https://images.unsplash.com/photo-1544550285-f813152fb2fd?w=400&h=300&fit=crop';
-    
-    if (parseInt(item._ID, 10) === 1 || parseInt(item._ID, 10) === 2) {
-      console.log('🖼️ Imagen cargada para', item.nombre, '(ID:', item._ID, '):', imagenUri);
-    }
+    const imagenUri =
+      item.imagen_principal ??
+      item.multimedia?.[0] ??
+      'https://images.unsplash.com/photo-1543783207-ec64e4d95325?w=800';
     
     return (
       <TouchableOpacity
