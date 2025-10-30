@@ -53,8 +53,11 @@ export default function PuebloInfo() {
         const json = await res.json();
         console.log('🌍 pueblo-info json:', JSON.stringify(json, null, 2));
         
-        if (!json.clima || !json.clima.temperatura || !json.clima.descripcion) {
-          console.log('🌍 Datos meteorológicos incompletos, obteniendo desde OpenWeather...');
+        const needsClima = !json.clima || !json.clima.temperatura || !json.clima.descripcion;
+        const needsLluvia = !json.lluvia_24h;
+        
+        if (needsClima || needsLluvia) {
+          console.log('🌍 Obteniendo datos desde OpenWeather...');
           try {
             const weatherRes = await fetch(
               `https://api.openweathermap.org/data/2.5/weather?lat=${json.coordenadas.lat}&lon=${json.coordenadas.lng}&appid=${OPENWEATHER_API_KEY}&units=metric&lang=es`
@@ -62,38 +65,22 @@ export default function PuebloInfo() {
             if (weatherRes.ok) {
               const weatherData = await weatherRes.json();
               console.log('🌍 OpenWeather data:', JSON.stringify(weatherData, null, 2));
-              json.clima = json.clima || {};
-              json.clima.temperatura = json.clima.temperatura || weatherData.main.temp;
-              json.clima.descripcion = json.clima.descripcion || weatherData.weather[0].description;
-              json.clima.icon = weatherData.weather[0].icon;
+              
+              if (needsClima) {
+                json.clima = json.clima || {};
+                json.clima.temperatura = json.clima.temperatura || weatherData.main.temp;
+                json.clima.descripcion = json.clima.descripcion || weatherData.weather[0].description;
+                json.clima.icon = weatherData.weather[0].icon;
+              }
+              
+              if (needsLluvia) {
+                json.lluvia_24h = weatherData.rain?.['1h'] || weatherData.rain?.['3h'] || 0;
+                console.log(`🌧️ Lluvia: ${json.lluvia_24h} mm`);
+              }
             }
           } catch (weatherError) {
             console.log('🌍 Error fetching OpenWeather data:', weatherError);
-          }
-        }
-
-        if (!json.lluvia_24h) {
-          console.log('🌧️ Obteniendo datos de precipitación desde AEMET OpenData...');
-          try {
-            const url = 'https://opendata.aemet.es/opendata/api/observacion/convencional/todas/?api_key=eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJsb3NwdWVibG9zbWFzYm9uaXRvc2RlZXNwYW5hQGdtYWlsLmNvbSIsImp0aSI6ImZhYWM1NzRkLWNlMGItNDEzMi1iOTM2LWMxNTM4Y2EzZDI1YSIsImlzcyI6IkFFTUVUIiwiaWF0IjoxNzYxNzI0MDc2LCJ1c2VySWQiOiJmYWFjNTc0ZC1jZTBiLTQxMzItYjkzNi1jMTUzOGNhM2QyNWEiLCJyb2xlIjoiIn0.MzCfv7virwFAKAiND87V8N5dMgRTpHuWnlQADU3FIfM';
-            
-            const meta = await fetch(url);
-            const metaJson = await meta.json();
-            console.log('🌧️ AEMET meta response:', JSON.stringify(metaJson, null, 2));
-            
-            const dataRes = await fetch(metaJson.datos);
-            const estaciones = await dataRes.json();
-            console.log('🌧️ AEMET estaciones (primeras 3):', JSON.stringify(estaciones.slice(0, 3), null, 2));
-            
-            const est = estaciones.find((e: any) =>
-              e.ubi && e.ubi.toLowerCase().includes(json.nombre.toLowerCase())
-            );
-            
-            json.lluvia_24h = est?.prec ?? 0;
-            console.log(`🌧️ Resultado lluvia para ${json.nombre}: ${json.lluvia_24h} mm`);
-          } catch (error) {
-            console.log('🌧️ Error al obtener datos AEMET:', error);
-            json.lluvia_24h = 0;
+            if (needsLluvia) json.lluvia_24h = 0;
           }
         }
         
