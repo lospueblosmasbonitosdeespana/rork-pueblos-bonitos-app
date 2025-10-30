@@ -1,5 +1,17 @@
 import { router } from 'expo-router';
-import { LogOut, Mail, User } from 'lucide-react-native';
+import {
+  Bell,
+  ChevronRight,
+  Key,
+
+  LogOut,
+  Map,
+  MapPin,
+  Shield,
+  Star,
+  User,
+  FileText,
+} from 'lucide-react-native';
 import React from 'react';
 import {
   ActivityIndicator,
@@ -35,7 +47,7 @@ export default function ProfileScreen() {
         }).start();
       }
     }
-  }, [isLoading, isAuthenticated, user]);
+  }, [isLoading, isAuthenticated, user, fadeAnim]);
 
   const handleLogout = () => {
     if (Platform.OS === 'web') {
@@ -83,6 +95,65 @@ export default function ProfileScreen() {
   const fullName = [user.first_name, user.last_name].filter(Boolean).join(' ') || user.name;
   const avatarUrl = user.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&size=200&background=c1121f&color=fff`;
 
+  const menuOptions = [
+    {
+      id: 'notifications',
+      label: 'Centro de Notificaciones',
+      icon: Bell,
+      onPress: () => router.push('/centro-notificaciones'),
+      active: true,
+    },
+    {
+      id: 'account',
+      label: 'Cuenta',
+      icon: User,
+      onPress: () => router.push('/cuenta-info'),
+      active: true,
+    },
+    {
+      id: 'visited',
+      label: 'Pueblos Visitados',
+      icon: MapPin,
+      onPress: () => router.push('/pueblos-visitados'),
+      active: true,
+    },
+    {
+      id: 'points',
+      label: 'Puntos Conseguidos',
+      icon: Star,
+      onPress: () => router.push('/puntos-conseguidos'),
+      active: true,
+    },
+    {
+      id: 'map',
+      label: 'Mapa de Pueblos Visitados',
+      icon: Map,
+      onPress: () => router.push('/mapa-pueblos-visitados'),
+      active: false,
+    },
+    {
+      id: 'guide',
+      label: 'Guía de uso',
+      icon: FileText,
+      onPress: () => router.push('/guia-uso'),
+      active: false,
+    },
+    {
+      id: 'password',
+      label: 'Cambiar contraseña',
+      icon: Key,
+      onPress: () => router.push('/cambiar-password'),
+      active: false,
+    },
+    {
+      id: 'privacy',
+      label: 'Privacidad',
+      icon: Shield,
+      onPress: () => router.push('/privacidad'),
+      active: false,
+    },
+  ];
+
   return (
     <View style={styles.container}>
       <ScrollView
@@ -102,30 +173,47 @@ export default function ProfileScreen() {
             <Text style={styles.email}>{user.email}</Text>
           </View>
 
-          <View style={styles.infoSection}>
-            <View style={styles.infoCard}>
-              <View style={styles.infoRow}>
-                <View style={styles.infoIconContainer}>
-                  <User size={24} color={LPBE_RED} strokeWidth={2} />
+          <View style={styles.menuSection}>
+            {menuOptions.map((option) => (
+              <TouchableOpacity
+                key={option.id}
+                style={[
+                  styles.menuItem,
+                  !option.active && styles.menuItemInactive,
+                ]}
+                onPress={option.active ? option.onPress : undefined}
+                activeOpacity={option.active ? 0.7 : 1}
+                disabled={!option.active}
+              >
+                <View style={styles.menuItemLeft}>
+                  <View
+                    style={[
+                      styles.menuIconContainer,
+                      !option.active && styles.menuIconInactive,
+                    ]}
+                  >
+                    <option.icon
+                      size={22}
+                      color={option.active ? LPBE_RED : '#999'}
+                      strokeWidth={2}
+                    />
+                  </View>
+                  <Text
+                    style={[
+                      styles.menuLabel,
+                      !option.active && styles.menuLabelInactive,
+                    ]}
+                  >
+                    {option.label}
+                  </Text>
                 </View>
-                <View style={styles.infoContent}>
-                  <Text style={styles.infoLabel}>Nombre Completo</Text>
-                  <Text style={styles.infoValue}>{fullName}</Text>
-                </View>
-              </View>
-            </View>
-
-            <View style={styles.infoCard}>
-              <View style={styles.infoRow}>
-                <View style={styles.infoIconContainer}>
-                  <Mail size={24} color={LPBE_RED} strokeWidth={2} />
-                </View>
-                <View style={styles.infoContent}>
-                  <Text style={styles.infoLabel}>Correo Electrónico</Text>
-                  <Text style={styles.infoValue}>{user.email}</Text>
-                </View>
-              </View>
-            </View>
+                <ChevronRight
+                  size={20}
+                  color={option.active ? '#999' : '#ccc'}
+                  strokeWidth={2}
+                />
+              </TouchableOpacity>
+            ))}
           </View>
 
           <TouchableOpacity
@@ -196,43 +284,54 @@ const styles = StyleSheet.create({
     color: '#666',
     textAlign: 'center',
   },
-  infoSection: {
+  menuSection: {
     marginBottom: 32,
   },
-  infoCard: {
-    backgroundColor: '#f8f8f8',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
-    borderWidth: 2,
-    borderColor: '#f0f0f0',
-  },
-  infoRow: {
+  menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  infoIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    justifyContent: 'space-between',
     backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 16,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#f0f0f0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
   },
-  infoContent: {
+  menuItemInactive: {
+    backgroundColor: '#fafafa',
+    opacity: 0.6,
+  },
+  menuItemLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
     flex: 1,
   },
-  infoLabel: {
-    fontSize: 13,
-    color: '#666',
-    marginBottom: 4,
-    fontWeight: '500' as const,
+  menuIconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#fff5f5',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 14,
   },
-  infoValue: {
-    fontSize: 17,
+  menuIconInactive: {
+    backgroundColor: '#f5f5f5',
+  },
+  menuLabel: {
+    fontSize: 16,
     color: '#1a1a1a',
     fontWeight: '600' as const,
+    flex: 1,
+  },
+  menuLabelInactive: {
+    color: '#999',
   },
   logoutButton: {
     backgroundColor: LPBE_RED,
