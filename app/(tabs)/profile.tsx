@@ -36,23 +36,24 @@ export default function ProfileScreen() {
     }
   }, [isLoading, isAuthenticated, user]);
 
-  const handleLogout = async () => {
+  const handleLogout = () => {
     Alert.alert(
       'Cerrar Sesión',
-      '¿Estás seguro de que deseas cerrar sesión?',
+      '¿Estás seguro que deseas finalizar sesión?',
       [
         {
-          text: 'Cancelar',
+          text: 'No',
           style: 'cancel',
         },
         {
-          text: 'Cerrar Sesión',
+          text: 'Sí',
           style: 'destructive',
           onPress: async () => {
             await logout();
           },
         },
-      ]
+      ],
+      { cancelable: false }
     );
   };
 
