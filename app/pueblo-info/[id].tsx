@@ -44,6 +44,10 @@ export default function PuebloInfo() {
 
   useEffect(() => {
     async function load() {
+      setLoading(true);
+      setData(null);
+      setError(null);
+      
       try {
         console.log('🌍 Fetching pueblo-info for id:', id);
         const res = await fetch(`https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/pueblo-info?id=${id}`);
@@ -58,12 +62,8 @@ export default function PuebloInfo() {
         const json = await res.json();
         console.log('🌍 pueblo-info json:', JSON.stringify(json, null, 2));
         
-        const needsClima = !json.clima || !json.clima.temperatura || !json.clima.descripcion;
-        const needsViento = !json.viento;
-        const needsAltitud = !json.altitud && json.coordenadas?.lat && json.coordenadas?.lng;
-        
-        if (needsClima || needsViento) {
-          console.log('🌍 Obteniendo datos desde OpenWeather...');
+        if (json.coordenadas?.lat && json.coordenadas?.lng) {
+          console.log('🌍 Obteniendo datos climáticos desde OpenWeather...');
           try {
             const weatherRes = await fetch(
               `https://api.openweathermap.org/data/2.5/weather?lat=${json.coordenadas.lat}&lon=${json.coordenadas.lng}&appid=${OPENWEATHER_API_KEY}&units=metric&lang=es`
@@ -72,30 +72,27 @@ export default function PuebloInfo() {
               const weatherData = await weatherRes.json();
               console.log('🌍 OpenWeather data:', JSON.stringify(weatherData, null, 2));
               
-              if (needsClima) {
-                json.clima = json.clima || {};
-                json.clima.temperatura = json.clima.temperatura || weatherData.main.temp;
-                json.clima.feels_like = weatherData.main.feels_like;
-                json.clima.temp_max = weatherData.main.temp_max;
-                json.clima.temp_min = weatherData.main.temp_min;
-                json.clima.humidity = weatherData.main.humidity;
-                json.clima.pressure = weatherData.main.pressure;
-                json.clima.descripcion = json.clima.descripcion || weatherData.weather[0].description;
-                json.clima.icon = weatherData.weather[0].icon;
-              }
+              json.clima = json.clima || {};
+              json.clima.temperatura = weatherData.main?.temp ?? json.clima.temperatura ?? null;
+              json.clima.feels_like = weatherData.main?.feels_like ?? null;
+              json.clima.temp_max = weatherData.main?.temp_max ?? null;
+              json.clima.temp_min = weatherData.main?.temp_min ?? null;
+              json.clima.humidity = weatherData.main?.humidity ?? json.clima.humidity ?? null;
+              json.clima.pressure = weatherData.main?.pressure ?? json.clima.pressure ?? null;
+              json.clima.descripcion = weatherData.weather?.[0]?.description ?? json.clima.descripcion ?? null;
+              json.clima.icon = weatherData.weather?.[0]?.icon ?? null;
               
-              if (needsViento) {
-                json.viento = Math.round((weatherData.wind?.speed || 0) * 3.6);
-                console.log(`💨 Viento: ${json.viento} km/h`);
-              }
+              json.viento = weatherData.wind?.speed ? Math.round(weatherData.wind.speed * 3.6) : 0;
+              console.log(`💨 Viento: ${json.viento} km/h`);
+              console.log(`🌡️ Feels like: ${json.clima.feels_like}°C`);
+              console.log(`🌡️ Max: ${json.clima.temp_max}°C, Min: ${json.clima.temp_min}°C`);
             }
           } catch (weatherError) {
             console.log('🌍 Error fetching OpenWeather data:', weatherError);
-            if (needsViento) json.viento = 0;
           }
         }
         
-        if (needsAltitud) {
+        if (!json.altitud && json.coordenadas?.lat && json.coordenadas?.lng) {
           console.log('⛰️ Obteniendo altitud desde Open-Elevation...');
           try {
             const elevationRes = await fetch(
@@ -114,6 +111,15 @@ export default function PuebloInfo() {
             console.log('⛰️ Error fetching Open-Elevation data:', elevationError);
           }
         }
+        
+        console.log('✅ Datos finales para pueblo:', JSON.stringify({
+          temperatura: json.clima?.temperatura,
+          feels_like: json.clima?.feels_like,
+          temp_max: json.clima?.temp_max,
+          temp_min: json.clima?.temp_min,
+          viento: json.viento,
+          altitud: json.altitud
+        }, null, 2));
         
         setData(json);
       } catch (e) {
@@ -224,7 +230,7 @@ export default function PuebloInfo() {
               </View>
               <Text style={styles.metricLabel}>Sensación Térmica</Text>
               <Text style={styles.metricValue}>
-                {data.clima?.feels_like ? `${data.clima.feels_like.toFixed(1)}°C` : '—'}
+                {data.clima?.feels_like != null ? `${data.clima.feels_like.toFixed(1)}°C` : '--'}
               </Text>
               <Text style={styles.metricSubtext}>Temperatura percibida</Text>
             </TouchableOpacity>
@@ -238,7 +244,7 @@ export default function PuebloInfo() {
               </View>
               <Text style={styles.metricLabel}>Temperatura Máxima</Text>
               <Text style={styles.metricValue}>
-                {data.clima?.temp_max ? `${data.clima.temp_max.toFixed(1)}°C` : '—'}
+                {data.clima?.temp_max != null ? `${data.clima.temp_max.toFixed(1)}°C` : '--'}
               </Text>
               <Text style={styles.metricSubtext}>Máxima del día</Text>
             </TouchableOpacity>
@@ -252,7 +258,7 @@ export default function PuebloInfo() {
               </View>
               <Text style={styles.metricLabel}>Temperatura Mínima</Text>
               <Text style={styles.metricValue}>
-                {data.clima?.temp_min ? `${data.clima.temp_min.toFixed(1)}°C` : '—'}
+                {data.clima?.temp_min != null ? `${data.clima.temp_min.toFixed(1)}°C` : '--'}
               </Text>
               <Text style={styles.metricSubtext}>Mínima del día</Text>
             </TouchableOpacity>
@@ -266,7 +272,7 @@ export default function PuebloInfo() {
               </View>
               <Text style={styles.metricLabel}>Viento</Text>
               <Text style={styles.metricValue}>
-                {data.viento ? `${data.viento} km/h` : '—'}
+                {data.viento != null ? `${data.viento} km/h` : '--'}
               </Text>
               <Text style={styles.metricSubtext}>Velocidad del viento</Text>
             </TouchableOpacity>
@@ -279,7 +285,7 @@ export default function PuebloInfo() {
                 <Mountain size={32} color="#FFFFFF" strokeWidth={2.5} />
               </View>
               <Text style={styles.metricLabel}>Altitud</Text>
-              <Text style={styles.metricValue}>{data.altitud ?? '—'} m</Text>
+              <Text style={styles.metricValue}>{data.altitud != null ? `${data.altitud} m` : '--'}</Text>
               <Text style={styles.metricSubtext}>sobre el nivel del mar</Text>
             </TouchableOpacity>
 
