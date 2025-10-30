@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { Image } from 'expo-image';
 import { Search } from 'lucide-react-native';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -18,46 +18,9 @@ import { useLanguage } from '@/contexts/language';
 import { fetchLugares } from '@/services/api';
 import { Lugar } from '@/types/api';
 
-const API_BASE_URL = 'https://lospueblosmasbonitosdeespana.org/wp-json';
-
-async function fetchImageForPlace(lugarId: string): Promise<string | null> {
-  try {
-    const url = `${API_BASE_URL}/jet-cct/multimedia?id_lugar=${lugarId}&nocache=${Date.now()}`;
-    const response = await fetch(url);
-    
-    if (!response.ok) return null;
-    
-    const data = await response.json();
-    
-    if (Array.isArray(data) && data.length > 0) {
-      const imageExtensions = ['.jpg', '.jpeg', '.png', '.webp'];
-      
-      for (const media of data) {
-        const mediaUrl = media.media_url || media.url;
-        
-        if (mediaUrl && typeof mediaUrl === 'string') {
-          const hasValidExtension = imageExtensions.some(ext => 
-            mediaUrl.toLowerCase().includes(ext)
-          );
-          
-          if (hasValidExtension) {
-            return mediaUrl;
-          }
-        }
-      }
-    }
-    
-    return null;
-  } catch {
-    return null;
-  }
-}
-
 export default function PueblosScreen() {
   const { t } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
-  const [lugaresWithImages, setLugaresWithImages] = useState<Lugar[]>([]);
-  const [loadingImages, setLoadingImages] = useState(false);
 
   const lugaresQuery = useQuery({
     queryKey: ['lugares'],
@@ -79,43 +42,7 @@ export default function PueblosScreen() {
     console.log('🏘️ Primer pueblo:', pueblosAsociacion[0].nombre, 'ID:', pueblosAsociacion[0]._ID, 'Imagen:', pueblosAsociacion[0].imagen_principal?.substring(0, 50));
   }
 
-  useEffect(() => {
-    if (pueblosAsociacion.length > 0 && lugaresWithImages.length === 0) {
-      setLoadingImages(true);
-      console.log('📸 Iniciando carga de imágenes para', pueblosAsociacion.length, 'pueblos');
-      
-      const loadImages = async () => {
-        const batchSize = 10;
-        const updatedLugares: Lugar[] = [];
-        
-        for (let i = 0; i < pueblosAsociacion.length; i += batchSize) {
-          const batch = pueblosAsociacion.slice(i, i + batchSize);
-          
-          const promises = batch.map(async (lugar) => {
-            const imagen = await fetchImageForPlace(lugar._ID);
-            return {
-              ...lugar,
-              imagen_principal: imagen || lugar.imagen_principal,
-            };
-          });
-          
-          const results = await Promise.all(promises);
-          updatedLugares.push(...results);
-          
-          setLugaresWithImages([...updatedLugares]);
-          
-          console.log(`📸 Cargadas ${updatedLugares.length}/${pueblosAsociacion.length} imágenes`);
-        }
-        
-        setLoadingImages(false);
-        console.log('✅ Todas las imágenes cargadas');
-      };
-      
-      loadImages();
-    }
-  }, [pueblosAsociacion.length, lugaresWithImages.length, pueblosAsociacion]);
-
-  const displayLugares = lugaresWithImages.length > 0 ? lugaresWithImages : pueblosAsociacion;
+  const displayLugares = pueblosAsociacion;
   
   const filteredLugares = searchQuery
     ? displayLugares.filter((lugar) =>
@@ -124,11 +51,8 @@ export default function PueblosScreen() {
     : displayLugares;
 
   const renderPueblo = ({ item }: { item: Lugar }) => {
-    const imagenUri = item.imagen_principal || 'https://images.unsplash.com/photo-1543783207-ec64e4d95325?w=800';
-    
-    if (item.nombre && item._ID && !item.imagen_principal) {
-      console.log(`📸 Pueblo sin imagen: ${item.nombre} (ID: ${item._ID})`);
-    }
+    const fallbackImage = 'https://lospueblosmasbonitosdeespana.org/wp-content/uploads/media/galerias/madrid.jpg';
+    const imagenUri = item.imagen_principal || fallbackImage;
     
     return (
       <TouchableOpacity
@@ -178,23 +102,12 @@ export default function PueblosScreen() {
         keyExtractor={(item, index) => `lugar-${item._ID}-${index}`}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
-        ListHeaderComponent={
-          loadingImages && lugaresWithImages.length > 0 ? (
-            <View style={styles.loadingImagesContainer}>
-              <ActivityIndicator size="small" color={COLORS.primary} />
-              <Text style={styles.loadingImagesText}>
-                Cargando imágenes... {lugaresWithImages.length}/{pueblosAsociacion.length}
-              </Text>
-            </View>
-          ) : null
-        }
+        ListHeaderComponent={null}
         ListEmptyComponent={
-          lugaresQuery.isLoading || loadingImages ? (
+          lugaresQuery.isLoading ? (
             <View style={styles.emptyContainer}>
               <ActivityIndicator size="large" color={COLORS.primary} />
-              <Text style={styles.loadingText}>
-                {lugaresQuery.isLoading ? 'Cargando pueblos...' : 'Cargando imágenes...'}
-              </Text>
+              <Text style={styles.loadingText}>Cargando pueblos...</Text>
               <Text style={styles.loadingSubtext}>Esto puede tardar unos segundos la primera vez</Text>
             </View>
           ) : lugaresQuery.error ? (
@@ -326,22 +239,5 @@ const styles = StyleSheet.create({
     ...TYPOGRAPHY.body,
     fontWeight: '600' as const,
     color: COLORS.card,
-  },
-  loadingImagesContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: SPACING.sm,
-    paddingHorizontal: SPACING.lg,
-    backgroundColor: COLORS.primary + '15',
-    marginHorizontal: SPACING.lg,
-    marginBottom: SPACING.sm,
-    borderRadius: 8,
-    gap: SPACING.sm,
-  },
-  loadingImagesText: {
-    ...TYPOGRAPHY.caption,
-    color: COLORS.primary,
-    fontWeight: '600' as const,
   },
 });

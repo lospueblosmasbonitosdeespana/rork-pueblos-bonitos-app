@@ -137,15 +137,12 @@ export async function fetchLugaresStable(): Promise<Lugar[]> {
     }
     
     console.log('✅ Pueblos recibidos:', data.length);
-    console.log('\n🔍 ====== ANALIZANDO PRIMEROS 3 PUEBLOS ======');
-    for (let i = 0; i < Math.min(3, data.length); i++) {
-      console.log(`\n📦 PUEBLO ${i + 1}:`);
-      console.log('Nombre:', data[i].nombre);
-      console.log('ID:', data[i].id);
-      console.log('Campos disponibles:', Object.keys(data[i]));
-      console.log('JSON completo:', JSON.stringify(data[i], null, 2));
+    
+    console.log('\n🔍 ====== FASE 1: DIAGNÓSTICO DEL PRIMER PUEBLO ======');
+    if (data.length > 0) {
+      console.log('🔍 Primer pueblo recibido:', JSON.stringify(data[0], null, 2));
     }
-    console.log('==========================================\n');
+    console.log('======================================================\n');
     
     const pueblos: Lugar[] = [];
     const nombresVistos = new Set<string>();
@@ -156,33 +153,15 @@ export async function fetchLugaresStable(): Promise<Lugar[]> {
         continue;
       }
       
-      const imagenRelativa =
+      const imagen =
         item.media_url ||
         item.url ||
-        (item.media && Array.isArray(item.media) && item.media.length > 0 && item.media[0].url) ||
+        (item.multimedia && item.multimedia[0] && item.multimedia[0].url) ||
         item.imagen ||
-        item.image_url ||
-        item.imagen_principal ||
-        item._jet_cct_media_url ||
         null;
       
-      let imagenUrl = imagenRelativa;
-      if (imagenUrl && !imagenUrl.startsWith('http')) {
-        imagenUrl = `https://lospueblosmasbonitosdeespana.org${imagenUrl}`;
-      }
-      
       if (pueblos.length === 0) {
-        console.log(`\n📸 ANÁLISIS DE IMAGEN DEL PRIMER PUEBLO: ${item.nombre} (ID: ${item.id})`);
-        console.log('📸 item.imagen:', item.imagen);
-        console.log('📸 item.media_url:', item.media_url);
-        console.log('📸 item.url:', item.url);
-        console.log('📸 item.image_url:', item.image_url);
-        console.log('📸 item.imagen_principal:', item.imagen_principal);
-        console.log('📸 item.media:', item.media);
-        console.log('📸 item._jet_cct_media_url:', item._jet_cct_media_url);
-        console.log('📸 imagenRelativa:', imagenRelativa);
-        console.log('📸 imagenUrl FINAL (after conversion):', imagenUrl);
-        console.log('================================\n');
+        console.log('📸 Imagen detectada para', item.nombre, '→', imagen);
       }
       
       pueblos.push({
@@ -190,7 +169,7 @@ export async function fetchLugaresStable(): Promise<Lugar[]> {
         nombre: item.nombre,
         provincia: item.provincia,
         comunidad_autonoma: item.comunidad_autonoma,
-        imagen_principal: imagenUrl,
+        imagen_principal: imagen,
         descripcion: '',
         multimedia: [],
         latitud: item.latitud || 0,
