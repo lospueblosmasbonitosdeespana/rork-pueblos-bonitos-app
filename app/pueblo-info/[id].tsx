@@ -75,37 +75,24 @@ export default function PuebloInfo() {
         if (!json.lluvia_24h) {
           console.log('🌧️ Obteniendo datos de precipitación desde AEMET OpenData...');
           try {
-            const aemetUrl = 'https://opendata.aemet.es/opendata/api/observacion/convencional/todas/?api_key=eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJsb3NwdWVibG9zbWFzYm9uaXRvc2RlZXNwYW5hQGdtYWlsLmNvbSIsImp0aSI6ImZhYWM1NzRkLWNlMGItNDEzMi1iOTM2LWMxNTM4Y2EzZDI1YSIsImlzcyI6IkFFTUVUIiwiaWF0IjoxNzYxNzI0MDc2LCJ1c2VySWQiOiJmYWFjNTc0ZC1jZTBiLTQxMzItYjkzNi1jMTUzOGNhM2QyNWEiLCJyb2xlIjoiIn0.MzCfv7virwFAKAiND87V8N5dMgRTpHuWnlQADU3FIfM';
-            const aemetRes = await fetch(aemetUrl);
+            const url = 'https://opendata.aemet.es/opendata/api/observacion/convencional/todas/?api_key=eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJsb3NwdWVibG9zbWFzYm9uaXRvc2RlZXNwYW5hQGdtYWlsLmNvbSIsImp0aSI6ImZhYWM1NzRkLWNlMGItNDEzMi1iOTM2LWMxNTM4Y2EzZDI1YSIsImlzcyI6IkFFTUVUIiwiaWF0IjoxNzYxNzI0MDc2LCJ1c2VySWQiOiJmYWFjNTc0ZC1jZTBiLTQxMzItYjkzNi1jMTUzOGNhM2QyNWEiLCJyb2xlIjoiIn0.MzCfv7virwFAKAiND87V8N5dMgRTpHuWnlQADU3FIfM';
             
-            if (aemetRes.ok) {
-              const aemetData = await aemetRes.json();
-              console.log('🌧️ AEMET response:', JSON.stringify(aemetData, null, 2));
-              
-              if (aemetData.datos) {
-                const dataRes = await fetch(aemetData.datos);
-                if (dataRes.ok) {
-                  const stations = await dataRes.json();
-                  console.log('🌧️ AEMET stations data:', JSON.stringify(stations.slice(0, 3), null, 2));
-                  
-                  const nombrePueblo = json.nombre.toLowerCase();
-                  const estacion = stations.find((e: any) => 
-                    e.ubi && e.ubi.toLowerCase().includes(nombrePueblo)
-                  );
-                  
-                  if (estacion && estacion.prec) {
-                    const prec = parseFloat(estacion.prec.replace(',', '.'));
-                    json.lluvia_24h = isNaN(prec) ? 0 : prec;
-                    console.log(`🌧️ Lluvia encontrada para ${json.nombre}: ${json.lluvia_24h} mm`);
-                  } else {
-                    json.lluvia_24h = 0;
-                    console.log(`🌧️ No se encontró estación para ${json.nombre}`);
-                  }
-                }
-              }
-            }
-          } catch (rainError) {
-            console.log('🌧️ Error fetching AEMET rain data:', rainError);
+            const meta = await fetch(url);
+            const metaJson = await meta.json();
+            console.log('🌧️ AEMET meta response:', JSON.stringify(metaJson, null, 2));
+            
+            const dataRes = await fetch(metaJson.datos);
+            const estaciones = await dataRes.json();
+            console.log('🌧️ AEMET estaciones (primeras 3):', JSON.stringify(estaciones.slice(0, 3), null, 2));
+            
+            const est = estaciones.find((e: any) =>
+              e.ubi && e.ubi.toLowerCase().includes(json.nombre.toLowerCase())
+            );
+            
+            json.lluvia_24h = est?.prec ?? 0;
+            console.log(`🌧️ Resultado lluvia para ${json.nombre}: ${json.lluvia_24h} mm`);
+          } catch (error) {
+            console.log('🌧️ Error al obtener datos AEMET:', error);
             json.lluvia_24h = 0;
           }
         }
