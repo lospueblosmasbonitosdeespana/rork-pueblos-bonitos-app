@@ -122,7 +122,7 @@ export default function PuebloDetailScreen() {
   const carouselImages = [
     imageUrl,
     ...multimedia.map((item: any) => item.url).filter((url: string) => url && url !== imageUrl)
-  ];
+  ].filter(url => url && url.trim() !== '');
 
   const mapUrl = `https://maps.lospueblosmasbonitosdeespana.org/es/mapas/PB-${id}#${Date.now()}`;
   const experienciasUrl = `https://lospueblosmasbonitosdeespana.org/experiencias-public/?id_lugar=${id}&app=1`;
@@ -138,14 +138,26 @@ export default function PuebloDetailScreen() {
             horizontal
             pagingEnabled
             showsHorizontalScrollIndicator={false}
+            initialNumToRender={5}
+            windowSize={5}
+            removeClippedSubviews={false}
             onMomentumScrollEnd={(event) => {
               const index = Math.round(event.nativeEvent.contentOffset.x / Dimensions.get('window').width);
               setCurrentImageIndex(index);
             }}
-            renderItem={({ item }) => (
-              <Image source={{ uri: item }} style={styles.headerImage} contentFit="cover" />
-            )}
-            keyExtractor={(item, index) => `image-${index}`}
+            renderItem={({ item, index }) => {
+              const cleanUrl = encodeURI(item.trim());
+              return (
+                <Image 
+                  source={{ uri: cleanUrl }} 
+                  style={styles.headerImage} 
+                  contentFit="cover"
+                  onError={(e) => console.log('❌ Error cargando imagen', index, cleanUrl, e)}
+                  onLoadEnd={() => console.log('✅ Imagen cargada', index, cleanUrl)}
+                />
+              );
+            }}
+            keyExtractor={(item, index) => `image-${index}-${item.substring(item.lastIndexOf('/') + 1, item.lastIndexOf('/') + 10)}`}
           />
           {carouselImages.length > 1 && (
             <View style={styles.paginationContainer}>
