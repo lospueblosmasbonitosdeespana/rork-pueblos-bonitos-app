@@ -2,8 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import { Stack, useLocalSearchParams, router } from 'expo-router';
 import { Image } from 'expo-image';
 import { MapPin, Map, X, BarChart3 } from 'lucide-react-native';
-import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Modal, ActivityIndicator, SafeAreaView } from 'react-native';
+import { useState, useRef } from 'react';
+import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Modal, ActivityIndicator, SafeAreaView, FlatList, Dimensions } from 'react-native';
 import { WebView } from 'react-native-webview';
 
 import { COLORS, SHADOWS, SPACING, TYPOGRAPHY } from '@/constants/theme';
@@ -44,9 +44,24 @@ export default function PuebloDetailScreen() {
     enabled: !!id,
   });
 
+  const multimediaQuery = useQuery({
+    queryKey: ['multimedia', id],
+    queryFn: async () => {
+      const response = await fetch(`https://lospueblosmasbonitosdeespana.org/wp-json/jet-cct/multimedia?id_lugar=${id}`);
+      if (!response.ok) return [];
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
+    },
+    enabled: !!id,
+  });
+
   const lugar = lugarQuery.data;
   const semaforo = semaforoQuery.data;
   const experiencias = experienciasQuery.data || [];
+  const multimedia = multimediaQuery.data || [];
+
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const flatListRef = useRef<FlatList>(null);
 
   console.log('📊 experiencias=', experiencias);
   console.log('📊 exp completo=', experiencias.map(e => ({
@@ -104,6 +119,11 @@ export default function PuebloDetailScreen() {
     lugar.multimedia?.[0] ??
     'https://images.unsplash.com/photo-1543783207-ec64e4d95325?w=800';
 
+  const carouselImages = [
+    imageUrl,
+    ...multimedia.map((item: any) => item.url).filter((url: string) => url && url !== imageUrl)
+  ];
+
   const mapUrl = `https://maps.lospueblosmasbonitosdeespana.org/es/mapas/PB-${id}#${Date.now()}`;
   const experienciasUrl = `https://lospueblosmasbonitosdeespana.org/experiencias-public/?id_lugar=${id}&app=1`;
 
@@ -111,7 +131,36 @@ export default function PuebloDetailScreen() {
     <>
       <Stack.Screen options={{ headerTitle: lugar.nombre }} />
       <ScrollView style={styles.container}>
-        <Image source={{ uri: imageUrl }} style={styles.headerImage} contentFit="cover" />
+        <View style={styles.carouselContainer}>
+          <FlatList
+            ref={flatListRef}
+            data={carouselImages}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onMomentumScrollEnd={(event) => {
+              const index = Math.round(event.nativeEvent.contentOffset.x / Dimensions.get('window').width);
+              setCurrentImageIndex(index);
+            }}
+            renderItem={({ item }) => (
+              <Image source={{ uri: item }} style={styles.headerImage} contentFit="cover" />
+            )}
+            keyExtractor={(item, index) => `image-${index}`}
+          />
+          {carouselImages.length > 1 && (
+            <View style={styles.paginationContainer}>
+              {carouselImages.map((_, index) => (
+                <View
+                  key={index}
+                  style={[
+                    styles.paginationDot,
+                    currentImageIndex === index && styles.paginationDotActive,
+                  ]}
+                />
+              ))}
+            </View>
+          )}
+        </View>
 
         <View style={styles.content}>
           <Text style={styles.title}>{lugar.nombre}</Text>
@@ -358,11 +407,34 @@ const styles = StyleSheet.create({
     ...TYPOGRAPHY.body,
     color: COLORS.textSecondary,
   },
-  headerImage: {
+  carouselContainer: {
+    position: 'relative',
     width: '100%',
     height: 250,
-    borderBottomWidth: 4,
-    borderBottomColor: COLORS.gold,
+  },
+  headerImage: {
+    width: Dimensions.get('window').width,
+    height: 250,
+  },
+  paginationContainer: {
+    position: 'absolute',
+    bottom: 12,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 6,
+  },
+  paginationDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+  },
+  paginationDotActive: {
+    backgroundColor: '#FFFFFF',
+    width: 24,
   },
   content: {
     padding: SPACING.lg,
