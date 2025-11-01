@@ -446,6 +446,27 @@ export default function PuebloDetailScreen() {
             }}
             geolocationEnabled={true}
             allowsInlineMediaPlayback={true}
+            injectedJavaScript={`
+              (function() {
+                document.body.style.marginTop = '0';
+                document.body.style.paddingTop = '0';
+                const header = document.querySelector('header');
+                if (header) {
+                  header.style.display = 'none';
+                  header.remove();
+                }
+                const wpAdminBar = document.querySelector('#wpadminbar');
+                if (wpAdminBar) {
+                  wpAdminBar.style.display = 'none';
+                  wpAdminBar.remove();
+                }
+                const nav = document.querySelector('nav');
+                if (nav) {
+                  nav.style.display = 'none';
+                  nav.remove();
+                }
+              })();
+            `}
           />
           {experienciasLoading && (
             <View style={styles.mapLoader}>
