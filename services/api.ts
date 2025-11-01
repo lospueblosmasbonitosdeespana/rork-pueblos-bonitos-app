@@ -787,12 +787,19 @@ export async function fetchUserProfile(
       }
     }
 
+    let profilePhoto = userData.avatar_urls?.['96'] || userData.avatar_urls?.['48'] || '';
+    if (userData.meta?.um_profile_photo_url) {
+      profilePhoto = userData.meta.um_profile_photo_url;
+      console.log('✅ Foto de perfil UM encontrada:', profilePhoto);
+    }
+
     const profileData = {
       id: userData.id,
       username: userData.slug || userData.username || '',
       email: userData.email || '',
       display_name: userData.name || userData.display_name || '',
-      avatar_url: userData.avatar_urls?.['96'] || userData.avatar_urls?.['48'] || '',
+      avatar_url: profilePhoto,
+      profile_photo: profilePhoto,
       roles: userData.roles || ['subscriber'],
       puntos: puntosTotal,
       description: userData.description || '',
@@ -806,5 +813,91 @@ export async function fetchUserProfile(
   } catch (error: any) {
     console.error('❌ Error cargando perfil:', error.message);
     throw error;
+  }
+}
+
+export async function uploadProfilePhoto(
+  userId: string,
+  imageUri: string
+): Promise<{ success: boolean; imageUrl?: string; message: string }> {
+  try {
+    console.log('📸 Subiendo foto de perfil para usuario', userId);
+    
+    const formData = new FormData();
+    
+    const filename = imageUri.split('/').pop() || 'profile.jpg';
+    const match = /\.([\w]+)$/.exec(filename);
+    const type = match ? `image/${match[1]}` : 'image/jpeg';
+    
+    formData.append('file', {
+      uri: imageUri,
+      name: filename,
+      type,
+    } as any);
+    
+    formData.append('user_id', userId);
+    
+    const uploadUrl = 'https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/upload-profile-photo';
+    console.log('📡 Subiendo a:', uploadUrl);
+    
+    const response = await fetch(uploadUrl, {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'Accept': 'application/json',
+      },
+    });
+    
+    console.log('📊 Status:', response.status);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Error response:', errorText.substring(0, 200));
+      return {
+        success: false,
+        message: 'Error al subir la imagen. Inténtalo de nuevo.',
+      };
+    }
+    
+    const data = await response.json();
+    console.log('✅ Imagen subida exitosamente');
+    
+    return {
+      success: true,
+      imageUrl: data.image_url || data.url,
+      message: 'Foto de perfil actualizada correctamente',
+    };
+  } catch (error: any) {
+    console.error('❌ Error subiendo foto:', error.message);
+    return {
+      success: false,
+      message: 'Error de conexión. Verifica tu conexión a internet.',
+    };
+  }
+}
+
+export async function getUserProfilePhoto(
+  userId: string
+): Promise<string | null> {
+  try {
+    console.log('🔍 Obteniendo foto de perfil para usuario', userId);
+    
+    const response = await fetch(
+      `https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/user/${userId}`
+    );
+    
+    if (!response.ok) {
+      console.log('⚠️ No se pudo obtener la foto de perfil');
+      return null;
+    }
+    
+    const userData = await response.json();
+    const profilePhoto = userData.profile_photo || userData.avatar_url || null;
+    
+    console.log('✅ Foto de perfil obtenida:', profilePhoto ? 'Sí' : 'No');
+    return profilePhoto;
+  } catch (error: any) {
+    console.warn('⚠️ Error obteniendo foto de perfil:', error.message);
+    return null;
   }
 }

@@ -1,8 +1,11 @@
-import { Mail, User } from 'lucide-react-native';
-import React from 'react';
+import * as ImagePicker from 'expo-image-picker';
+import { Camera, Mail, User } from 'lucide-react-native';
+import React, { useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Image,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -12,11 +15,93 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuth } from '@/contexts/auth';
+import { uploadProfilePhoto, getUserProfilePhoto } from '@/services/api';
 
 const LPBE_RED = '#c1121f';
 
 export default function CuentaInfoScreen() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, checkAuth } = useAuth();
+  const [isUploading, setIsUploading] = useState(false);
+  const [currentAvatar, setCurrentAvatar] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (user?.id) {
+      getUserProfilePhoto(user.id.toString()).then((photoUrl) => {
+        if (photoUrl) {
+          setCurrentAvatar(photoUrl);
+        }
+      });
+    }
+  }, [user?.id]);
+
+  const handleSelectPhoto = async () => {
+    if (!user) return;
+
+    try {
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+      if (!permissionResult.granted) {
+        if (Platform.OS === 'web') {
+          alert('Se necesita permiso para acceder a la galería');
+        } else {
+          Alert.alert(
+            'Permiso requerido',
+            'Se necesita permiso para acceder a la galería de fotos',
+            [{ text: 'OK' }]
+          );
+        }
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'] as any,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets && result.assets[0]) {
+        const imageUri = result.assets[0].uri;
+        setIsUploading(true);
+
+        const uploadResult = await uploadProfilePhoto(
+          user.id.toString(),
+          imageUri
+        );
+
+        setIsUploading(false);
+
+        if (uploadResult.success) {
+          if (uploadResult.imageUrl) {
+            setCurrentAvatar(uploadResult.imageUrl);
+          }
+
+          await checkAuth();
+
+          if (Platform.OS === 'web') {
+            alert(uploadResult.message);
+          } else {
+            Alert.alert('Éxito', uploadResult.message, [{ text: 'OK' }]);
+          }
+        } else {
+          if (Platform.OS === 'web') {
+            alert(uploadResult.message);
+          } else {
+            Alert.alert('Error', uploadResult.message, [{ text: 'OK' }]);
+          }
+        }
+      }
+    } catch (error: any) {
+      setIsUploading(false);
+      console.error('Error selecting photo:', error);
+      
+      if (Platform.OS === 'web') {
+        alert('Error al seleccionar la foto');
+      } else {
+        Alert.alert('Error', 'Error al seleccionar la foto', [{ text: 'OK' }]);
+      }
+    }
+  };
 
   if (isLoading) {
     return (
@@ -34,7 +119,7 @@ export default function CuentaInfoScreen() {
   }
 
   const fullName = [user.first_name, user.last_name].filter(Boolean).join(' ') || user.name;
-  const avatarUrl = user.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&size=200&background=c1121f&color=fff`;
+  const displayAvatar = currentAvatar || user.profile_photo || user.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&size=200&background=c1121f&color=fff`;
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -43,14 +128,29 @@ export default function CuentaInfoScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.avatarSection}>
-          <View style={styles.avatarContainer}>
+          <TouchableOpacity
+            style={styles.avatarContainer}
+            onPress={handleSelectPhoto}
+            activeOpacity={0.7}
+            disabled={isUploading}
+          >
             <Image
-              source={{ uri: avatarUrl }}
+              source={{ uri: displayAvatar }}
               style={styles.avatar}
               resizeMode="cover"
             />
-          </View>
+            {isUploading ? (
+              <View style={styles.avatarOverlay}>
+                <ActivityIndicator size="large" color="#fff" />
+              </View>
+            ) : (
+              <View style={styles.avatarOverlay}>
+                <Camera size={32} color="#fff" strokeWidth={2} />
+              </View>
+            )}
+          </TouchableOpacity>
           <Text style={styles.name}>{fullName}</Text>
+          <Text style={styles.changePhotoHint}>Toca la imagen para cambiar</Text>
         </View>
 
         <View style={styles.infoSection}>
@@ -119,9 +219,9 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   avatarContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 130,
+    height: 130,
+    borderRadius: 65,
     marginBottom: 16,
     shadowColor: LPBE_RED,
     shadowOffset: { width: 0, height: 4 },
@@ -129,16 +229,34 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 8,
     backgroundColor: '#fff',
+    position: 'relative' as const,
   },
   avatar: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 130,
+    height: 130,
+    borderRadius: 65,
+  },
+  avatarOverlay: {
+    position: 'absolute' as const,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    borderRadius: 65,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   name: {
     fontSize: 24,
     fontWeight: '700' as const,
     color: '#1a1a1a',
+    textAlign: 'center',
+  },
+  changePhotoHint: {
+    fontSize: 13,
+    color: '#999',
+    marginTop: 8,
     textAlign: 'center',
   },
   infoSection: {
