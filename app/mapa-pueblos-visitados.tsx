@@ -8,18 +8,7 @@ import { fetchLugaresStable } from '@/services/api';
 import { Lugar } from '@/types/api';
 import { API_BASE_URL } from '@/constants/api';
 
-let MapView: any;
-let Marker: any;
-let Callout: any;
-let PROVIDER_GOOGLE: any;
-
-if (Platform.OS !== 'web') {
-  const maps = require('react-native-maps');
-  MapView = maps.default || maps;
-  Marker = maps.Marker;
-  Callout = maps.Callout;
-  PROVIDER_GOOGLE = maps.PROVIDER_GOOGLE;
-}
+import MapView, { Marker, Callout, PROVIDER_GOOGLE } from 'react-native-maps';
 
 const LPBE_RED = '#c1121f';
 
