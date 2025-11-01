@@ -53,7 +53,7 @@ export default function CuentaInfoScreen() {
         const timeoutId = setTimeout(() => controller.abort(), 10000);
         
         const response = await fetch(
-          `https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/user/${user.id}`,
+          `https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/user-profile?user_id=${user.id}`,
           {
             method: 'GET',
             signal: controller.signal,
@@ -66,9 +66,9 @@ export default function CuentaInfoScreen() {
         clearTimeout(timeoutId);
         
         if (!response.ok) {
-          console.error('❌ Error en GET /user:', response.status);
-          if (response.status === 401 || response.status === 403) {
-            setSyncError('No autorizado. Por favor, inicia sesión de nuevo.');
+          console.error('❌ Error en GET /user-profile:', response.status);
+          if (response.status === 404) {
+            setSyncError('Perfil no encontrado. Usando datos locales.');
           } else {
             setSyncError('No se pudo cargar el perfil. Usando datos locales.');
           }
@@ -85,14 +85,14 @@ export default function CuentaInfoScreen() {
         }
         
         const wpData = await response.json();
-        console.log('✅ Datos sincronizados correctamente desde /user');
+        console.log('✅ Datos sincronizados correctamente desde /user-profile:', wpData);
         
         setSyncedData({
           id: wpData.id || user.id,
           name: wpData.name || '',
           email: wpData.email || '',
           username: wpData.username || '',
-          photo: wpData.profile_photo || wpData.avatar_url || null,
+          photo: wpData.photo || null,
         });
         setEditedName(wpData.name || '');
       } catch (error: any) {
@@ -185,9 +185,9 @@ export default function CuentaInfoScreen() {
           console.log('✅ Imagen subida:', photoUrl);
           
           if (photoUrl) {
-            console.log('🔄 Actualizando foto en /update-user...');
+            console.log('🔄 Actualizando foto en /user-profile...');
             const updateResponse = await fetch(
-              `https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/update-user/${user.id}`,
+              `https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/user-profile`,
               {
                 method: 'POST',
                 headers: {
@@ -195,7 +195,8 @@ export default function CuentaInfoScreen() {
                   'Accept': 'application/json',
                 },
                 body: JSON.stringify({
-                  profile_photo: photoUrl,
+                  user_id: user.id,
+                  photo: photoUrl,
                 }),
               }
             );
@@ -213,16 +214,7 @@ export default function CuentaInfoScreen() {
             } else {
               const errorText = await updateResponse.text();
               console.error('❌ Error actualizando perfil:', errorText.substring(0, 200));
-              
-              if (updateResponse.status === 401 || updateResponse.status === 403) {
-                if (Platform.OS === 'web') {
-                  alert('No autorizado. Por favor, inicia sesión de nuevo.');
-                } else {
-                  Alert.alert('Error', 'No autorizado. Por favor, inicia sesión de nuevo.', [{ text: 'OK' }]);
-                }
-              } else {
-                throw new Error('Error al actualizar el perfil');
-              }
+              throw new Error('Error al actualizar el perfil');
             }
           }
         } catch (error: any) {
@@ -254,10 +246,10 @@ export default function CuentaInfoScreen() {
     setIsUpdatingName(true);
 
     try {
-      console.log('✏�� Actualizando nombre a:', editedName.trim());
+      console.log('✏️ Actualizando nombre a:', editedName.trim());
       
       const response = await fetch(
-        `https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/update-user/${user.id}`,
+        `https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/user-profile`,
         {
           method: 'POST',
           headers: {
@@ -265,6 +257,7 @@ export default function CuentaInfoScreen() {
             'Accept': 'application/json',
           },
           body: JSON.stringify({
+            user_id: user.id,
             name: editedName.trim(),
           }),
         }
@@ -289,18 +282,10 @@ export default function CuentaInfoScreen() {
         const errorText = await response.text();
         console.error('❌ Error response:', errorText.substring(0, 200));
         
-        if (response.status === 401 || response.status === 403) {
-          if (Platform.OS === 'web') {
-            alert('No autorizado. Por favor, inicia sesión de nuevo.');
-          } else {
-            Alert.alert('Error', 'No autorizado. Por favor, inicia sesión de nuevo.', [{ text: 'OK' }]);
-          }
+        if (Platform.OS === 'web') {
+          alert('Error al actualizar el nombre. Inténtalo de nuevo.');
         } else {
-          if (Platform.OS === 'web') {
-            alert('Error al actualizar el nombre. Inténtalo de nuevo.');
-          } else {
-            Alert.alert('Error', 'Error al actualizar el nombre. Inténtalo de nuevo.', [{ text: 'OK' }]);
-          }
+          Alert.alert('Error', 'Error al actualizar el nombre. Inténtalo de nuevo.', [{ text: 'OK' }]);
         }
       }
     } catch (error: any) {
