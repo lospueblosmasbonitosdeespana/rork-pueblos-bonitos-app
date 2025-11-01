@@ -1,9 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { Stack, useLocalSearchParams, router } from 'expo-router';
 import { Image } from 'expo-image';
-import { MapPin, Map, X, BarChart3 } from 'lucide-react-native';
+import { MapPin, Map, X, BarChart3, Navigation } from 'lucide-react-native';
+import * as Linking from 'expo-linking';
 import { useState, useRef } from 'react';
-import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Modal, ActivityIndicator, SafeAreaView, FlatList, Dimensions } from 'react-native';
+import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Modal, ActivityIndicator, SafeAreaView, FlatList, Dimensions, Platform } from 'react-native';
 import { WebView } from 'react-native-webview';
 
 import { COLORS, SHADOWS, SPACING, TYPOGRAPHY } from '@/constants/theme';
@@ -141,6 +142,28 @@ export default function PuebloDetailScreen() {
   const mapUrl = `https://maps.lospueblosmasbonitosdeespana.org/es/mapas/PB-${id}#${Date.now()}`;
   const experienciasUrl = `https://lospueblosmasbonitosdeespana.org/experiencias-public/?id_lugar=${id}&app=1`;
 
+  const openDirections = () => {
+    const lat = lugar.latitud;
+    const lon = lugar.longitud;
+    
+    if (!lat || !lon) {
+      console.warn('⚠️ No hay coordenadas disponibles para este pueblo');
+      return;
+    }
+
+    const url = Platform.select({
+      ios: `maps://app?saddr=Current%20Location&daddr=${lat},${lon}`,
+      android: `google.navigation:q=${lat},${lon}`,
+      default: `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`
+    });
+
+    Linking.openURL(url).catch((err) => {
+      console.error('❌ Error al abrir el mapa', err);
+      const fallbackUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`;
+      Linking.openURL(fallbackUrl);
+    });
+  };
+
   return (
     <>
       <Stack.Screen options={{ headerTitle: lugar.nombre }} />
@@ -191,7 +214,8 @@ export default function PuebloDetailScreen() {
             </Text>
           </View>
 
-          <View style={styles.buttonsRow}>
+          <View style={styles.buttonsContainer}>
+            <View style={styles.buttonsRow}>
             <TouchableOpacity
               style={styles.actionButton}
               onPress={() => setShowMapModal(true)}
@@ -214,6 +238,15 @@ export default function PuebloDetailScreen() {
               activeOpacity={0.7}
             >
               <BarChart3 size={24} color={COLORS.card} />
+            </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity
+              style={styles.directionsButton}
+              onPress={openDirections}
+              activeOpacity={0.7}
+            >
+              <Navigation size={18} color="#007AFF" />
             </TouchableOpacity>
           </View>
 
@@ -548,10 +581,23 @@ const styles = StyleSheet.create({
     marginTop: SPACING.xs,
     fontWeight: '600' as const,
   },
+  buttonsContainer: {
+    marginBottom: SPACING.lg,
+  },
   buttonsRow: {
     flexDirection: 'row',
     gap: SPACING.sm,
-    marginBottom: SPACING.lg,
+    marginBottom: SPACING.xs,
+  },
+  directionsButton: {
+    alignSelf: 'flex-end',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.card,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    marginTop: SPACING.xs,
   },
   actionButton: {
     flex: 1,
