@@ -456,46 +456,18 @@ export default function PuebloDetailScreen() {
             allowsInlineMediaPlayback={true}
             injectedJavaScript={`
               (function() {
-                function eliminarEspacioSuperior() {
-                  document.querySelectorAll('header, nav, #wpadminbar, .site-header, .header, .top-bar, .nav-bar').forEach(function(el) {
-                    if (el) {
-                      el.style.cssText = 'display: none !important; height: 0 !important; margin: 0 !important; padding: 0 !important;';
-                      el.remove();
-                    }
-                  });
+                try {
+                  const header = document.querySelector('header');
+                  if (header) header.style.display = 'none';
                   
-                  document.body.style.cssText = 'margin: 0 !important; padding: 0 !important; margin-top: 0 !important; padding-top: 0 !important;';
-                  document.documentElement.style.cssText = 'margin: 0 !important; padding: 0 !important; margin-top: 0 !important; padding-top: 0 !important;';
+                  const adminBar = document.querySelector('#wpadminbar');
+                  if (adminBar) adminBar.style.display = 'none';
                   
-                  var mainContent = document.querySelector('main, .main, .content, article, .post, [role="main"]');
-                  if (mainContent) {
-                    mainContent.style.cssText = 'margin-top: 0 !important; padding-top: 0 !important;';
-                    
-                    var parent = mainContent.parentElement;
-                    while (parent && parent !== document.body) {
-                      parent.style.cssText = 'margin-top: 0 !important; padding-top: 0 !important;';
-                      parent = parent.parentElement;
-                    }
-                  }
-                  
-                  var style = document.createElement('style');
-                  style.textContent = '* { margin-top: 0 !important; } body > *:first-child { margin-top: 0 !important; padding-top: 0 !important; }';
-                  document.head.appendChild(style);
-                  
-                  window.scrollTo(0, 0);
+                  document.body.style.marginTop = '0';
+                  document.body.style.paddingTop = '0';
+                } catch(e) {
+                  console.log('Error:', e);
                 }
-                
-                if (document.readyState === 'loading') {
-                  document.addEventListener('DOMContentLoaded', eliminarEspacioSuperior);
-                } else {
-                  eliminarEspacioSuperior();
-                }
-                
-                setTimeout(eliminarEspacioSuperior, 50);
-                setTimeout(eliminarEspacioSuperior, 150);
-                setTimeout(eliminarEspacioSuperior, 400);
-                setTimeout(eliminarEspacioSuperior, 800);
-                setTimeout(eliminarEspacioSuperior, 1500);
               })();
               true;
             `}
