@@ -6,7 +6,7 @@ import {
   LogOut,
   Map,
   MapPin,
-  Shield,
+
   Star,
   User,
   FileText,
@@ -142,13 +142,6 @@ export default function ProfileScreen() {
       label: 'Cambiar contraseña',
       icon: Key,
       onPress: () => router.push('/cambiar-password'),
-      active: true,
-    },
-    {
-      id: 'privacy',
-      label: 'Privacidad',
-      icon: Shield,
-      onPress: () => router.push('/privacidad'),
       active: true,
     },
   ];
