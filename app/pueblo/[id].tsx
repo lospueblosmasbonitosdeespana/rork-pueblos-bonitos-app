@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Stack, useLocalSearchParams, router } from 'expo-router';
 import { Image } from 'expo-image';
-import { MapPin, Map, X, BarChart3 } from 'lucide-react-native';
+import { MapPin, Map, X, Route, Wind } from 'lucide-react-native';
 import { useState, useRef } from 'react';
 import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Modal, ActivityIndicator, SafeAreaView, FlatList, Dimensions, Platform, Linking } from 'react-native';
 import { WebView } from 'react-native-webview';
@@ -251,7 +251,7 @@ export default function PuebloDetailScreen() {
               onPress={() => setShowExperienciasModal(true)}
               activeOpacity={0.7}
             >
-              <Text style={styles.expText}>EXP</Text>
+              <Route size={24} color={COLORS.card} />
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -259,7 +259,7 @@ export default function PuebloDetailScreen() {
               onPress={() => router.push(`/pueblo-info/${id}` as any)}
               activeOpacity={0.7}
             >
-              <BarChart3 size={24} color={COLORS.card} />
+              <Wind size={24} color={COLORS.card} />
             </TouchableOpacity>
             </View>
           </View>
@@ -626,12 +626,7 @@ const styles = StyleSheet.create({
     ...SHADOWS.medium,
     minHeight: 56,
   },
-  expText: {
-    fontSize: 18,
-    fontWeight: '900' as const,
-    color: COLORS.card,
-    letterSpacing: 1,
-  },
+
   modalContainer: {
     flex: 1,
     backgroundColor: COLORS.background,
