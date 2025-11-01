@@ -840,7 +840,7 @@ export async function uploadProfilePhoto(
     const uploadUrl = 'https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/upload-profile-photo';
     console.log('📡 Subiendo a:', uploadUrl);
     
-    const response = await fetch(uploadUrl, {
+    const uploadResponse = await fetch(uploadUrl, {
       method: 'POST',
       body: formData,
       headers: {
@@ -848,10 +848,10 @@ export async function uploadProfilePhoto(
       },
     });
     
-    console.log('📊 Status:', response.status);
+    console.log('📊 Upload Status:', uploadResponse.status);
     
-    if (!response.ok) {
-      const errorText = await response.text();
+    if (!uploadResponse.ok) {
+      const errorText = await uploadResponse.text();
       console.error('❌ Error response:', errorText.substring(0, 200));
       return {
         success: false,
@@ -859,12 +859,39 @@ export async function uploadProfilePhoto(
       };
     }
     
-    const data = await response.json();
-    console.log('✅ Imagen subida exitosamente');
+    const uploadData = await uploadResponse.json();
+    console.log('✅ Imagen subida exitosamente:', uploadData);
+    
+    const photoUrl = uploadData.image_url || uploadData.url;
+    
+    if (photoUrl) {
+      console.log('🔄 Actualizando foto en el perfil del usuario...');
+      
+      const updateResponse = await fetch(
+        'https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/user-profile',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          body: JSON.stringify({
+            user_id: userId,
+            photo: photoUrl,
+          }),
+        }
+      );
+      
+      if (updateResponse.ok) {
+        console.log('✅ Foto actualizada en el perfil del usuario');
+      } else {
+        console.warn('⚠️ No se pudo actualizar la foto en el perfil, pero se subió correctamente');
+      }
+    }
     
     return {
       success: true,
-      imageUrl: data.image_url || data.url,
+      imageUrl: photoUrl,
       message: 'Foto de perfil actualizada correctamente',
     };
   } catch (error: any) {
@@ -906,14 +933,15 @@ export async function getWordPressUserData(
   userId: string
 ): Promise<{ name: string; email: string; username: string; profile_photo: string | null } | null> {
   try {
-    console.log('🔍 Obteniendo datos del usuario desde WordPress API');
+    console.log('🔍 Obteniendo datos del usuario desde nuevo endpoint /user-profile');
     
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000);
     
-    const lpbeResponse = await fetch(
-      `https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/user/${userId}`,
+    const response = await fetch(
+      `https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/user-profile?user_id=${userId}`,
       {
+        method: 'GET',
         signal: controller.signal,
         headers: {
           'Accept': 'application/json',
@@ -923,32 +951,28 @@ export async function getWordPressUserData(
     
     clearTimeout(timeoutId);
     
-    if (!lpbeResponse.ok) {
-      console.log('⚠️ No se pudieron obtener los datos del usuario desde lpbe (status:', lpbeResponse.status, ')');
+    if (!response.ok) {
+      console.log('⚠️ No se pudieron obtener los datos del usuario (status:', response.status, ')');
+      const errorText = await response.text();
+      console.error('❌ Error response:', errorText.substring(0, 200));
       return null;
     }
     
-    const userData = await lpbeResponse.json();
+    const userData = await response.json();
     
     if (!userData || typeof userData !== 'object') {
       console.log('⚠️ Datos del usuario inválidos');
       return null;
     }
     
-    let profilePhoto = userData.profile_photo || userData.avatar_url || null;
-    
-    console.log('ℹ️ Usando foto de perfil del endpoint lpbe/v1/user (el endpoint wp/v2/users requiere autenticación)');
-    // El endpoint wp/v2/users/{id}?context=edit requiere autenticación
-    // y sin ella devuelve 404. Por ahora usamos solo la foto del endpoint lpbe/v1/user
-    
     const result = {
       name: userData.name || '',
       email: userData.email || '',
       username: userData.username || '',
-      profile_photo: profilePhoto,
+      profile_photo: userData.photo || null,
     };
     
-    console.log('✅ Datos del usuario obtenidos:', result.name, '| Foto:', profilePhoto ? 'Sí' : 'No');
+    console.log('✅ Datos del usuario obtenidos:', result.name, '| Foto:', result.profile_photo ? 'Sí' : 'No');
     return result;
   } catch (error: any) {
     if (error.name === 'AbortError') {
@@ -968,7 +992,7 @@ export async function updateUserName(
     console.log('✏️ Actualizando nombre del usuario', userId, 'a:', newName);
     
     const response = await fetch(
-      `https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/update-user`,
+      `https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/user-profile`,
       {
         method: 'POST',
         headers: {
@@ -993,12 +1017,12 @@ export async function updateUserName(
       };
     }
     
-    await response.json();
-    console.log('✅ Nombre actualizado exitosamente');
+    const data = await response.json();
+    console.log('✅ Nombre actualizado exitosamente:', data);
     
     return {
       success: true,
-      message: 'Nombre actualizado correctamente',
+      message: data.message || 'Nombre actualizado correctamente',
     };
   } catch (error: any) {
     console.error('❌ Error actualizando nombre:', error.message);
