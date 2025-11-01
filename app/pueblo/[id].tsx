@@ -456,31 +456,65 @@ export default function PuebloDetailScreen() {
             allowsInlineMediaPlayback={true}
             injectedJavaScript={`
               (function() {
-                setTimeout(function() {
+                function eliminarEspacioSuperior() {
                   const header = document.querySelector('header');
                   if (header) {
                     header.style.display = 'none';
                     header.remove();
                   }
+                  
                   const wpAdminBar = document.querySelector('#wpadminbar');
                   if (wpAdminBar) {
                     wpAdminBar.style.display = 'none';
                     wpAdminBar.remove();
                   }
+                  
                   const nav = document.querySelector('nav');
                   if (nav) {
                     nav.style.display = 'none';
                     nav.remove();
                   }
                   
-                  const firstText = document.querySelector('p, h1, h2, h3, article, .entry-content, main');
-                  if (firstText) {
-                    firstText.scrollIntoView({ behavior: 'instant', block: 'start' });
+                  const body = document.body;
+                  const html = document.documentElement;
+                  
+                  body.style.margin = '0';
+                  body.style.padding = '0';
+                  body.style.marginTop = '0';
+                  body.style.paddingTop = '0';
+                  html.style.margin = '0';
+                  html.style.padding = '0';
+                  html.style.marginTop = '0';
+                  html.style.paddingTop = '0';
+                  
+                  const allElements = document.querySelectorAll('*');
+                  let firstContentElement = null;
+                  
+                  for (let elem of allElements) {
+                    const text = elem.textContent?.trim();
+                    if (text && text.length > 10) {
+                      const rect = elem.getBoundingClientRect();
+                      if (rect.top > 0) {
+                        firstContentElement = elem;
+                        break;
+                      }
+                    }
                   }
                   
-                  document.body.style.marginTop = '0';
-                  document.body.style.paddingTop = '0';
-                }, 300);
+                  if (firstContentElement) {
+                    const rect = firstContentElement.getBoundingClientRect();
+                    const scrollAmount = rect.top + window.pageYOffset;
+                    window.scrollTo({ top: scrollAmount, behavior: 'instant' });
+                  } else {
+                    window.scrollTo({ top: 0, behavior: 'instant' });
+                  }
+                }
+                
+                eliminarEspacioSuperior();
+                setTimeout(eliminarEspacioSuperior, 100);
+                setTimeout(eliminarEspacioSuperior, 300);
+                setTimeout(eliminarEspacioSuperior, 600);
+                setTimeout(eliminarEspacioSuperior, 1000);
               })();
             `}
           />
