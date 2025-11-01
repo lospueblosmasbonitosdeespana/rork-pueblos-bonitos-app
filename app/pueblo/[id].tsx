@@ -60,7 +60,15 @@ export default function PuebloDetailScreen() {
           return [];
         }
         
-        const data = await response.json();
+        const text = await response.text();
+        console.log('📦 Multimedia raw response (first 200 chars):', text.substring(0, 200));
+        
+        if (!text || text.trim().length === 0) {
+          console.log('⚠️ Empty response');
+          return [];
+        }
+        
+        const data = JSON.parse(text);
         return Array.isArray(data) ? data : [];
       } catch (error) {
         console.error('❌ Error loading multimedia:', error);
