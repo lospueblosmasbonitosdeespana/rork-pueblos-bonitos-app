@@ -1,5 +1,4 @@
-import { router } from 'expo-router';
-import { ArrowLeft, Download } from 'lucide-react-native';
+import { Download } from 'lucide-react-native';
 import React, { useCallback } from 'react';
 import {
   ActivityIndicator,
@@ -120,13 +119,6 @@ export default function PrivacidadScreen() {
   if (!isAuthenticated) {
     return (
       <View style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <ArrowLeft size={24} color={LPBE_RED} strokeWidth={2} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Privacidad</Text>
-          <View style={styles.placeholder} />
-        </View>
         <View style={styles.notAuthContent}>
           <Text style={styles.notAuthText}>
             Inicia sesión para ver tu configuración de privacidad
@@ -139,13 +131,6 @@ export default function PrivacidadScreen() {
   if (isLoading) {
     return (
       <View style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <ArrowLeft size={24} color={LPBE_RED} strokeWidth={2} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Privacidad</Text>
-          <View style={styles.placeholder} />
-        </View>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={LPBE_RED} />
         </View>
@@ -155,14 +140,6 @@ export default function PrivacidadScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <ArrowLeft size={24} color={LPBE_RED} strokeWidth={2} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Privacidad</Text>
-        <View style={styles.placeholder} />
-      </View>
-
       <ScrollView style={styles.content}>
         <View style={styles.settingItem}>
           <View style={styles.settingTextContainer}>
@@ -228,27 +205,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: BG_BEIGE,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  backButton: {
-    padding: 4,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700' as const,
-    color: '#1a1a1a',
-  },
-  placeholder: {
-    width: 32,
-  },
+
   notAuthContent: {
     flex: 1,
     justifyContent: 'center',

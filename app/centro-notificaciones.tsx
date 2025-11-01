@@ -1,5 +1,4 @@
-import { router } from 'expo-router';
-import { ArrowLeft, Newspaper, AlertTriangle, Snowflake } from 'lucide-react-native';
+import { Newspaper, AlertTriangle, Snowflake } from 'lucide-react-native';
 import React, { useEffect } from 'react';
 import {
   ActivityIndicator,
@@ -100,13 +99,6 @@ export default function CentroNotificaciones() {
   if (error && notificaciones.length === 0) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <ArrowLeft size={24} color="#800000" strokeWidth={2} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Centro de Notificaciones</Text>
-          <View style={styles.placeholder} />
-        </View>
         <View style={styles.errorContainer}>
           <AlertTriangle size={48} color="#FF6B00" />
           <Text style={styles.errorTitle}>Error de conexión</Text>
@@ -123,14 +115,6 @@ export default function CentroNotificaciones() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <ArrowLeft size={24} color="#800000" strokeWidth={2} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Centro de Notificaciones</Text>
-        <View style={styles.placeholder} />
-      </View>
-
       {notificaciones.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyText}>No hay notificaciones disponibles</Text>
@@ -263,27 +247,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  backButton: {
-    padding: 4,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1a1a1a',
-  },
-  placeholder: {
-    width: 32,
-  },
+
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',

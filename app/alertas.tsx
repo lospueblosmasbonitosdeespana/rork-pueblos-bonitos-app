@@ -51,11 +51,6 @@ export default function AlertasScreen() {
             />
           }
         >
-          <View style={styles.header}>
-            <AlertTriangle size={32} color={COLORS.primary} />
-            <Text style={styles.headerTitle}>Alertas y Avisos</Text>
-            <Text style={styles.headerSubtitle}>Información importante sobre los pueblos</Text>
-          </View>
 
           {notificacionesQuery.isLoading && (
             <View style={styles.loadingContainer}>
@@ -119,25 +114,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: SPACING.xl,
   },
-  header: {
-    padding: SPACING.xl,
-    alignItems: 'center',
-    backgroundColor: COLORS.beige,
-    borderBottomWidth: 2,
-    borderBottomColor: COLORS.primary,
-  },
-  headerTitle: {
-    ...TYPOGRAPHY.h1,
-    color: COLORS.primary,
-    marginTop: SPACING.sm,
-    textAlign: 'center',
-  },
-  headerSubtitle: {
-    ...TYPOGRAPHY.body,
-    color: COLORS.textSecondary,
-    marginTop: SPACING.xs,
-    textAlign: 'center',
-  },
+
   section: {
     marginTop: SPACING.lg,
     backgroundColor: COLORS.beige,

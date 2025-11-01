@@ -1,5 +1,3 @@
-import { router } from 'expo-router';
-import { ArrowLeft } from 'lucide-react-native';
 import React from 'react';
 import {
   ActivityIndicator,
@@ -64,17 +62,10 @@ export default function CambiarPasswordScreen() {
       const result = await response.json();
 
       if (response.ok) {
-        Alert.alert('Éxito', 'Contraseña actualizada correctamente', [
-          {
-            text: 'OK',
-            onPress: () => {
-              setCurrentPassword('');
-              setNewPassword('');
-              setConfirmPassword('');
-              router.back();
-            },
-          },
-        ]);
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+        Alert.alert('Éxito', 'Contraseña actualizada correctamente');
       } else {
         Alert.alert('Error', result.message || 'No se pudo cambiar la contraseña');
       }
@@ -89,13 +80,6 @@ export default function CambiarPasswordScreen() {
   if (!isAuthenticated) {
     return (
       <View style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <ArrowLeft size={24} color={LPBE_RED} strokeWidth={2} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Cambiar contraseña</Text>
-          <View style={styles.placeholder} />
-        </View>
         <View style={styles.notAuthContent}>
           <Text style={styles.notAuthText}>
             Inicia sesión para cambiar tu contraseña
@@ -107,14 +91,6 @@ export default function CambiarPasswordScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <ArrowLeft size={24} color={LPBE_RED} strokeWidth={2} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Cambiar contraseña</Text>
-        <View style={styles.placeholder} />
-      </View>
-
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -185,27 +161,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: BG_BEIGE,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  backButton: {
-    padding: 4,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700' as const,
-    color: '#1a1a1a',
-  },
-  placeholder: {
-    width: 32,
-  },
+
   notAuthContent: {
     flex: 1,
     justifyContent: 'center',

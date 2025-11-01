@@ -80,8 +80,57 @@ function RootLayoutNav() {
       <Stack.Screen
         name="centro-notificaciones"
         options={{
-          headerShown: false,
+          headerTitle: "Centro de Notificaciones",
           presentation: "modal",
+        }}
+      />
+      <Stack.Screen
+        name="cuenta-info"
+        options={{
+          headerTitle: "Información de Cuenta",
+          presentation: "card",
+        }}
+      />
+      <Stack.Screen
+        name="pueblos-visitados"
+        options={{
+          headerTitle: "Pueblos Visitados",
+          presentation: "card",
+        }}
+      />
+      <Stack.Screen
+        name="puntos-conseguidos"
+        options={{
+          headerTitle: "Puntos Conseguidos",
+          presentation: "card",
+        }}
+      />
+      <Stack.Screen
+        name="mapa-pueblos-visitados"
+        options={{
+          headerTitle: "Mapa de Pueblos Visitados",
+          presentation: "card",
+        }}
+      />
+      <Stack.Screen
+        name="guia-uso"
+        options={{
+          headerTitle: "Guía de uso",
+          presentation: "card",
+        }}
+      />
+      <Stack.Screen
+        name="cambiar-password"
+        options={{
+          headerTitle: "Cambiar contraseña",
+          presentation: "card",
+        }}
+      />
+      <Stack.Screen
+        name="privacidad"
+        options={{
+          headerTitle: "Privacidad",
+          presentation: "card",
         }}
       />
       </Stack>

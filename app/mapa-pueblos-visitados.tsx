@@ -1,5 +1,5 @@
+
 import { router } from 'expo-router';
-import { ArrowLeft } from 'lucide-react-native';
 import React from 'react';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { WebView } from 'react-native-webview';
@@ -17,13 +17,6 @@ export default function MapaPueblosVisitadosScreen() {
   if (authLoading) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <ArrowLeft size={24} color={LPBE_RED} strokeWidth={2} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Mapa de Pueblos Visitados</Text>
-          <View style={styles.placeholder} />
-        </View>
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color={LPBE_RED} />
         </View>
@@ -34,13 +27,6 @@ export default function MapaPueblosVisitadosScreen() {
   if (!isAuthenticated) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <ArrowLeft size={24} color={LPBE_RED} strokeWidth={2} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Mapa de Pueblos Visitados</Text>
-          <View style={styles.placeholder} />
-        </View>
         <View style={styles.centerContainer}>
           <Text style={styles.notLoggedText}>Inicia sesión para ver tu mapa de pueblos visitados</Text>
           <TouchableOpacity 
@@ -56,14 +42,6 @@ export default function MapaPueblosVisitadosScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <ArrowLeft size={24} color={LPBE_RED} strokeWidth={2} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Mapa de Pueblos Visitados</Text>
-        <View style={styles.placeholder} />
-      </View>
-
       <View style={styles.webViewContainer}>
         {isLoading && (
           <View style={styles.loadingOverlay}>
@@ -99,27 +77,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: BEIGE_BG,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  backButton: {
-    padding: 4,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700' as const,
-    color: '#1a1a1a',
-  },
-  placeholder: {
-    width: 32,
-  },
+
   webViewContainer: {
     flex: 1,
     backgroundColor: BEIGE_BG,

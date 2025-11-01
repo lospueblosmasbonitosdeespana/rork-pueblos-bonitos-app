@@ -1,5 +1,4 @@
-import { router } from 'expo-router';
-import { ArrowLeft, MapPin, Star } from 'lucide-react-native';
+import { MapPin, Star } from 'lucide-react-native';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -365,13 +364,6 @@ export default function PueblosVisitadosScreen() {
   if (error) {
     return (
       <View style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <ArrowLeft size={24} color={LPBE_RED} strokeWidth={2} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Pueblos Visitados</Text>
-          <View style={styles.placeholder} />
-        </View>
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>{error}</Text>
           <TouchableOpacity style={styles.retryButton} onPress={() => fetchPueblosVisitados()}>
@@ -384,26 +376,6 @@ export default function PueblosVisitadosScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <ArrowLeft size={24} color={LPBE_RED} strokeWidth={2} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Pueblos Visitados</Text>
-        <TouchableOpacity 
-          onPress={toggleEditMode} 
-          style={styles.editButton}
-          disabled={isSaving}
-        >
-          {isSaving ? (
-            <ActivityIndicator size="small" color={LPBE_RED} />
-          ) : (
-            <Text style={styles.editButtonText}>
-              {isEditing ? 'Guardar' : 'Editar'}
-            </Text>
-          )}
-        </TouchableOpacity>
-      </View>
-
       <View style={styles.statsContainer}>
         <View style={styles.statBox}>
           <Text style={styles.statValue}>{totalVisitados}</Text>
@@ -534,39 +506,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  backButton: {
-    padding: 4,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700' as const,
-    color: '#1a1a1a',
-  },
-  editButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    minWidth: 70,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  editButtonText: {
-    fontSize: 16,
-    fontWeight: '600' as const,
-    color: LPBE_RED,
-  },
-  placeholder: {
-    width: 32,
-  },
+
   statsContainer: {
     flexDirection: 'row',
     backgroundColor: '#fff',

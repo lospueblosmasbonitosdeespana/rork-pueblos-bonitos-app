@@ -1,5 +1,4 @@
-import { router } from 'expo-router';
-import { ArrowLeft, Award, MapPin, Star, TrendingUp } from 'lucide-react-native';
+import { Award, MapPin, Star, TrendingUp } from 'lucide-react-native';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -135,13 +134,6 @@ export default function PuntosConseguidosScreen() {
   if (error) {
     return (
       <View style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <ArrowLeft size={24} color={LPBE_RED} strokeWidth={2} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Puntos Conseguidos</Text>
-          <View style={styles.placeholder} />
-        </View>
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>{error}</Text>
           <TouchableOpacity style={styles.retryButton} onPress={() => fetchPuntos()}>
@@ -154,14 +146,6 @@ export default function PuntosConseguidosScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <ArrowLeft size={24} color={LPBE_RED} strokeWidth={2} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Puntos Conseguidos</Text>
-        <View style={styles.placeholder} />
-      </View>
-
       <View style={styles.summaryContainer}>
         <View style={styles.totalPointsCard}>
           <Award size={48} color={LPBE_RED} strokeWidth={2} />
@@ -288,27 +272,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  backButton: {
-    padding: 4,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700' as const,
-    color: '#1a1a1a',
-  },
-  placeholder: {
-    width: 32,
-  },
+
   summaryContainer: {
     backgroundColor: '#fff',
     paddingHorizontal: 20,

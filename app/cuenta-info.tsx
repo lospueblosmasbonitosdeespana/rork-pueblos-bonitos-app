@@ -1,5 +1,4 @@
-import { router } from 'expo-router';
-import { ArrowLeft, Mail, User } from 'lucide-react-native';
+import { Mail, User } from 'lucide-react-native';
 import React from 'react';
 import {
   ActivityIndicator,
@@ -39,14 +38,6 @@ export default function CuentaInfoScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <ArrowLeft size={24} color={LPBE_RED} strokeWidth={2} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Información de Cuenta</Text>
-        <View style={styles.placeholder} />
-      </View>
-
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -119,27 +110,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  backButton: {
-    padding: 4,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700' as const,
-    color: '#1a1a1a',
-  },
-  placeholder: {
-    width: 32,
-  },
+
   scrollContent: {
     padding: 24,
   },
