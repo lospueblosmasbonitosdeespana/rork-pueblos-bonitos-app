@@ -15,7 +15,7 @@ let PROVIDER_GOOGLE: any;
 
 if (Platform.OS !== 'web') {
   const maps = require('react-native-maps');
-  MapView = maps.default;
+  MapView = maps.default || maps;
   Marker = maps.Marker;
   Callout = maps.Callout;
   PROVIDER_GOOGLE = maps.PROVIDER_GOOGLE;
