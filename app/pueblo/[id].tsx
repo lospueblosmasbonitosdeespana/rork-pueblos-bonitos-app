@@ -2,9 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import { Stack, useLocalSearchParams, router } from 'expo-router';
 import { Image } from 'expo-image';
 import { MapPin, Map, X, BarChart3 } from 'lucide-react-native';
-import * as Linking from 'expo-linking';
 import { useState, useRef } from 'react';
-import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Modal, ActivityIndicator, SafeAreaView, FlatList, Dimensions, Platform } from 'react-native';
+import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Modal, ActivityIndicator, SafeAreaView, FlatList, Dimensions, Platform, Linking } from 'react-native';
 import { WebView } from 'react-native-webview';
 
 import { COLORS, SHADOWS, SPACING, TYPOGRAPHY } from '@/constants/theme';
