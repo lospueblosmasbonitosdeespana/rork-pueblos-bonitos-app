@@ -53,7 +53,7 @@ export default function CuentaInfoScreen() {
         const timeoutId = setTimeout(() => controller.abort(), 10000);
         
         const response = await fetch(
-          `https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/user-profile?user_id=${user.id}`,
+          `https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/user/${user.id}`,
           {
             method: 'GET',
             signal: controller.signal,
@@ -66,8 +66,8 @@ export default function CuentaInfoScreen() {
         clearTimeout(timeoutId);
         
         if (!response.ok) {
-          console.error('❌ Error en GET /user-profile:', response.status);
-          if (response.status === 403) {
+          console.error('❌ Error en GET /user:', response.status);
+          if (response.status === 401 || response.status === 403) {
             setSyncError('No autorizado. Por favor, inicia sesión de nuevo.');
           } else {
             setSyncError('No se pudo cargar el perfil. Usando datos locales.');
@@ -85,14 +85,14 @@ export default function CuentaInfoScreen() {
         }
         
         const wpData = await response.json();
-        console.log('✅ Datos sincronizados correctamente desde /user-profile');
+        console.log('✅ Datos sincronizados correctamente desde /user');
         
         setSyncedData({
           id: wpData.id || user.id,
           name: wpData.name || '',
           email: wpData.email || '',
           username: wpData.username || '',
-          photo: wpData.photo || null,
+          photo: wpData.profile_photo || wpData.avatar_url || null,
         });
         setEditedName(wpData.name || '');
       } catch (error: any) {
@@ -185,9 +185,9 @@ export default function CuentaInfoScreen() {
           console.log('✅ Imagen subida:', photoUrl);
           
           if (photoUrl) {
-            console.log('🔄 Actualizando foto en /user-profile...');
+            console.log('🔄 Actualizando foto en /update-user...');
             const updateResponse = await fetch(
-              'https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/user-profile',
+              `https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/update-user/${user.id}`,
               {
                 method: 'POST',
                 headers: {
@@ -195,8 +195,7 @@ export default function CuentaInfoScreen() {
                   'Accept': 'application/json',
                 },
                 body: JSON.stringify({
-                  user_id: user.id,
-                  photo: photoUrl,
+                  profile_photo: photoUrl,
                 }),
               }
             );
@@ -215,7 +214,7 @@ export default function CuentaInfoScreen() {
               const errorText = await updateResponse.text();
               console.error('❌ Error actualizando perfil:', errorText.substring(0, 200));
               
-              if (updateResponse.status === 403) {
+              if (updateResponse.status === 401 || updateResponse.status === 403) {
                 if (Platform.OS === 'web') {
                   alert('No autorizado. Por favor, inicia sesión de nuevo.');
                 } else {
@@ -258,7 +257,7 @@ export default function CuentaInfoScreen() {
       console.log('✏�� Actualizando nombre a:', editedName.trim());
       
       const response = await fetch(
-        'https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/user-profile',
+        `https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/update-user/${user.id}`,
         {
           method: 'POST',
           headers: {
@@ -266,7 +265,6 @@ export default function CuentaInfoScreen() {
             'Accept': 'application/json',
           },
           body: JSON.stringify({
-            user_id: user.id,
             name: editedName.trim(),
           }),
         }
@@ -291,7 +289,7 @@ export default function CuentaInfoScreen() {
         const errorText = await response.text();
         console.error('❌ Error response:', errorText.substring(0, 200));
         
-        if (response.status === 403) {
+        if (response.status === 401 || response.status === 403) {
           if (Platform.OS === 'web') {
             alert('No autorizado. Por favor, inicia sesión de nuevo.');
           } else {
