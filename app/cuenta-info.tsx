@@ -20,7 +20,7 @@ import { useAuth } from '@/contexts/auth';
 const LPBE_RED = '#c1121f';
 
 export default function CuentaInfoScreen() {
-  const { user, isLoading } = useAuth();
+  const { user, token, isLoading } = useAuth();
   const [isUploading, setIsUploading] = useState(false);
   const [isSyncing, setIsSyncing] = useState(true);
   const [syncError, setSyncError] = useState<string | null>(null);
@@ -163,10 +163,18 @@ export default function CuentaInfoScreen() {
         formData.append('user_id', user.id.toString());
         
         try {
+          if (!token) {
+            console.error('❌ No hay token JWT disponible');
+            throw new Error('Sesión no autenticada. Por favor, inicia sesión de nuevo.');
+          }
+
           const uploadResponse = await fetch(
             'https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/upload-profile-photo',
             {
               method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+              },
               body: formData,
             }
           );
