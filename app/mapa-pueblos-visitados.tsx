@@ -1,103 +1,16 @@
 import { router } from 'expo-router';
-import { ArrowLeft, Flag } from 'lucide-react-native';
-import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View, Platform } from 'react-native';
+import { ArrowLeft } from 'lucide-react-native';
+import React from 'react';
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { WebView } from 'react-native-webview';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useAuth } from '@/contexts/auth';
-import { fetchLugaresStable } from '@/services/api';
-import { Lugar } from '@/types/api';
-import { API_BASE_URL } from '@/constants/api';
-
-// TEMPORALMENTE DESACTIVADO - react-native-maps causa problemas de compilación
-// import MapView, { Marker, Callout, PROVIDER_GOOGLE } from 'react-native-maps';
 
 const LPBE_RED = '#c1121f';
-
-interface PuebloConVisita extends Lugar {
-  visitado: boolean;
-}
+const BEIGE_BG = '#F3EDE3';
+const MAP_URL = 'https://lospueblosmasbonitosdeespana.org/mapa-pueblos-visitados/';
 
 export default function MapaPueblosVisitadosScreen() {
-  const { userId, isAuthenticated } = useAuth();
-  const [pueblos, setPueblos] = useState<PuebloConVisita[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const loadPueblosConVisitas = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      console.log('🗺️ Cargando pueblos...');
-      const todosPueblos = await fetchLugaresStable();
-      console.log('✅ Pueblos cargados:', todosPueblos.length);
-
-      let visitasIds = new Set<string>();
-
-      if (isAuthenticated && userId) {
-        console.log('🔍 Cargando visitas para usuario:', userId);
-        try {
-          const visitasResponse = await fetch(
-            `${API_BASE_URL}/jet-cct/visita?user_id=${userId}`,
-            {
-              headers: {
-                'Content-Type': 'application/json',
-              },
-            }
-          );
-
-          if (visitasResponse.ok) {
-            const visitasData = await visitasResponse.json();
-            console.log('📦 Visitas data:', visitasData);
-            
-            if (Array.isArray(visitasData)) {
-              visitasIds = new Set(
-                visitasData.map((v: any) => String(v.id_lugar || v.pueblo || v._ID)).filter(Boolean)
-              );
-              console.log('✅ Visitas encontradas:', visitasIds.size);
-            }
-          } else {
-            console.warn('⚠️ No se pudieron cargar las visitas');
-          }
-        } catch (error: any) {
-          console.warn('⚠️ Error cargando visitas:', error.message);
-        }
-      }
-
-      const pueblosConVisitas: PuebloConVisita[] = todosPueblos
-        .filter(p => p.latitud && p.longitud && p.latitud !== 0 && p.longitud !== 0)
-        .map(pueblo => ({
-          ...pueblo,
-          visitado: visitasIds.has(pueblo._ID),
-        }));
-
-      console.log('✅ Pueblos con coordenadas:', pueblosConVisitas.length);
-      console.log('✅ Pueblos visitados:', pueblosConVisitas.filter(p => p.visitado).length);
-
-      setPueblos(pueblosConVisitas);
-    } catch (error: any) {
-      console.error('❌ Error cargando mapa:', error);
-      setError(error.message || 'Error al cargar el mapa');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [userId, isAuthenticated]);
-
-  useEffect(() => {    
-    loadPueblosConVisitas();
-  }, [loadPueblosConVisitas]);
-
-  // const handleMarkerPress = (puebloId: string) => {
-  //   console.log('📍 Marcador pulsado:', puebloId);
-  //   router.push(`/pueblo/${puebloId}`);
-  // };
-
-  // const initialRegion = {
-  //   latitude: 40.4637,
-  //   longitude: -3.7492,
-  //   latitudeDelta: 10,
-  //   longitudeDelta: 10,
-  // };
+  const [isLoading, setIsLoading] = React.useState(true);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -109,67 +22,32 @@ export default function MapaPueblosVisitadosScreen() {
         <View style={styles.placeholder} />
       </View>
 
-      {isLoading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={LPBE_RED} />
-          <Text style={styles.loadingText}>Cargando mapa...</Text>
-        </View>
-      ) : error ? (
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={loadPueblosConVisitas}>
-            <Text style={styles.retryButtonText}>Reintentar</Text>
-          </TouchableOpacity>
-        </View>
-      ) : Platform.OS === 'web' ? (
-        <View style={styles.webMapContainer}>
-          <View style={styles.webMapPlaceholder}>
-            <Flag size={48} color={LPBE_RED} strokeWidth={2} />
-            <Text style={styles.webMapTitle}>Mapa de Pueblos</Text>
-            <Text style={styles.webMapText}>
-              Esta función está disponible en la app móvil.
-            </Text>
-            <Text style={styles.webMapSubtext}>
-              Descarga la app para ver el mapa interactivo de todos los pueblos visitados.
-            </Text>
-            <View style={styles.statsContainer}>
-              <View style={styles.statItem}>
-                <Text style={styles.statNumber}>{pueblos.length}</Text>
-                <Text style={styles.statLabel}>Pueblos totales</Text>
-              </View>
-              <View style={styles.statDivider} />
-              <View style={styles.statItem}>
-                <Text style={styles.statNumber}>{pueblos.filter(p => p.visitado).length}</Text>
-                <Text style={styles.statLabel}>Visitados</Text>
-              </View>
-            </View>
+      <View style={styles.webViewContainer}>
+        {isLoading && (
+          <View style={styles.loadingOverlay}>
+            <ActivityIndicator size="large" color={LPBE_RED} />
+            <Text style={styles.loadingText}>Cargando mapa...</Text>
           </View>
-        </View>
-      ) : (
-        <View style={styles.webMapContainer}>
-          <View style={styles.webMapPlaceholder}>
-            <Flag size={48} color={LPBE_RED} strokeWidth={2} />
-            <Text style={styles.webMapTitle}>Mapa Temporalmente Desactivado</Text>
-            <Text style={styles.webMapText}>
-              Esta función está temporalmente desactivada.
-            </Text>
-            <Text style={styles.webMapSubtext}>
-              Estamos trabajando en mejorar la experiencia del mapa.
-            </Text>
-            <View style={styles.statsContainer}>
-              <View style={styles.statItem}>
-                <Text style={styles.statNumber}>{pueblos.length}</Text>
-                <Text style={styles.statLabel}>Pueblos totales</Text>
-              </View>
-              <View style={styles.statDivider} />
-              <View style={styles.statItem}>
-                <Text style={styles.statNumber}>{pueblos.filter(p => p.visitado).length}</Text>
-                <Text style={styles.statLabel}>Visitados</Text>
-              </View>
-            </View>
-          </View>
-        </View>
-      )}
+        )}
+        <WebView
+          source={{ uri: MAP_URL }}
+          style={styles.webView}
+          onLoadStart={() => setIsLoading(true)}
+          onLoadEnd={() => setIsLoading(false)}
+          onError={(syntheticEvent) => {
+            const { nativeEvent } = syntheticEvent;
+            console.error('❌ Error cargando WebView:', nativeEvent);
+            setIsLoading(false);
+          }}
+          allowsInlineMediaPlayback={true}
+          mediaPlaybackRequiresUserAction={false}
+          javaScriptEnabled={true}
+          domStorageEnabled={true}
+          startInLoadingState={false}
+          scalesPageToFit={true}
+          bounces={false}
+        />
+      </View>
     </SafeAreaView>
   );
 }
@@ -177,7 +55,7 @@ export default function MapaPueblosVisitadosScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: BEIGE_BG,
   },
   header: {
     flexDirection: 'row',
@@ -200,136 +78,29 @@ const styles = StyleSheet.create({
   placeholder: {
     width: 32,
   },
-  loadingContainer: {
+  webViewContainer: {
     flex: 1,
+    backgroundColor: BEIGE_BG,
+  },
+  webView: {
+    flex: 1,
+    backgroundColor: BEIGE_BG,
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: BEIGE_BG,
+    zIndex: 10,
     gap: 16,
   },
   loadingText: {
     fontSize: 16,
     color: '#666',
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 32,
-    gap: 16,
-  },
-  errorText: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-  },
-  retryButton: {
-    backgroundColor: LPBE_RED,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-  },
-  retryButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600' as const,
-  },
-  map: {
-    flex: 1,
-  },
-  flagMarker: {
-    backgroundColor: LPBE_RED,
-    borderRadius: 20,
-    padding: 8,
-    borderWidth: 2,
-    borderColor: '#fff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  callout: {
-    padding: 12,
-    minWidth: 200,
-    gap: 8,
-  },
-  calloutTitle: {
-    fontSize: 16,
-    fontWeight: '700' as const,
-    color: '#1a1a1a',
-  },
-  calloutSubtitle: {
-    fontSize: 14,
-    color: '#666',
-  },
-  calloutButton: {
-    backgroundColor: LPBE_RED,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 6,
-    marginTop: 4,
-    alignItems: 'center',
-  },
-  calloutButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600' as const,
-  },
-  webMapContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  webMapPlaceholder: {
-    maxWidth: 400,
-    alignItems: 'center',
-    gap: 16,
-  },
-  webMapTitle: {
-    fontSize: 24,
-    fontWeight: '700' as const,
-    color: '#1a1a1a',
-    marginTop: 16,
-  },
-  webMapText: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    lineHeight: 24,
-  },
-  webMapSubtext: {
-    fontSize: 14,
-    color: '#999',
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 24,
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-    backgroundColor: '#f9f9f9',
-    borderRadius: 12,
-    gap: 24,
-  },
-  statItem: {
-    alignItems: 'center',
-  },
-  statDivider: {
-    width: 1,
-    height: 40,
-    backgroundColor: '#e0e0e0',
-  },
-  statNumber: {
-    fontSize: 32,
-    fontWeight: '700' as const,
-    color: LPBE_RED,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 4,
+    marginTop: 8,
   },
 });
