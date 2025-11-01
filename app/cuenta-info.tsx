@@ -148,7 +148,7 @@ export default function CuentaInfoScreen() {
         const imageUri = result.assets[0].uri;
         setIsUploading(true);
 
-        console.log('📸 Subiendo foto de perfil...');
+        console.log('📸 Subiendo foto de perfil al nuevo endpoint...');
         
         const formData = new FormData();
         const filename = imageUri.split('/').pop() || 'profile.jpg';
@@ -164,7 +164,7 @@ export default function CuentaInfoScreen() {
         
         try {
           const uploadResponse = await fetch(
-            'https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/user-profile',
+            'https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/upload-profile-photo',
             {
               method: 'POST',
               body: formData,
@@ -178,20 +178,46 @@ export default function CuentaInfoScreen() {
           }
           
           const uploadData = await uploadResponse.json();
-          const photoUrl = uploadData.photo || uploadData.image_url || uploadData.url;
-          console.log('✅ Respuesta del servidor:', uploadData);
-          console.log('✅ Imagen subida y perfil actualizado:', photoUrl);
+          console.log('✅ Imagen subida correctamente:', uploadData);
           
-          if (photoUrl) {
-            setSyncedData(prev => prev ? { ...prev, photo: photoUrl } : null);
-            
-            if (Platform.OS === 'web') {
-              alert('Foto de perfil actualizada correctamente');
-            } else {
-              Alert.alert('Éxito', 'Foto de perfil actualizada correctamente', [{ text: 'OK' }]);
+          if (!uploadData.success || !uploadData.photo) {
+            console.error('❌ Respuesta inesperada del servidor:', uploadData);
+            throw new Error('No se recibió la URL de la foto');
+          }
+          
+          const photoUrl = uploadData.photo;
+          console.log('✅ URL de la foto:', photoUrl);
+          
+          console.log('🔄 Actualizando perfil con la nueva URL...');
+          const updateResponse = await fetch(
+            'https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/user-profile',
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+              },
+              body: JSON.stringify({
+                user_id: user.id,
+                photo: photoUrl,
+              }),
             }
+          );
+          
+          if (!updateResponse.ok) {
+            console.error('❌ Error actualizando perfil con la nueva foto');
+            throw new Error('Error al actualizar el perfil');
+          }
+          
+          const updateData = await updateResponse.json();
+          console.log('✅ Perfil actualizado:', updateData);
+          
+          setSyncedData(prev => prev ? { ...prev, photo: photoUrl } : null);
+          
+          if (Platform.OS === 'web') {
+            alert('Foto de perfil actualizada correctamente');
           } else {
-            console.warn('⚠️ No se recibió URL de la foto en la respuesta');
+            Alert.alert('Éxito', 'Foto de perfil actualizada correctamente', [{ text: 'OK' }]);
           }
         } catch (error: any) {
           console.error('❌ Error en upload/update:', error);
