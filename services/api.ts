@@ -862,7 +862,15 @@ export async function uploadProfilePhoto(
     const uploadData = await uploadResponse.json();
     console.log('✅ Imagen subida exitosamente:', uploadData);
     
-    const photoUrl = uploadData.image_url || uploadData.url;
+    if (!uploadData.success || !uploadData.photo) {
+      console.error('❌ Respuesta inesperada del servidor:', uploadData);
+      return {
+        success: false,
+        message: uploadData.message || 'No se recibió la URL de la foto',
+      };
+    }
+    
+    const photoUrl = uploadData.photo;
     
     if (photoUrl) {
       console.log('🔄 Actualizando foto en el perfil del usuario...');
@@ -892,7 +900,7 @@ export async function uploadProfilePhoto(
     return {
       success: true,
       imageUrl: photoUrl,
-      message: 'Foto de perfil actualizada correctamente',
+      message: uploadData.message || 'Foto de perfil actualizada correctamente',
     };
   } catch (error: any) {
     console.error('❌ Error subiendo foto:', error.message);
