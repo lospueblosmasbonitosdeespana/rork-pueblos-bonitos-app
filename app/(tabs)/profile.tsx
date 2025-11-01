@@ -3,9 +3,7 @@ import {
   Bell,
   ChevronRight,
   Key,
-
   LogOut,
-  Map,
   MapPin,
   Shield,
   Star,
@@ -124,13 +122,14 @@ export default function ProfileScreen() {
       onPress: () => router.push('/puntos-conseguidos'),
       active: true,
     },
-    {
-      id: 'map',
-      label: 'Mapa de Pueblos Visitados',
-      icon: Map,
-      onPress: () => router.push('/mapa-pueblos-visitados'),
-      active: false,
-    },
+    // TEMPORALMENTE DESACTIVADO - react-native-maps causa problemas de compilación
+    // {
+    //   id: 'map',
+    //   label: 'Mapa de Pueblos Visitados',
+    //   icon: Map,
+    //   onPress: () => router.push('/mapa-pueblos-visitados'),
+    //   active: false,
+    // },
     {
       id: 'guide',
       label: 'Guía de uso',

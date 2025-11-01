@@ -8,7 +8,8 @@ import { fetchLugaresStable } from '@/services/api';
 import { Lugar } from '@/types/api';
 import { API_BASE_URL } from '@/constants/api';
 
-import MapView, { Marker, Callout, PROVIDER_GOOGLE } from 'react-native-maps';
+// TEMPORALMENTE DESACTIVADO - react-native-maps causa problemas de compilación
+// import MapView, { Marker, Callout, PROVIDER_GOOGLE } from 'react-native-maps';
 
 const LPBE_RED = '#c1121f';
 
@@ -86,17 +87,17 @@ export default function MapaPueblosVisitadosScreen() {
     loadPueblosConVisitas();
   }, [loadPueblosConVisitas]);
 
-  const handleMarkerPress = (puebloId: string) => {
-    console.log('📍 Marcador pulsado:', puebloId);
-    router.push(`/pueblo/${puebloId}`);
-  };
+  // const handleMarkerPress = (puebloId: string) => {
+  //   console.log('📍 Marcador pulsado:', puebloId);
+  //   router.push(`/pueblo/${puebloId}`);
+  // };
 
-  const initialRegion = {
-    latitude: 40.4637,
-    longitude: -3.7492,
-    latitudeDelta: 10,
-    longitudeDelta: 10,
-  };
+  // const initialRegion = {
+  //   latitude: 40.4637,
+  //   longitude: -3.7492,
+  //   latitudeDelta: 10,
+  //   longitudeDelta: 10,
+  // };
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -145,40 +146,29 @@ export default function MapaPueblosVisitadosScreen() {
           </View>
         </View>
       ) : (
-        <MapView
-          provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
-          style={styles.map}
-          initialRegion={initialRegion}
-          showsUserLocation={true}
-          showsMyLocationButton={true}
-        >
-          {pueblos.map((pueblo) => (
-            <Marker
-              key={pueblo._ID}
-              coordinate={{
-                latitude: pueblo.latitud,
-                longitude: pueblo.longitud,
-              }}
-              pinColor={pueblo.visitado ? LPBE_RED : '#d4a373'}
-              onPress={() => handleMarkerPress(pueblo._ID)}
-            >
-              {pueblo.visitado && (
-                <View style={styles.flagMarker}>
-                  <Flag size={24} color="#fff" fill={LPBE_RED} strokeWidth={2} />
-                </View>
-              )}
-              <Callout onPress={() => handleMarkerPress(pueblo._ID)}>
-                <View style={styles.callout}>
-                  <Text style={styles.calloutTitle}>{pueblo.nombre}</Text>
-                  <Text style={styles.calloutSubtitle}>{pueblo.provincia}</Text>
-                  <View style={styles.calloutButton}>
-                    <Text style={styles.calloutButtonText}>Ver pueblo</Text>
-                  </View>
-                </View>
-              </Callout>
-            </Marker>
-          ))}
-        </MapView>
+        <View style={styles.webMapContainer}>
+          <View style={styles.webMapPlaceholder}>
+            <Flag size={48} color={LPBE_RED} strokeWidth={2} />
+            <Text style={styles.webMapTitle}>Mapa Temporalmente Desactivado</Text>
+            <Text style={styles.webMapText}>
+              Esta función está temporalmente desactivada.
+            </Text>
+            <Text style={styles.webMapSubtext}>
+              Estamos trabajando en mejorar la experiencia del mapa.
+            </Text>
+            <View style={styles.statsContainer}>
+              <View style={styles.statItem}>
+                <Text style={styles.statNumber}>{pueblos.length}</Text>
+                <Text style={styles.statLabel}>Pueblos totales</Text>
+              </View>
+              <View style={styles.statDivider} />
+              <View style={styles.statItem}>
+                <Text style={styles.statNumber}>{pueblos.filter(p => p.visitado).length}</Text>
+                <Text style={styles.statLabel}>Visitados</Text>
+              </View>
+            </View>
+          </View>
+        </View>
       )}
     </SafeAreaView>
   );
