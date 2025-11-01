@@ -2,12 +2,24 @@ import { router } from 'expo-router';
 import { ArrowLeft, Flag } from 'lucide-react-native';
 import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View, Platform } from 'react-native';
-import MapView, { Marker, Callout, PROVIDER_GOOGLE } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/contexts/auth';
 import { fetchLugaresStable } from '@/services/api';
 import { Lugar } from '@/types/api';
 import { API_BASE_URL } from '@/constants/api';
+
+let MapView: any;
+let Marker: any;
+let Callout: any;
+let PROVIDER_GOOGLE: any;
+
+if (Platform.OS !== 'web') {
+  const maps = require('react-native-maps');
+  MapView = maps.default;
+  Marker = maps.Marker;
+  Callout = maps.Callout;
+  PROVIDER_GOOGLE = maps.PROVIDER_GOOGLE;
+}
 
 const LPBE_RED = '#c1121f';
 
@@ -118,6 +130,30 @@ export default function MapaPueblosVisitadosScreen() {
           <TouchableOpacity style={styles.retryButton} onPress={loadPueblosConVisitas}>
             <Text style={styles.retryButtonText}>Reintentar</Text>
           </TouchableOpacity>
+        </View>
+      ) : Platform.OS === 'web' ? (
+        <View style={styles.webMapContainer}>
+          <View style={styles.webMapPlaceholder}>
+            <Flag size={48} color={LPBE_RED} strokeWidth={2} />
+            <Text style={styles.webMapTitle}>Mapa de Pueblos</Text>
+            <Text style={styles.webMapText}>
+              Esta función está disponible en la app móvil.
+            </Text>
+            <Text style={styles.webMapSubtext}>
+              Descarga la app para ver el mapa interactivo de todos los pueblos visitados.
+            </Text>
+            <View style={styles.statsContainer}>
+              <View style={styles.statItem}>
+                <Text style={styles.statNumber}>{pueblos.length}</Text>
+                <Text style={styles.statLabel}>Pueblos totales</Text>
+              </View>
+              <View style={styles.statDivider} />
+              <View style={styles.statItem}>
+                <Text style={styles.statNumber}>{pueblos.filter(p => p.visitado).length}</Text>
+                <Text style={styles.statLabel}>Visitados</Text>
+              </View>
+            </View>
+          </View>
         </View>
       ) : (
         <MapView
@@ -259,5 +295,62 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
     fontWeight: '600' as const,
+  },
+  webMapContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  webMapPlaceholder: {
+    maxWidth: 400,
+    alignItems: 'center',
+    gap: 16,
+  },
+  webMapTitle: {
+    fontSize: 24,
+    fontWeight: '700' as const,
+    color: '#1a1a1a',
+    marginTop: 16,
+  },
+  webMapText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 24,
+  },
+  webMapSubtext: {
+    fontSize: 14,
+    color: '#999',
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 24,
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    backgroundColor: '#f9f9f9',
+    borderRadius: 12,
+    gap: 24,
+  },
+  statItem: {
+    alignItems: 'center',
+  },
+  statDivider: {
+    width: 1,
+    height: 40,
+    backgroundColor: '#e0e0e0',
+  },
+  statNumber: {
+    fontSize: 32,
+    fontWeight: '700' as const,
+    color: LPBE_RED,
+  },
+  statLabel: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 4,
   },
 });
