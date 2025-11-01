@@ -911,7 +911,7 @@ export async function getWordPressUserData(
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000);
     
-    const response = await fetch(
+    const lpbeResponse = await fetch(
       `https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/user/${userId}`,
       {
         signal: controller.signal,
@@ -923,26 +923,71 @@ export async function getWordPressUserData(
     
     clearTimeout(timeoutId);
     
-    if (!response.ok) {
-      console.log('⚠️ No se pudieron obtener los datos del usuario (status:', response.status, ')');
+    if (!lpbeResponse.ok) {
+      console.log('⚠️ No se pudieron obtener los datos del usuario desde lpbe (status:', lpbeResponse.status, ')');
       return null;
     }
     
-    const userData = await response.json();
+    const userData = await lpbeResponse.json();
     
     if (!userData || typeof userData !== 'object') {
       console.log('⚠️ Datos del usuario inválidos');
       return null;
     }
     
+    let profilePhoto = userData.profile_photo || userData.avatar_url || null;
+    
+    try {
+      console.log('🔍 Intentando obtener foto de perfil de Ultimate Member...');
+      const wpController = new AbortController();
+      const wpTimeoutId = setTimeout(() => wpController.abort(), 8000);
+      
+      const wpResponse = await fetch(
+        `https://lospueblosmasbonitosdeespana.org/wp-json/wp/v2/users/${userId}?context=edit`,
+        {
+          signal: wpController.signal,
+          headers: {
+            'Accept': 'application/json',
+          },
+        }
+      );
+      
+      clearTimeout(wpTimeoutId);
+      
+      if (wpResponse.ok) {
+        const wpUserData = await wpResponse.json();
+        
+        if (wpUserData.meta) {
+          const umPhotoUrl = wpUserData.meta._um_profile_photo_url || wpUserData.meta.um_profile_photo_url;
+          
+          if (umPhotoUrl && typeof umPhotoUrl === 'string' && umPhotoUrl.trim() !== '') {
+            console.log('✅ Foto de perfil de Ultimate Member encontrada:', umPhotoUrl.substring(0, 80));
+            profilePhoto = umPhotoUrl;
+          } else {
+            console.log('⚠️ No se encontró _um_profile_photo_url en meta');
+          }
+        } else {
+          console.log('⚠️ No hay campo meta en la respuesta de WordPress');
+        }
+      } else {
+        console.log('⚠️ No se pudo acceder a wp/v2/users (status:', wpResponse.status, ')');
+      }
+    } catch (umError: any) {
+      if (umError.name === 'AbortError') {
+        console.log('⏱️ Timeout obteniendo foto de UM, usando foto por defecto');
+      } else {
+        console.log('⚠️ Error obteniendo foto de UM:', umError.message);
+      }
+    }
+    
     const result = {
       name: userData.name || '',
       email: userData.email || '',
       username: userData.username || '',
-      profile_photo: userData.profile_photo || userData.avatar_url || null,
+      profile_photo: profilePhoto,
     };
     
-    console.log('✅ Datos del usuario obtenidos:', result.name);
+    console.log('✅ Datos del usuario obtenidos:', result.name, '| Foto:', profilePhoto ? 'Sí' : 'No');
     return result;
   } catch (error: any) {
     if (error.name === 'AbortError') {
