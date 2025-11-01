@@ -119,9 +119,19 @@ export default function PuebloDetailScreen() {
     lugar.multimedia?.[0] ??
     'https://images.unsplash.com/photo-1543783207-ec64e4d95325?w=800';
 
+  const getUrlValida = (url: string) => {
+    if (!url) return null;
+    return url.replace(/\\/g, '/').replace(/^https?:\/+/g, 'https://');
+  };
+
+  const fotosValidas = multimedia
+    .filter((item: any) => item.url && typeof item.url === 'string')
+    .map((item: any) => ({ ...item, url: getUrlValida(item.url) }))
+    .filter((item: any) => item.url && item.url !== imageUrl);
+
   const carouselImages = [
     imageUrl,
-    ...multimedia.map((item: any) => item.url).filter((url: string) => url && url !== imageUrl)
+    ...fotosValidas.map((item: any) => item.url)
   ].filter(url => url && url.trim() !== '');
 
   const mapUrl = `https://maps.lospueblosmasbonitosdeespana.org/es/mapas/PB-${id}#${Date.now()}`;
@@ -146,14 +156,14 @@ export default function PuebloDetailScreen() {
               setCurrentImageIndex(index);
             }}
             renderItem={({ item, index }) => {
-              const cleanUrl = encodeURI(item.trim());
               return (
                 <Image 
-                  source={{ uri: cleanUrl }} 
+                  source={{ uri: item }} 
                   style={styles.headerImage} 
                   contentFit="cover"
-                  onError={(e) => console.log('❌ Error cargando imagen', index, cleanUrl, e)}
-                  onLoadEnd={() => console.log('✅ Imagen cargada', index, cleanUrl)}
+                  cachePolicy="none"
+                  onError={(e) => console.log('❌ Error cargando imagen', index, item, e)}
+                  onLoadEnd={() => console.log('✅ Imagen cargada', index, item)}
                 />
               );
             }}
