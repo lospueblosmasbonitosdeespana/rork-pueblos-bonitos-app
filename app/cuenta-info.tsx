@@ -28,6 +28,7 @@ export default function CuentaInfoScreen() {
   const { user, isLoading, checkAuth } = useAuth();
   const [isUploading, setIsUploading] = useState(false);
   const [isSyncing, setIsSyncing] = useState(true);
+  const [syncError, setSyncError] = useState<string | null>(null);
   const [isEditingName, setIsEditingName] = useState(false);
   const [isUpdatingName, setIsUpdatingName] = useState(false);
   
@@ -42,13 +43,43 @@ export default function CuentaInfoScreen() {
 
   React.useEffect(() => {
     const syncUserData = async () => {
-      if (user?.id) {
+      if (!user?.id) {
+        setIsSyncing(false);
+        return;
+      }
+
+      try {
         setIsSyncing(true);
+        setSyncError(null);
+        console.log('🔄 Sincronizando datos del usuario:', user.id);
+        
         const wpData = await getWordPressUserData(user.id.toString());
+        
         if (wpData) {
+          console.log('✅ Datos sincronizados correctamente');
           setSyncedData(wpData);
           setEditedName(wpData.name);
+        } else {
+          console.warn('⚠️ No se obtuvieron datos del servidor, usando datos locales');
+          setSyncedData({
+            name: user.name || '',
+            email: user.email || '',
+            username: user.username || '',
+            profile_photo: user.profile_photo || user.avatar_url || null,
+          });
+          setEditedName(user.name || '');
         }
+      } catch (error: any) {
+        console.error('❌ Error sincronizando datos:', error);
+        setSyncError('No se pudo cargar el perfil. Usando datos locales.');
+        setSyncedData({
+          name: user.name || '',
+          email: user.email || '',
+          username: user.username || '',
+          profile_photo: user.profile_photo || user.avatar_url || null,
+        });
+        setEditedName(user.name || '');
+      } finally {
         setIsSyncing(false);
       }
     };
@@ -158,19 +189,48 @@ export default function CuentaInfoScreen() {
     setIsEditingName(false);
   };
 
-  if (isLoading || isSyncing) {
+  if (isLoading) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={LPBE_RED} />
-          <Text style={styles.loadingText}>Cargando información...</Text>
+          <Text style={styles.loadingText}>Cargando perfil...</Text>
         </View>
       </SafeAreaView>
     );
   }
 
-  if (!user || !syncedData) {
-    return null;
+  if (!user) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.errorText}>No se pudo cargar el perfil.</Text>
+          <Text style={styles.errorSubtext}>Por favor, inicia sesión de nuevo.</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (isSyncing) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={LPBE_RED} />
+          <Text style={styles.loadingText}>Sincronizando información...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!syncedData) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.errorText}>Error al cargar información</Text>
+          <Text style={styles.errorSubtext}>Inténtalo de nuevo más tarde</Text>
+        </View>
+      </SafeAreaView>
+    );
   }
 
   const displayName = syncedData.name || user.name;
@@ -184,6 +244,12 @@ export default function CuentaInfoScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+        {syncError && (
+          <View style={styles.errorBanner}>
+            <Text style={styles.errorBannerText}>{syncError}</Text>
+          </View>
+        )}
+        
         <View style={styles.avatarSection}>
           <TouchableOpacity
             style={styles.avatarContainer}
@@ -307,6 +373,31 @@ const styles = StyleSheet.create({
     marginTop: 16,
     fontSize: 16,
     color: '#666',
+  },
+  errorText: {
+    fontSize: 18,
+    fontWeight: '600' as const,
+    color: '#333',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  errorSubtext: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+  },
+  errorBanner: {
+    backgroundColor: '#fff3cd',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+    borderLeftWidth: 4,
+    borderLeftColor: '#ffc107',
+  },
+  errorBannerText: {
+    fontSize: 13,
+    color: '#856404',
+    textAlign: 'center',
   },
 
   scrollContent: {

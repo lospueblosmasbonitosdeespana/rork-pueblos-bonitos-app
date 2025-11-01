@@ -908,16 +908,32 @@ export async function getWordPressUserData(
   try {
     console.log('🔍 Obteniendo datos del usuario desde WordPress API');
     
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    
     const response = await fetch(
-      `https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/user/${userId}`
+      `https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/user/${userId}`,
+      {
+        signal: controller.signal,
+        headers: {
+          'Accept': 'application/json',
+        },
+      }
     );
     
+    clearTimeout(timeoutId);
+    
     if (!response.ok) {
-      console.log('⚠️ No se pudieron obtener los datos del usuario');
+      console.log('⚠️ No se pudieron obtener los datos del usuario (status:', response.status, ')');
       return null;
     }
     
     const userData = await response.json();
+    
+    if (!userData || typeof userData !== 'object') {
+      console.log('⚠️ Datos del usuario inválidos');
+      return null;
+    }
     
     const result = {
       name: userData.name || '',
@@ -929,7 +945,11 @@ export async function getWordPressUserData(
     console.log('✅ Datos del usuario obtenidos:', result.name);
     return result;
   } catch (error: any) {
-    console.error('❌ Error obteniendo datos del usuario:', error.message);
+    if (error.name === 'AbortError') {
+      console.error('❌ Timeout obteniendo datos del usuario');
+    } else {
+      console.error('❌ Error obteniendo datos del usuario:', error.message);
+    }
     return null;
   }
 }
