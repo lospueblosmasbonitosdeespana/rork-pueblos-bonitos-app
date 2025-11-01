@@ -8,7 +8,7 @@ import { useAuth } from '@/contexts/auth';
 
 const LPBE_RED = '#c1121f';
 const BEIGE_BG = '#F3EDE3';
-const MAP_URL = 'https://lospueblosmasbonitosdeespana.org/account-2/mapa-de-pueblos-visitados/';
+const MAP_URL = 'https://lospueblosmasbonitosdeespana.org/account-2/?um_tab=mapa-de-pueblos-visitados';
 
 export default function MapaPueblosVisitadosScreen() {
   const [isLoading, setIsLoading] = React.useState(true);
