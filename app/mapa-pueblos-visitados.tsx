@@ -4,13 +4,55 @@ import React from 'react';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useAuth } from '@/contexts/auth';
 
 const LPBE_RED = '#c1121f';
 const BEIGE_BG = '#F3EDE3';
-const MAP_URL = 'https://lospueblosmasbonitosdeespana.org/mapa-pueblos-visitados/';
+const MAP_URL = 'https://lospueblosmasbonitosdeespana.org/account-2/mapa-de-pueblos-visitados/';
 
 export default function MapaPueblosVisitadosScreen() {
   const [isLoading, setIsLoading] = React.useState(true);
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
+
+  if (authLoading) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <ArrowLeft size={24} color={LPBE_RED} strokeWidth={2} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Mapa de Pueblos Visitados</Text>
+          <View style={styles.placeholder} />
+        </View>
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" color={LPBE_RED} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <ArrowLeft size={24} color={LPBE_RED} strokeWidth={2} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Mapa de Pueblos Visitados</Text>
+          <View style={styles.placeholder} />
+        </View>
+        <View style={styles.centerContainer}>
+          <Text style={styles.notLoggedText}>Inicia sesión para ver tu mapa de pueblos visitados</Text>
+          <TouchableOpacity 
+            style={styles.loginButton}
+            onPress={() => router.push('/login')}
+          >
+            <Text style={styles.loginButtonText}>Iniciar sesión</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -102,5 +144,29 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
     marginTop: 8,
+  },
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+    gap: 20,
+  },
+  notLoggedText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 24,
+  },
+  loginButton: {
+    backgroundColor: LPBE_RED,
+    paddingHorizontal: 32,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  loginButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600' as const,
   },
 });
