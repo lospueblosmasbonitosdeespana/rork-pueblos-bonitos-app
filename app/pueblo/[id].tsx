@@ -121,14 +121,22 @@ export default function PuebloDetailScreen() {
     lugar.multimedia?.[0] ??
     'https://images.unsplash.com/photo-1543783207-ec64e4d95325?w=800';
 
-  const carouselImages = [
-    { url: imageUrl },
-    ...multimedia.filter((item: any) => item && item.url)
-  ]
-    .filter((item, index, self) => 
-      item && item.url && self.findIndex(f => f.url === item.url) === index
-    )
-    .map(item => item.url);
+  const imagenesValidas = multimedia
+    .filter((item: any) => {
+      if (!item || !item.url || typeof item.url !== 'string') return false;
+      
+      const esImagen = item.tipo === 'Imagen' || 
+        item.url.toLowerCase().endsWith('.jpg') || 
+        item.url.toLowerCase().endsWith('.jpeg') || 
+        item.url.toLowerCase().endsWith('.png') ||
+        item.url.toLowerCase().endsWith('.webp');
+      
+      return esImagen;
+    })
+    .map((item: any) => item.url);
+
+  const carouselImages = [imageUrl, ...imagenesValidas]
+    .filter((url, index, self) => url && self.indexOf(url) === index);
 
   const mapUrl = `https://maps.lospueblosmasbonitosdeespana.org/es/mapas/PB-${id}#${Date.now()}`;
   const experienciasUrl = `https://lospueblosmasbonitosdeespana.org/experiencias-public/?id_lugar=${id}&app=1`;
