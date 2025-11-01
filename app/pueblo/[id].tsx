@@ -60,6 +60,8 @@ export default function PuebloDetailScreen() {
   const experiencias = experienciasQuery.data || [];
   const multimedia = multimediaQuery.data || [];
 
+  console.log('📸 Fotos del pueblo', multimedia);
+
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
 
@@ -119,20 +121,12 @@ export default function PuebloDetailScreen() {
     lugar.multimedia?.[0] ??
     'https://images.unsplash.com/photo-1543783207-ec64e4d95325?w=800';
 
-  const getUrlValida = (url: string) => {
-    if (!url) return null;
-    return url.replace(/\\/g, '/').replace(/^https?:\/+/g, 'https://');
-  };
-
-  const fotosValidas = multimedia
-    .filter((item: any) => item.url && typeof item.url === 'string')
-    .map((item: any) => ({ ...item, url: getUrlValida(item.url) }))
-    .filter((item: any) => item.url && item.url !== imageUrl);
-
   const carouselImages = [
     imageUrl,
-    ...fotosValidas.map((item: any) => item.url)
-  ].filter(url => url && url.trim() !== '');
+    ...multimedia
+      .filter((item: any) => item.url)
+      .map((item: any) => item.url)
+  ];
 
   const mapUrl = `https://maps.lospueblosmasbonitosdeespana.org/es/mapas/PB-${id}#${Date.now()}`;
   const experienciasUrl = `https://lospueblosmasbonitosdeespana.org/experiencias-public/?id_lugar=${id}&app=1`;
@@ -148,26 +142,18 @@ export default function PuebloDetailScreen() {
             horizontal
             pagingEnabled
             showsHorizontalScrollIndicator={false}
-            initialNumToRender={5}
-            windowSize={5}
-            removeClippedSubviews={false}
             onMomentumScrollEnd={(event) => {
               const index = Math.round(event.nativeEvent.contentOffset.x / Dimensions.get('window').width);
               setCurrentImageIndex(index);
             }}
-            renderItem={({ item, index }) => {
-              return (
-                <Image 
-                  source={{ uri: item }} 
-                  style={styles.headerImage} 
-                  contentFit="cover"
-                  cachePolicy="none"
-                  onError={(e) => console.log('❌ Error cargando imagen', index, item, e)}
-                  onLoadEnd={() => console.log('✅ Imagen cargada', index, item)}
-                />
-              );
-            }}
-            keyExtractor={(item, index) => `image-${index}-${item.substring(item.lastIndexOf('/') + 1, item.lastIndexOf('/') + 10)}`}
+            renderItem={({ item }) => (
+              <Image 
+                source={{ uri: item }} 
+                style={styles.headerImage} 
+                contentFit="cover"
+              />
+            )}
+            keyExtractor={(item, index) => `image-${index}`}
           />
           {carouselImages.length > 1 && (
             <View style={styles.paginationContainer}>
