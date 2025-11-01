@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import * as Location from 'expo-location';
 import { router } from 'expo-router';
-import { ChevronDown, MapPin, Search } from 'lucide-react-native';
+import { ChevronDown, Crosshair, Search } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -327,7 +327,7 @@ export default function PueblosScreen() {
             onPress={handleLocationPress}
             activeOpacity={0.7}
           >
-            <MapPin
+            <Crosshair
               size={20}
               color={showNearby ? COLORS.card : COLORS.primary}
             />
