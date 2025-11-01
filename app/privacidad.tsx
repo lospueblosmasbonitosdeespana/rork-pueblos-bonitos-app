@@ -11,7 +11,6 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuth } from '@/contexts/auth';
 
@@ -120,7 +119,7 @@ export default function PrivacidadScreen() {
 
   if (!isAuthenticated) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <ArrowLeft size={24} color={LPBE_RED} strokeWidth={2} />
@@ -133,13 +132,13 @@ export default function PrivacidadScreen() {
             Inicia sesión para ver tu configuración de privacidad
           </Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <ArrowLeft size={24} color={LPBE_RED} strokeWidth={2} />
@@ -150,12 +149,12 @@ export default function PrivacidadScreen() {
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={LPBE_RED} />
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <ArrowLeft size={24} color={LPBE_RED} strokeWidth={2} />
@@ -220,7 +219,7 @@ export default function PrivacidadScreen() {
           Puedes solicitar una copia de todos tus datos personales que tenemos almacenados.
         </Text>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
