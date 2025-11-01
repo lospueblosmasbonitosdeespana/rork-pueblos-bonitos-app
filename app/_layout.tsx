@@ -16,10 +16,16 @@ const queryClient = new QueryClient();
 
 function RootLayoutNav() {
   useEffect(() => {
+    console.log('📱 RootLayoutNav montado');
     const timer = setTimeout(() => {
-      SplashScreen.hideAsync();
+      console.log('👋 Ocultando splash screen nativo');
+      SplashScreen.hideAsync().catch(error => {
+        console.error('❌ Error ocultando splash screen:', error);
+      });
     }, 500);
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+    };
   }, []);
 
   return (
@@ -142,19 +148,26 @@ function RootLayoutNav() {
 }
 
 export default function RootLayout() {
-  return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <trpc.Provider client={trpcClient} queryClient={queryClient}>
-        <QueryClientProvider client={queryClient}>
-          <AuthProvider>
-            <LanguageProvider>
-              <NotificationsProvider>
-                <RootLayoutNav />
-              </NotificationsProvider>
-            </LanguageProvider>
-          </AuthProvider>
-        </QueryClientProvider>
-      </trpc.Provider>
-    </GestureHandlerRootView>
-  );
+  console.log('🚀 RootLayout inicializando...');
+  
+  try {
+    return (
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <trpc.Provider client={trpcClient} queryClient={queryClient}>
+          <QueryClientProvider client={queryClient}>
+            <AuthProvider>
+              <LanguageProvider>
+                <NotificationsProvider>
+                  <RootLayoutNav />
+                </NotificationsProvider>
+              </LanguageProvider>
+            </AuthProvider>
+          </QueryClientProvider>
+        </trpc.Provider>
+      </GestureHandlerRootView>
+    );
+  } catch (error) {
+    console.error('❌ Error fatal en RootLayout:', error);
+    throw error;
+  }
 }

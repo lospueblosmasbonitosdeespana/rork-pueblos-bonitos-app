@@ -72,38 +72,50 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
 
   const checkAuth = async () => {
     try {
+      console.log('🔐 Iniciando checkAuth...');
       setState(prev => ({ ...prev, isLoading: true }));
       const userId = await getStoredUserId();
+      console.log('🆔 UserId almacenado:', userId);
 
       if (!userId) {
+        console.log('❌ No hay userId, marcando como no autenticado');
         setState({ user: null, userId: null, isLoading: false, isAuthenticated: false });
         return;
       }
 
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      const timeoutId = setTimeout(() => {
+        console.log('⏱️ Timeout de auth check alcanzado');
+        controller.abort();
+      }, 8000);
 
+      console.log('📡 Haciendo fetch a:', `${API_BASE}/user/${userId}`);
       const response = await fetch(`${API_BASE}/user/${userId}`, {
         signal: controller.signal,
       });
 
       clearTimeout(timeoutId);
+      console.log('📊 Response status:', response.status);
 
       if (!response.ok) {
+        console.log('❌ Response no OK, limpiando userId');
         await deleteStoredUserId();
         setState({ user: null, userId: null, isLoading: false, isAuthenticated: false });
         return;
       }
 
       const user = await response.json();
+      console.log('✅ Usuario autenticado:', user.name);
       
       setState({ user, userId, isLoading: false, isAuthenticated: true });
     } catch (error) {
-      console.error('Error checking auth:', error);
+      console.error('❌ Error checking auth:', error);
       if ((error as Error).name === 'AbortError') {
-        console.log('Auth check timed out - allowing app to continue');
+        console.log('⏱️ Auth check timed out - continuando sin autenticación');
       }
       setState({ user: null, userId: null, isLoading: false, isAuthenticated: false });
+    } finally {
+      console.log('✅ checkAuth completado');
     }
   };
 
@@ -200,7 +212,17 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
   };
 
   useEffect(() => {
-    checkAuth();
+    console.log('🚀 AuthProvider montado, ejecutando checkAuth...');
+    const initAuth = async () => {
+      try {
+        await checkAuth();
+        console.log('✅ Autenticación inicializada');
+      } catch (error) {
+        console.error('❌ Error en inicialización de auth:', error);
+        setState({ user: null, userId: null, isLoading: false, isAuthenticated: false });
+      }
+    };
+    initAuth();
   }, []);
 
   return {
