@@ -29,7 +29,10 @@ export default function PrivacidadScreen() {
   const [showLastLogin, setShowLastLogin] = React.useState(true);
 
   const loadPrivacySettings = useCallback(async () => {
-    if (!userId) return;
+    if (!userId) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);
@@ -114,7 +117,7 @@ export default function PrivacidadScreen() {
     if (isAuthenticated) {
       loadPrivacySettings();
     }
-  }, [isAuthenticated, userId, loadPrivacySettings]);
+  }, [isAuthenticated, loadPrivacySettings]);
 
   if (!isAuthenticated) {
     return (
