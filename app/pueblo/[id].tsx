@@ -457,65 +457,47 @@ export default function PuebloDetailScreen() {
             injectedJavaScript={`
               (function() {
                 function eliminarEspacioSuperior() {
-                  const header = document.querySelector('header');
-                  if (header) {
-                    header.style.display = 'none';
-                    header.remove();
-                  }
+                  document.querySelectorAll('header, nav, #wpadminbar, .site-header, .header, .top-bar, .nav-bar').forEach(function(el) {
+                    if (el) {
+                      el.style.cssText = 'display: none !important; height: 0 !important; margin: 0 !important; padding: 0 !important;';
+                      el.remove();
+                    }
+                  });
                   
-                  const wpAdminBar = document.querySelector('#wpadminbar');
-                  if (wpAdminBar) {
-                    wpAdminBar.style.display = 'none';
-                    wpAdminBar.remove();
-                  }
+                  document.body.style.cssText = 'margin: 0 !important; padding: 0 !important; margin-top: 0 !important; padding-top: 0 !important;';
+                  document.documentElement.style.cssText = 'margin: 0 !important; padding: 0 !important; margin-top: 0 !important; padding-top: 0 !important;';
                   
-                  const nav = document.querySelector('nav');
-                  if (nav) {
-                    nav.style.display = 'none';
-                    nav.remove();
-                  }
-                  
-                  const body = document.body;
-                  const html = document.documentElement;
-                  
-                  body.style.margin = '0';
-                  body.style.padding = '0';
-                  body.style.marginTop = '0';
-                  body.style.paddingTop = '0';
-                  html.style.margin = '0';
-                  html.style.padding = '0';
-                  html.style.marginTop = '0';
-                  html.style.paddingTop = '0';
-                  
-                  const allElements = document.querySelectorAll('*');
-                  let firstContentElement = null;
-                  
-                  for (let elem of allElements) {
-                    const text = elem.textContent?.trim();
-                    if (text && text.length > 10) {
-                      const rect = elem.getBoundingClientRect();
-                      if (rect.top > 0) {
-                        firstContentElement = elem;
-                        break;
-                      }
+                  var mainContent = document.querySelector('main, .main, .content, article, .post, [role="main"]');
+                  if (mainContent) {
+                    mainContent.style.cssText = 'margin-top: 0 !important; padding-top: 0 !important;';
+                    
+                    var parent = mainContent.parentElement;
+                    while (parent && parent !== document.body) {
+                      parent.style.cssText = 'margin-top: 0 !important; padding-top: 0 !important;';
+                      parent = parent.parentElement;
                     }
                   }
                   
-                  if (firstContentElement) {
-                    const rect = firstContentElement.getBoundingClientRect();
-                    const scrollAmount = rect.top + window.pageYOffset;
-                    window.scrollTo({ top: scrollAmount, behavior: 'instant' });
-                  } else {
-                    window.scrollTo({ top: 0, behavior: 'instant' });
-                  }
+                  var style = document.createElement('style');
+                  style.textContent = '* { margin-top: 0 !important; } body > *:first-child { margin-top: 0 !important; padding-top: 0 !important; }';
+                  document.head.appendChild(style);
+                  
+                  window.scrollTo(0, 0);
                 }
                 
-                eliminarEspacioSuperior();
-                setTimeout(eliminarEspacioSuperior, 100);
-                setTimeout(eliminarEspacioSuperior, 300);
-                setTimeout(eliminarEspacioSuperior, 600);
-                setTimeout(eliminarEspacioSuperior, 1000);
+                if (document.readyState === 'loading') {
+                  document.addEventListener('DOMContentLoaded', eliminarEspacioSuperior);
+                } else {
+                  eliminarEspacioSuperior();
+                }
+                
+                setTimeout(eliminarEspacioSuperior, 50);
+                setTimeout(eliminarEspacioSuperior, 150);
+                setTimeout(eliminarEspacioSuperior, 400);
+                setTimeout(eliminarEspacioSuperior, 800);
+                setTimeout(eliminarEspacioSuperior, 1500);
               })();
+              true;
             `}
           />
           {experienciasLoading && (
