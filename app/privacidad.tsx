@@ -1,12 +1,44 @@
 import { router } from 'expo-router';
-import { ArrowLeft, Shield } from 'lucide-react-native';
+import { ArrowLeft } from 'lucide-react-native';
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+  ActivityIndicator,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { WebView } from 'react-native-webview';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { useAuth } from '@/contexts/auth';
+
 const LPBE_RED = '#c1121f';
+const BG_BEIGE = '#F3EDE3';
 
 export default function PrivacidadScreen() {
+  const { isAuthenticated } = useAuth();
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  if (!isAuthenticated) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <ArrowLeft size={24} color={LPBE_RED} strokeWidth={2} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Privacidad</Text>
+          <View style={styles.placeholder} />
+        </View>
+        <View style={styles.notAuthContent}>
+          <Text style={styles.notAuthText}>
+            Inicia sesión para ver tu configuración de privacidad
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
@@ -17,13 +49,21 @@ export default function PrivacidadScreen() {
         <View style={styles.placeholder} />
       </View>
 
-      <View style={styles.content}>
-        <Shield size={64} color="#ccc" strokeWidth={1.5} />
-        <Text style={styles.title}>Próximamente</Text>
-        <Text style={styles.subtitle}>
-          Esta funcionalidad estará disponible en una próxima actualización
-        </Text>
-      </View>
+      {isLoading && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color={LPBE_RED} />
+        </View>
+      )}
+
+      <WebView
+        source={{
+          uri: 'https://lospueblosmasbonitosdeespana.org/account-2/?um_tab=privacy',
+        }}
+        style={styles.webview}
+        onLoadEnd={() => setIsLoading(false)}
+        sharedCookiesEnabled={true}
+        javaScriptEnabled={true}
+      />
     </SafeAreaView>
   );
 }
@@ -31,7 +71,7 @@ export default function PrivacidadScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: BG_BEIGE,
   },
   header: {
     flexDirection: 'row',
@@ -54,23 +94,30 @@ const styles = StyleSheet.create({
   placeholder: {
     width: 32,
   },
-  content: {
+  notAuthContent: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 32,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: '700' as const,
-    color: '#1a1a1a',
-    marginTop: 24,
-    marginBottom: 12,
-  },
-  subtitle: {
+  notAuthText: {
     fontSize: 16,
     color: '#666',
     textAlign: 'center',
-    lineHeight: 24,
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: BG_BEIGE,
+    zIndex: 10,
+  },
+  webview: {
+    flex: 1,
+    backgroundColor: BG_BEIGE,
   },
 });
