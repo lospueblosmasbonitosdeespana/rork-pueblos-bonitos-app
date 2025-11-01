@@ -89,8 +89,8 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
         controller.abort();
       }, 8000);
 
-      console.log('📡 Haciendo fetch a:', `${API_BASE}/user/${userId}`);
-      const response = await fetch(`${API_BASE}/user/${userId}`, {
+      console.log('📡 Haciendo fetch a:', `${API_BASE}/user-profile?user_id=${userId}`);
+      const response = await fetch(`${API_BASE}/user-profile?user_id=${userId}`, {
         signal: controller.signal,
       });
 
