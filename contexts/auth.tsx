@@ -79,7 +79,14 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
         return;
       }
 
-      const response = await fetch(`${API_BASE}/user/${userId}`);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+      const response = await fetch(`${API_BASE}/user/${userId}`, {
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         await deleteStoredUserId();
@@ -91,7 +98,9 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
       setState({ user, userId, isLoading: false, isAuthenticated: true });
     } catch (error) {
       console.error('Error checking auth:', error);
-      await deleteStoredUserId();
+      if ((error as Error).name === 'AbortError') {
+        console.log('Auth check timed out - allowing app to continue');
+      }
       setState({ user: null, userId: null, isLoading: false, isAuthenticated: false });
     }
   };

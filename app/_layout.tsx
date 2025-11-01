@@ -16,7 +16,10 @@ const queryClient = new QueryClient();
 
 function RootLayoutNav() {
   useEffect(() => {
-    SplashScreen.hideAsync();
+    const timer = setTimeout(() => {
+      SplashScreen.hideAsync();
+    }, 500);
+    return () => clearTimeout(timer);
   }, []);
 
   return (
