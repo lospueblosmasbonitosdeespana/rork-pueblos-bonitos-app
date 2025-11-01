@@ -1,20 +1,59 @@
-import { FileText } from 'lucide-react-native';
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
-const LPBE_RED = '#c1121f';
 
 export default function GuiaUsoScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.content}>
-        <FileText size={64} color="#ccc" strokeWidth={1.5} />
-        <Text style={styles.title}>Próximamente</Text>
-        <Text style={styles.subtitle}>
-          Esta funcionalidad estará disponible en una próxima actualización
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <Text style={styles.h1}>GUÍA DE USO — ÁREA DE USUARIOS</Text>
+
+        <Text style={styles.p}>
+          Bienvenido al espacio de usuarios de Los Pueblos Más Bonitos de España.
+          Aquí tienes lo esencial para usar tu cuenta, el mapa y el registro de
+          visitas.
         </Text>
-      </View>
+
+        <Text style={styles.secciones}>
+          🚩 Pueblos visitados    🟡 Pueblos por visitar    ⭐ Valoraciones
+        </Text>
+
+        <Text style={styles.h2}>Mapa de Pueblos Visitados</Text>
+        <Text style={styles.p}>
+          En el Mapa: banderita = visitado; círculo amarillo = pendiente.
+        </Text>
+        <View style={styles.ul}>
+          <Text style={styles.li}>
+            • La app puede marcar automáticamente por geolocalización (si lo
+            autorizas).
+          </Text>
+          <Text style={styles.li}>
+            • También puedes marcar manualmente desde &ldquo;Pueblos visitados&rdquo;.
+          </Text>
+        </View>
+
+        <Text style={styles.h2}>Puntos, niveles y favoritos</Text>
+        <Text style={styles.p}>
+          Gana puntos por cada pueblo confirmado. Sube de nivel con tus visitas y
+          marca pueblos como favoritos para tenerlos a mano.
+        </Text>
+
+        <Text style={styles.h2}>Consejos rápidos</Text>
+        <View style={styles.ul}>
+          <Text style={styles.li}>
+            • Permite la ubicación en la app para el auto-marcado.
+          </Text>
+          <Text style={styles.li}>
+            • Cuando esté disponible el álbum, sube fotos de tus viajes.
+          </Text>
+          <Text style={styles.li}>
+            • Si tienes dudas, usa la pestaña de Soporte.
+          </Text>
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -24,24 +63,46 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f5f5f5',
   },
-
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 32,
+  scrollContent: {
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 32,
   },
-  title: {
-    fontSize: 24,
+  h1: {
+    fontSize: 22,
+    fontWeight: '700' as const,
+    color: '#1a1a1a',
+    marginBottom: 16,
+    letterSpacing: 0.5,
+  },
+  h2: {
+    fontSize: 18,
     fontWeight: '700' as const,
     color: '#1a1a1a',
     marginTop: 24,
-    marginBottom: 12,
+    marginBottom: 8,
   },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    lineHeight: 24,
+  p: {
+    fontSize: 15,
+    lineHeight: 22,
+    color: '#333',
+    marginBottom: 8,
+  },
+  secciones: {
+    fontSize: 15,
+    lineHeight: 22,
+    color: '#333',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  ul: {
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  li: {
+    fontSize: 15,
+    lineHeight: 22,
+    color: '#333',
+    marginTop: 6,
   },
 });

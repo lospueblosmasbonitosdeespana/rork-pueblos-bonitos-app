@@ -135,7 +135,7 @@ export default function ProfileScreen() {
       label: 'Guía de uso',
       icon: FileText,
       onPress: () => router.push('/guia-uso'),
-      active: false,
+      active: true,
     },
     {
       id: 'password',
