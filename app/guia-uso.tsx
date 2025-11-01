@@ -31,7 +31,7 @@ export default function GuiaUsoScreen() {
             autorizas).
           </Text>
           <Text style={styles.li}>
-            • También puedes marcar manualmente desde &ldquo;Pueblos visitados&rdquo;.
+            • También puedes marcar manualmente desde "Pueblos visitados".
           </Text>
         </View>
 
