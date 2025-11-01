@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Stack, useLocalSearchParams, router } from 'expo-router';
 import { Image } from 'expo-image';
-import { MapPin, Map, X, BarChart3, Navigation } from 'lucide-react-native';
+import { MapPin, Map, X, BarChart3 } from 'lucide-react-native';
 import * as Linking from 'expo-linking';
 import { useState, useRef } from 'react';
 import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Modal, ActivityIndicator, SafeAreaView, FlatList, Dimensions, Platform } from 'react-native';
@@ -230,6 +230,14 @@ export default function PuebloDetailScreen() {
           </View>
 
           <View style={styles.buttonsContainer}>
+            <TouchableOpacity
+              style={styles.directionsButton}
+              onPress={openDirections}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.directionsText}>Cómo llegar</Text>
+            </TouchableOpacity>
+
             <View style={styles.buttonsRow}>
             <TouchableOpacity
               style={styles.actionButton}
@@ -255,14 +263,6 @@ export default function PuebloDetailScreen() {
               <BarChart3 size={24} color={COLORS.card} />
             </TouchableOpacity>
             </View>
-
-            <TouchableOpacity
-              style={styles.directionsButton}
-              onPress={openDirections}
-              activeOpacity={0.7}
-            >
-              <Navigation size={18} color="#007AFF" />
-            </TouchableOpacity>
           </View>
 
           {semaforo && (
@@ -602,17 +602,22 @@ const styles = StyleSheet.create({
   buttonsRow: {
     flexDirection: 'row',
     gap: SPACING.sm,
-    marginBottom: SPACING.xs,
   },
   directionsButton: {
     alignSelf: 'flex-end',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: COLORS.card,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    marginTop: SPACING.xs,
+    backgroundColor: '#007AFF',
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 8,
+    borderRadius: 10,
+    marginBottom: 8,
+    height: 32,
+  },
+  directionsText: {
+    fontSize: 14,
+    fontWeight: '500' as const,
+    color: '#FFFFFF',
   },
   actionButton: {
     flex: 1,
