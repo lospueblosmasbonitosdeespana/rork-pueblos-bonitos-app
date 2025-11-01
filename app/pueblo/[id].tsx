@@ -603,11 +603,9 @@ const styles = StyleSheet.create({
     gap: SPACING.sm,
   },
   directionsButton: {
-    alignSelf: 'flex-end',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#007AFF',
-    paddingHorizontal: SPACING.md,
+    backgroundColor: COLORS.gold,
     paddingVertical: 8,
     borderRadius: 10,
     marginBottom: 8,
