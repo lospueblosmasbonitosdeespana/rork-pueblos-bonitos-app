@@ -95,23 +95,7 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
         return;
       }
 
-      let user = await response.json();
-      
-      if (user.id && !user.profile_photo) {
-        try {
-          const photoResponse = await fetch(
-            `https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/user/${user.id}`
-          );
-          if (photoResponse.ok) {
-            const photoData = await photoResponse.json();
-            if (photoData.profile_photo) {
-              user = { ...user, profile_photo: photoData.profile_photo, avatar_url: photoData.profile_photo };
-            }
-          }
-        } catch (photoError) {
-          console.log('Could not fetch profile photo:', photoError);
-        }
-      }
+      const user = await response.json();
       
       setState({ user, userId, isLoading: false, isAuthenticated: true });
     } catch (error) {

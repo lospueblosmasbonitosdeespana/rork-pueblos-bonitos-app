@@ -901,3 +901,84 @@ export async function getUserProfilePhoto(
     return null;
   }
 }
+
+export async function getWordPressUserData(
+  userId: string
+): Promise<{ name: string; email: string; username: string; profile_photo: string | null } | null> {
+  try {
+    console.log('🔍 Obteniendo datos del usuario desde WordPress API');
+    
+    const response = await fetch(
+      `https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/user/${userId}`
+    );
+    
+    if (!response.ok) {
+      console.log('⚠️ No se pudieron obtener los datos del usuario');
+      return null;
+    }
+    
+    const userData = await response.json();
+    
+    const result = {
+      name: userData.name || '',
+      email: userData.email || '',
+      username: userData.username || '',
+      profile_photo: userData.profile_photo || userData.avatar_url || null,
+    };
+    
+    console.log('✅ Datos del usuario obtenidos:', result.name);
+    return result;
+  } catch (error: any) {
+    console.error('❌ Error obteniendo datos del usuario:', error.message);
+    return null;
+  }
+}
+
+export async function updateUserName(
+  userId: string,
+  newName: string
+): Promise<{ success: boolean; message: string }> {
+  try {
+    console.log('✏️ Actualizando nombre del usuario', userId, 'a:', newName);
+    
+    const response = await fetch(
+      `https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/update-user`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          user_id: userId,
+          name: newName,
+        }),
+      }
+    );
+    
+    console.log('📊 Status:', response.status);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Error response:', errorText.substring(0, 200));
+      return {
+        success: false,
+        message: 'Error al actualizar el nombre. Inténtalo de nuevo.',
+      };
+    }
+    
+    await response.json();
+    console.log('✅ Nombre actualizado exitosamente');
+    
+    return {
+      success: true,
+      message: 'Nombre actualizado correctamente',
+    };
+  } catch (error: any) {
+    console.error('❌ Error actualizando nombre:', error.message);
+    return {
+      success: false,
+      message: 'Error de conexión. Verifica tu conexión a internet.',
+    };
+  }
+}

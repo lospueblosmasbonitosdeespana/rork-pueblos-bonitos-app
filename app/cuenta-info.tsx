@@ -1,5 +1,5 @@
 import * as ImagePicker from 'expo-image-picker';
-import { Camera, Mail, User } from 'lucide-react-native';
+import { Camera, Edit2, Mail, Save, User, X } from 'lucide-react-native';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
@@ -9,29 +9,51 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuth } from '@/contexts/auth';
-import { uploadProfilePhoto, getUserProfilePhoto } from '@/services/api';
+import { 
+  uploadProfilePhoto, 
+  getWordPressUserData, 
+  updateUserName 
+} from '@/services/api';
 
 const LPBE_RED = '#c1121f';
 
 export default function CuentaInfoScreen() {
   const { user, isLoading, checkAuth } = useAuth();
   const [isUploading, setIsUploading] = useState(false);
-  const [currentAvatar, setCurrentAvatar] = useState<string | null>(null);
+  const [isSyncing, setIsSyncing] = useState(true);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [isUpdatingName, setIsUpdatingName] = useState(false);
+  
+  const [syncedData, setSyncedData] = useState<{
+    name: string;
+    email: string;
+    username: string;
+    profile_photo: string | null;
+  } | null>(null);
+  
+  const [editedName, setEditedName] = useState('');
 
   React.useEffect(() => {
-    if (user?.id) {
-      getUserProfilePhoto(user.id.toString()).then((photoUrl) => {
-        if (photoUrl) {
-          setCurrentAvatar(photoUrl);
+    const syncUserData = async () => {
+      if (user?.id) {
+        setIsSyncing(true);
+        const wpData = await getWordPressUserData(user.id.toString());
+        if (wpData) {
+          setSyncedData(wpData);
+          setEditedName(wpData.name);
         }
-      });
-    }
+        setIsSyncing(false);
+      }
+    };
+    
+    syncUserData();
   }, [user?.id]);
 
   const handleSelectPhoto = async () => {
@@ -73,7 +95,7 @@ export default function CuentaInfoScreen() {
 
         if (uploadResult.success) {
           if (uploadResult.imageUrl) {
-            setCurrentAvatar(uploadResult.imageUrl);
+            setSyncedData(prev => prev ? { ...prev, profile_photo: uploadResult.imageUrl || null } : null);
           }
 
           await checkAuth();
@@ -103,7 +125,40 @@ export default function CuentaInfoScreen() {
     }
   };
 
-  if (isLoading) {
+  const handleSaveName = async () => {
+    if (!user || !editedName.trim()) return;
+
+    setIsUpdatingName(true);
+
+    const result = await updateUserName(user.id.toString(), editedName.trim());
+
+    setIsUpdatingName(false);
+
+    if (result.success) {
+      setSyncedData(prev => prev ? { ...prev, name: editedName.trim() } : null);
+      setIsEditingName(false);
+      await checkAuth();
+
+      if (Platform.OS === 'web') {
+        alert(result.message);
+      } else {
+        Alert.alert('Éxito', result.message, [{ text: 'OK' }]);
+      }
+    } else {
+      if (Platform.OS === 'web') {
+        alert(result.message);
+      } else {
+        Alert.alert('Error', result.message, [{ text: 'OK' }]);
+      }
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditedName(syncedData?.name || '');
+    setIsEditingName(false);
+  };
+
+  if (isLoading || isSyncing) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.loadingContainer}>
@@ -114,12 +169,14 @@ export default function CuentaInfoScreen() {
     );
   }
 
-  if (!user) {
+  if (!user || !syncedData) {
     return null;
   }
 
-  const fullName = [user.first_name, user.last_name].filter(Boolean).join(' ') || user.name;
-  const displayAvatar = currentAvatar || user.profile_photo || user.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&size=200&background=c1121f&color=fff`;
+  const displayName = syncedData.name || user.name;
+  const displayEmail = syncedData.email || user.email;
+  const displayUsername = syncedData.username || user.username;
+  const displayAvatar = syncedData.profile_photo || user.profile_photo || user.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&size=200&background=c1121f&color=fff`;
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -149,7 +206,7 @@ export default function CuentaInfoScreen() {
               </View>
             )}
           </TouchableOpacity>
-          <Text style={styles.name}>{fullName}</Text>
+          <Text style={styles.name}>{displayName}</Text>
           <Text style={styles.changePhotoHint}>Toca la imagen para cambiar</Text>
         </View>
 
@@ -161,7 +218,48 @@ export default function CuentaInfoScreen() {
               </View>
               <View style={styles.infoContent}>
                 <Text style={styles.infoLabel}>Nombre Completo</Text>
-                <Text style={styles.infoValue}>{fullName}</Text>
+                {isEditingName ? (
+                  <View style={styles.editContainer}>
+                    <TextInput
+                      style={styles.editInput}
+                      value={editedName}
+                      onChangeText={setEditedName}
+                      placeholder="Nombre completo"
+                      autoFocus
+                      editable={!isUpdatingName}
+                    />
+                    <View style={styles.editButtons}>
+                      <TouchableOpacity
+                        style={[styles.editButton, styles.saveButton]}
+                        onPress={handleSaveName}
+                        disabled={isUpdatingName || !editedName.trim()}
+                      >
+                        {isUpdatingName ? (
+                          <ActivityIndicator size="small" color="#fff" />
+                        ) : (
+                          <Save size={18} color="#fff" strokeWidth={2} />
+                        )}
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.editButton, styles.cancelButton]}
+                        onPress={handleCancelEdit}
+                        disabled={isUpdatingName}
+                      >
+                        <X size={18} color="#666" strokeWidth={2} />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ) : (
+                  <View style={styles.valueWithEdit}>
+                    <Text style={styles.infoValue}>{displayName}</Text>
+                    <TouchableOpacity
+                      style={styles.editIconButton}
+                      onPress={() => setIsEditingName(true)}
+                    >
+                      <Edit2 size={18} color={LPBE_RED} strokeWidth={2} />
+                    </TouchableOpacity>
+                  </View>
+                )}
               </View>
             </View>
           </View>
@@ -173,7 +271,7 @@ export default function CuentaInfoScreen() {
               </View>
               <View style={styles.infoContent}>
                 <Text style={styles.infoLabel}>Correo Electrónico</Text>
-                <Text style={styles.infoValue}>{user.email}</Text>
+                <Text style={styles.infoValue}>{displayEmail}</Text>
               </View>
             </View>
           </View>
@@ -185,7 +283,7 @@ export default function CuentaInfoScreen() {
               </View>
               <View style={styles.infoContent}>
                 <Text style={styles.infoLabel}>Nombre de Usuario</Text>
-                <Text style={styles.infoValue}>{user.username}</Text>
+                <Text style={styles.infoValue}>{displayUsername}</Text>
               </View>
             </View>
           </View>
@@ -298,5 +396,42 @@ const styles = StyleSheet.create({
     fontSize: 17,
     color: '#1a1a1a',
     fontWeight: '600' as const,
+  },
+  valueWithEdit: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  editIconButton: {
+    padding: 6,
+  },
+  editContainer: {
+    gap: 12,
+  },
+  editInput: {
+    fontSize: 17,
+    color: '#1a1a1a',
+    fontWeight: '600' as const,
+    borderBottomWidth: 2,
+    borderBottomColor: LPBE_RED,
+    paddingVertical: 4,
+    paddingHorizontal: 0,
+  },
+  editButtons: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  editButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  saveButton: {
+    backgroundColor: LPBE_RED,
+  },
+  cancelButton: {
+    backgroundColor: '#e8e8e8',
   },
 });
