@@ -937,48 +937,9 @@ export async function getWordPressUserData(
     
     let profilePhoto = userData.profile_photo || userData.avatar_url || null;
     
-    try {
-      console.log('🔍 Intentando obtener foto de perfil de Ultimate Member...');
-      const wpController = new AbortController();
-      const wpTimeoutId = setTimeout(() => wpController.abort(), 8000);
-      
-      const wpResponse = await fetch(
-        `https://lospueblosmasbonitosdeespana.org/wp-json/wp/v2/users/${userId}?context=edit`,
-        {
-          signal: wpController.signal,
-          headers: {
-            'Accept': 'application/json',
-          },
-        }
-      );
-      
-      clearTimeout(wpTimeoutId);
-      
-      if (wpResponse.ok) {
-        const wpUserData = await wpResponse.json();
-        
-        if (wpUserData.meta) {
-          const umPhotoUrl = wpUserData.meta._um_profile_photo_url || wpUserData.meta.um_profile_photo_url;
-          
-          if (umPhotoUrl && typeof umPhotoUrl === 'string' && umPhotoUrl.trim() !== '') {
-            console.log('✅ Foto de perfil de Ultimate Member encontrada:', umPhotoUrl.substring(0, 80));
-            profilePhoto = umPhotoUrl;
-          } else {
-            console.log('⚠️ No se encontró _um_profile_photo_url en meta');
-          }
-        } else {
-          console.log('⚠️ No hay campo meta en la respuesta de WordPress');
-        }
-      } else {
-        console.log('⚠️ No se pudo acceder a wp/v2/users (status:', wpResponse.status, ')');
-      }
-    } catch (umError: any) {
-      if (umError.name === 'AbortError') {
-        console.log('⏱️ Timeout obteniendo foto de UM, usando foto por defecto');
-      } else {
-        console.log('⚠️ Error obteniendo foto de UM:', umError.message);
-      }
-    }
+    console.log('ℹ️ Usando foto de perfil del endpoint lpbe/v1/user (el endpoint wp/v2/users requiere autenticación)');
+    // El endpoint wp/v2/users/{id}?context=edit requiere autenticación
+    // y sin ella devuelve 404. Por ahora usamos solo la foto del endpoint lpbe/v1/user
     
     const result = {
       name: userData.name || '',
