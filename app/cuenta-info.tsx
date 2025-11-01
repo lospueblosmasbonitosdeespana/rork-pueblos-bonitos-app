@@ -16,11 +16,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuth } from '@/contexts/auth';
-import { 
-  uploadProfilePhoto, 
-  getWordPressUserData, 
-  updateUserName 
-} from '@/services/api';
 
 const LPBE_RED = '#c1121f';
 
@@ -33,10 +28,11 @@ export default function CuentaInfoScreen() {
   const [isUpdatingName, setIsUpdatingName] = useState(false);
   
   const [syncedData, setSyncedData] = useState<{
+    id: number;
     name: string;
     email: string;
     username: string;
-    profile_photo: string | null;
+    photo: string | null;
   } | null>(null);
   
   const [editedName, setEditedName] = useState('');
@@ -51,32 +47,67 @@ export default function CuentaInfoScreen() {
       try {
         setIsSyncing(true);
         setSyncError(null);
-        console.log('🔄 Sincronizando datos del usuario:', user.id);
+        console.log('🔄 Sincronizando datos del usuario desde /user-profile:', user.id);
         
-        const wpData = await getWordPressUserData(user.id.toString());
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
         
-        if (wpData) {
-          console.log('✅ Datos sincronizados correctamente');
-          setSyncedData(wpData);
-          setEditedName(wpData.name);
-        } else {
-          console.warn('⚠️ No se obtuvieron datos del servidor, usando datos locales');
+        const response = await fetch(
+          `https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/user-profile?user_id=${user.id}`,
+          {
+            method: 'GET',
+            signal: controller.signal,
+            headers: {
+              'Accept': 'application/json',
+            },
+          }
+        );
+        
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+          console.error('❌ Error en GET /user-profile:', response.status);
+          if (response.status === 403) {
+            setSyncError('No autorizado. Por favor, inicia sesión de nuevo.');
+          } else {
+            setSyncError('No se pudo cargar el perfil. Usando datos locales.');
+          }
           setSyncedData({
+            id: user.id,
             name: user.name || '',
             email: user.email || '',
             username: user.username || '',
-            profile_photo: user.profile_photo || user.avatar_url || null,
+            photo: user.profile_photo || user.avatar_url || null,
           });
           setEditedName(user.name || '');
+          setIsSyncing(false);
+          return;
         }
+        
+        const wpData = await response.json();
+        console.log('✅ Datos sincronizados correctamente desde /user-profile');
+        
+        setSyncedData({
+          id: wpData.id || user.id,
+          name: wpData.name || '',
+          email: wpData.email || '',
+          username: wpData.username || '',
+          photo: wpData.photo || null,
+        });
+        setEditedName(wpData.name || '');
       } catch (error: any) {
         console.error('❌ Error sincronizando datos:', error);
-        setSyncError('No se pudo cargar el perfil. Usando datos locales.');
+        if (error.name === 'AbortError') {
+          setSyncError('Tiempo de espera agotado. Usando datos locales.');
+        } else {
+          setSyncError('No se pudo cargar el perfil. Usando datos locales.');
+        }
         setSyncedData({
+          id: user.id,
           name: user.name || '',
           email: user.email || '',
           username: user.username || '',
-          profile_photo: user.profile_photo || user.avatar_url || null,
+          photo: user.profile_photo || user.avatar_url || null,
         });
         setEditedName(user.name || '');
       } finally {
@@ -88,7 +119,7 @@ export default function CuentaInfoScreen() {
   }, [user?.id]);
 
   const handleSelectPhoto = async () => {
-    if (!user) return;
+    if (!user || !syncedData) return;
 
     try {
       const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -117,31 +148,93 @@ export default function CuentaInfoScreen() {
         const imageUri = result.assets[0].uri;
         setIsUploading(true);
 
-        const uploadResult = await uploadProfilePhoto(
-          user.id.toString(),
-          imageUri
-        );
-
-        setIsUploading(false);
-
-        if (uploadResult.success) {
-          if (uploadResult.imageUrl) {
-            setSyncedData(prev => prev ? { ...prev, profile_photo: uploadResult.imageUrl || null } : null);
+        console.log('📸 Subiendo foto de perfil...');
+        
+        const formData = new FormData();
+        const filename = imageUri.split('/').pop() || 'profile.jpg';
+        const match = /\.([\w]+)$/.exec(filename);
+        const type = match ? `image/${match[1]}` : 'image/jpeg';
+        
+        formData.append('file', {
+          uri: imageUri,
+          name: filename,
+          type,
+        } as any);
+        formData.append('user_id', user.id.toString());
+        
+        try {
+          const uploadResponse = await fetch(
+            'https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/upload-profile-photo',
+            {
+              method: 'POST',
+              body: formData,
+              headers: {
+                'Accept': 'application/json',
+              },
+            }
+          );
+          
+          if (!uploadResponse.ok) {
+            const errorText = await uploadResponse.text();
+            console.error('❌ Error subiendo imagen:', errorText.substring(0, 200));
+            throw new Error('Error al subir la imagen');
           }
-
-          await checkAuth();
-
+          
+          const uploadData = await uploadResponse.json();
+          const photoUrl = uploadData.image_url || uploadData.url;
+          console.log('✅ Imagen subida:', photoUrl);
+          
+          if (photoUrl) {
+            console.log('🔄 Actualizando foto en /user-profile...');
+            const updateResponse = await fetch(
+              'https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/user-profile',
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Accept': 'application/json',
+                },
+                body: JSON.stringify({
+                  user_id: user.id,
+                  photo: photoUrl,
+                }),
+              }
+            );
+            
+            if (updateResponse.ok) {
+              console.log('✅ Foto actualizada en el perfil');
+              setSyncedData(prev => prev ? { ...prev, photo: photoUrl } : null);
+              await checkAuth();
+              
+              if (Platform.OS === 'web') {
+                alert('Foto de perfil actualizada correctamente');
+              } else {
+                Alert.alert('Éxito', 'Foto de perfil actualizada correctamente', [{ text: 'OK' }]);
+              }
+            } else {
+              const errorText = await updateResponse.text();
+              console.error('❌ Error actualizando perfil:', errorText.substring(0, 200));
+              
+              if (updateResponse.status === 403) {
+                if (Platform.OS === 'web') {
+                  alert('No autorizado. Por favor, inicia sesión de nuevo.');
+                } else {
+                  Alert.alert('Error', 'No autorizado. Por favor, inicia sesión de nuevo.', [{ text: 'OK' }]);
+                }
+              } else {
+                throw new Error('Error al actualizar el perfil');
+              }
+            }
+          }
+        } catch (error: any) {
+          console.error('❌ Error en upload/update:', error);
           if (Platform.OS === 'web') {
-            alert(uploadResult.message);
+            alert('Error al actualizar la foto. Inténtalo de nuevo.');
           } else {
-            Alert.alert('Éxito', uploadResult.message, [{ text: 'OK' }]);
+            Alert.alert('Error', 'Error al actualizar la foto. Inténtalo de nuevo.', [{ text: 'OK' }]);
           }
-        } else {
-          if (Platform.OS === 'web') {
-            alert(uploadResult.message);
-          } else {
-            Alert.alert('Error', uploadResult.message, [{ text: 'OK' }]);
-          }
+        } finally {
+          setIsUploading(false);
         }
       }
     } catch (error: any) {
@@ -161,25 +254,65 @@ export default function CuentaInfoScreen() {
 
     setIsUpdatingName(true);
 
-    const result = await updateUserName(user.id.toString(), editedName.trim());
-
-    setIsUpdatingName(false);
-
-    if (result.success) {
-      setSyncedData(prev => prev ? { ...prev, name: editedName.trim() } : null);
-      setIsEditingName(false);
-      await checkAuth();
-
-      if (Platform.OS === 'web') {
-        alert(result.message);
+    try {
+      console.log('✏�� Actualizando nombre a:', editedName.trim());
+      
+      const response = await fetch(
+        'https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/user-profile',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          body: JSON.stringify({
+            user_id: user.id,
+            name: editedName.trim(),
+          }),
+        }
+      );
+      
+      setIsUpdatingName(false);
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('✅ Nombre actualizado exitosamente');
+        
+        setSyncedData(prev => prev ? { ...prev, name: editedName.trim() } : null);
+        setIsEditingName(false);
+        await checkAuth();
+        
+        if (Platform.OS === 'web') {
+          alert(data.message || 'Nombre actualizado correctamente');
+        } else {
+          Alert.alert('Éxito', data.message || 'Nombre actualizado correctamente', [{ text: 'OK' }]);
+        }
       } else {
-        Alert.alert('Éxito', result.message, [{ text: 'OK' }]);
+        const errorText = await response.text();
+        console.error('❌ Error response:', errorText.substring(0, 200));
+        
+        if (response.status === 403) {
+          if (Platform.OS === 'web') {
+            alert('No autorizado. Por favor, inicia sesión de nuevo.');
+          } else {
+            Alert.alert('Error', 'No autorizado. Por favor, inicia sesión de nuevo.', [{ text: 'OK' }]);
+          }
+        } else {
+          if (Platform.OS === 'web') {
+            alert('Error al actualizar el nombre. Inténtalo de nuevo.');
+          } else {
+            Alert.alert('Error', 'Error al actualizar el nombre. Inténtalo de nuevo.', [{ text: 'OK' }]);
+          }
+        }
       }
-    } else {
+    } catch (error: any) {
+      setIsUpdatingName(false);
+      console.error('❌ Error actualizando nombre:', error);
+      
       if (Platform.OS === 'web') {
-        alert(result.message);
+        alert('Error de conexión. Verifica tu conexión a internet.');
       } else {
-        Alert.alert('Error', result.message, [{ text: 'OK' }]);
+        Alert.alert('Error', 'Error de conexión. Verifica tu conexión a internet.', [{ text: 'OK' }]);
       }
     }
   };
@@ -236,7 +369,7 @@ export default function CuentaInfoScreen() {
   const displayName = syncedData.name || user.name;
   const displayEmail = syncedData.email || user.email;
   const displayUsername = syncedData.username || user.username;
-  const displayAvatar = syncedData.profile_photo || user.profile_photo || user.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&size=200&background=c1121f&color=fff`;
+  const displayAvatar = syncedData.photo || user.profile_photo || user.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&size=200&background=c1121f&color=fff`;
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
