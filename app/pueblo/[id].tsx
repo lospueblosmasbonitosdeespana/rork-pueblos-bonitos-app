@@ -456,23 +456,31 @@ export default function PuebloDetailScreen() {
             allowsInlineMediaPlayback={true}
             injectedJavaScript={`
               (function() {
-                document.body.style.marginTop = '0';
-                document.body.style.paddingTop = '0';
-                const header = document.querySelector('header');
-                if (header) {
-                  header.style.display = 'none';
-                  header.remove();
-                }
-                const wpAdminBar = document.querySelector('#wpadminbar');
-                if (wpAdminBar) {
-                  wpAdminBar.style.display = 'none';
-                  wpAdminBar.remove();
-                }
-                const nav = document.querySelector('nav');
-                if (nav) {
-                  nav.style.display = 'none';
-                  nav.remove();
-                }
+                setTimeout(function() {
+                  const header = document.querySelector('header');
+                  if (header) {
+                    header.style.display = 'none';
+                    header.remove();
+                  }
+                  const wpAdminBar = document.querySelector('#wpadminbar');
+                  if (wpAdminBar) {
+                    wpAdminBar.style.display = 'none';
+                    wpAdminBar.remove();
+                  }
+                  const nav = document.querySelector('nav');
+                  if (nav) {
+                    nav.style.display = 'none';
+                    nav.remove();
+                  }
+                  
+                  const firstText = document.querySelector('p, h1, h2, h3, article, .entry-content, main');
+                  if (firstText) {
+                    firstText.scrollIntoView({ behavior: 'instant', block: 'start' });
+                  }
+                  
+                  document.body.style.marginTop = '0';
+                  document.body.style.paddingTop = '0';
+                }, 300);
               })();
             `}
           />
