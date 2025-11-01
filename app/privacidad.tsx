@@ -268,6 +268,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+    paddingTop: 0,
   },
   settingItem: {
     flexDirection: 'row',
@@ -276,6 +277,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
     backgroundColor: '#fff',
+    marginTop: 0,
   },
   settingTextContainer: {
     flex: 1,
