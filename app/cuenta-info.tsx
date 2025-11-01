@@ -164,58 +164,34 @@ export default function CuentaInfoScreen() {
         
         try {
           const uploadResponse = await fetch(
-            'https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/upload-profile-photo',
+            'https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/user-profile',
             {
               method: 'POST',
               body: formData,
-              headers: {
-                'Accept': 'application/json',
-              },
             }
           );
           
           if (!uploadResponse.ok) {
-            const errorText = await uploadResponse.text();
-            console.error('❌ Error subiendo imagen:', errorText.substring(0, 200));
+            const errorData = await uploadResponse.json().catch(() => ({}));
+            console.error('❌ Error subiendo imagen:', errorData);
             throw new Error('Error al subir la imagen');
           }
           
           const uploadData = await uploadResponse.json();
-          const photoUrl = uploadData.image_url || uploadData.url;
-          console.log('✅ Imagen subida:', photoUrl);
+          const photoUrl = uploadData.photo || uploadData.image_url || uploadData.url;
+          console.log('✅ Respuesta del servidor:', uploadData);
+          console.log('✅ Imagen subida y perfil actualizado:', photoUrl);
           
           if (photoUrl) {
-            console.log('🔄 Actualizando foto en /user-profile...');
-            const updateResponse = await fetch(
-              `https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/user-profile`,
-              {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Accept': 'application/json',
-                },
-                body: JSON.stringify({
-                  user_id: user.id,
-                  photo: photoUrl,
-                }),
-              }
-            );
+            setSyncedData(prev => prev ? { ...prev, photo: photoUrl } : null);
             
-            if (updateResponse.ok) {
-              const updateData = await updateResponse.json();
-              console.log('✅ Foto actualizada en el perfil:', updateData);
-              setSyncedData(prev => prev ? { ...prev, photo: photoUrl } : null);
-              
-              if (Platform.OS === 'web') {
-                alert('Foto de perfil actualizada correctamente');
-              } else {
-                Alert.alert('Éxito', 'Foto de perfil actualizada correctamente', [{ text: 'OK' }]);
-              }
+            if (Platform.OS === 'web') {
+              alert('Foto de perfil actualizada correctamente');
             } else {
-              const errorText = await updateResponse.text();
-              console.error('❌ Error actualizando perfil:', errorText.substring(0, 200));
-              throw new Error('Error al actualizar el perfil');
+              Alert.alert('Éxito', 'Foto de perfil actualizada correctamente', [{ text: 'OK' }]);
             }
+          } else {
+            console.warn('⚠️ No se recibió URL de la foto en la respuesta');
           }
         } catch (error: any) {
           console.error('❌ Error en upload/update:', error);
