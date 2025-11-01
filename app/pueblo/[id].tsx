@@ -469,6 +469,7 @@ export default function PuebloDetailScreen() {
                   console.log('Error:', e);
                 }
               })();
+              true;
             `}
           />
           {experienciasLoading && (
