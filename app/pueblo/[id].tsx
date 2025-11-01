@@ -48,10 +48,25 @@ export default function PuebloDetailScreen() {
   const multimediaQuery = useQuery({
     queryKey: ['multimedia', id],
     queryFn: async () => {
-      const response = await fetch(`https://lospueblosmasbonitosdeespana.org/wp-json/jet-cct/multimedia?id_lugar=${id}`);
-      if (!response.ok) return [];
-      const data = await response.json();
-      return Array.isArray(data) ? data : [];
+      try {
+        const response = await fetch(`https://lospueblosmasbonitosdeespana.org/wp-json/jet-cct/multimedia?id_lugar=${id}`);
+        if (!response.ok) {
+          console.log('⚠️ Multimedia response not OK:', response.status);
+          return [];
+        }
+        
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          console.log('⚠️ Multimedia response is not JSON:', contentType);
+          return [];
+        }
+        
+        const data = await response.json();
+        return Array.isArray(data) ? data : [];
+      } catch (error) {
+        console.error('❌ Error loading multimedia:', error);
+        return [];
+      }
     },
     enabled: !!id,
   });
