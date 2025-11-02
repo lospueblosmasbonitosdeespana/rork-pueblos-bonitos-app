@@ -277,11 +277,19 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
     initAuth();
   }, []);
 
+  const updateUser = (updates: Partial<LPBEUser>) => {
+    setState(prev => ({
+      ...prev,
+      user: prev.user ? { ...prev.user, ...updates } : null,
+    }));
+  };
+
   return {
     ...state,
     login,
     register,
     logout,
     checkAuth,
+    updateUser,
   };
 });

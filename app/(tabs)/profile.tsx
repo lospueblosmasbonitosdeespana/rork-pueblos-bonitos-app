@@ -11,7 +11,7 @@ import {
   User,
   FileText,
 } from 'lucide-react-native';
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -26,14 +26,12 @@ import {
 } from 'react-native';
 
 import { useAuth } from '@/contexts/auth';
-import { getUserProfilePhoto } from '@/services/api';
 
 const LPBE_RED = '#c1121f';
 
 export default function ProfileScreen() {
   const { user, isLoading, isAuthenticated, logout } = useAuth();
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
-  const [currentAvatar, setCurrentAvatar] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isLoading) {
@@ -50,15 +48,7 @@ export default function ProfileScreen() {
     }
   }, [isLoading, isAuthenticated, user, fadeAnim]);
 
-  useEffect(() => {
-    if (user?.id) {
-      getUserProfilePhoto(user.id.toString()).then((photoUrl) => {
-        if (photoUrl) {
-          setCurrentAvatar(photoUrl);
-        }
-      });
-    }
-  }, [user?.id]);
+
 
   const handleLogout = () => {
     if (Platform.OS === 'web') {
@@ -104,7 +94,7 @@ export default function ProfileScreen() {
   }
 
   const fullName = [user.first_name, user.last_name].filter(Boolean).join(' ') || user.name;
-  const displayAvatar = currentAvatar || user.profile_photo || user.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&size=200&background=c1121f&color=fff`;
+  const displayAvatar = user.profile_photo || user.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&size=200&background=c1121f&color=fff`;
 
   const menuOptions = [
     {

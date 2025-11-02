@@ -20,7 +20,7 @@ import { useAuth } from '@/contexts/auth';
 const LPBE_RED = '#c1121f';
 
 export default function CuentaInfoScreen() {
-  const { user, token, isLoading } = useAuth();
+  const { user, token, isLoading, updateUser } = useAuth();
   const [isUploading, setIsUploading] = useState(false);
   const [isSyncing, setIsSyncing] = useState(true);
   const [syncError, setSyncError] = useState<string | null>(null);
@@ -221,6 +221,7 @@ export default function CuentaInfoScreen() {
           console.log('✅ Perfil actualizado:', updateData);
           
           setSyncedData(prev => prev ? { ...prev, photo: photoUrl } : null);
+          updateUser({ profile_photo: photoUrl });
           
           if (Platform.OS === 'web') {
             alert('Foto de perfil actualizada correctamente');
@@ -280,6 +281,7 @@ export default function CuentaInfoScreen() {
         console.log('✅ Nombre actualizado exitosamente:', data);
         
         setSyncedData(prev => prev ? { ...prev, name: editedName.trim() } : null);
+        updateUser({ name: editedName.trim() });
         setIsEditingName(false);
         
         if (Platform.OS === 'web') {
