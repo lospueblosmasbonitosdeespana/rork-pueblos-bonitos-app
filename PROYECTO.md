@@ -287,3 +287,5 @@ Para dudas sobre la API de WordPress:
 ---
 
 **Última actualización**: v1.0 - Primera versión funcional
+
+<!-- redeploy: trigger 2025-11-02T10:00:00Z -->
