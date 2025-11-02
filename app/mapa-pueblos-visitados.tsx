@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity } from "react-native";
-import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Platform } from "react-native";
 import { useAuth } from "@/contexts/auth";
 import { RefreshCw } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -101,6 +100,38 @@ export default function MapaPueblosVisitados() {
     );
   }
 
+  if (Platform.OS === 'web') {
+    return (
+      <View style={styles.center}>
+        <Text style={styles.webTitle}>Pueblos Visitados</Text>
+        <Text style={styles.webSubtitle}>
+          Has visitado {pueblos.length} {pueblos.length === 1 ? 'pueblo' : 'pueblos'}
+        </Text>
+        <View style={styles.pueblosList}>
+          {pueblos.map((pueblo) => (
+            <View key={pueblo.id} style={styles.puebloItem}>
+              <Text style={styles.puebloName}>📍 {pueblo.name}</Text>
+            </View>
+          ))}
+        </View>
+        <TouchableOpacity
+          style={styles.retryButton}
+          onPress={fetchPueblosVisitados}
+        >
+          <RefreshCw size={20} color="#fff" />
+          <Text style={styles.retryButtonText}>Recargar</Text>
+        </TouchableOpacity>
+        <Text style={styles.webNote}>
+          El mapa interactivo está disponible en la app móvil
+        </Text>
+      </View>
+    );
+  }
+
+  const MapView = require('react-native-maps').default;
+  const Marker = require('react-native-maps').Marker;
+  const PROVIDER_GOOGLE = require('react-native-maps').PROVIDER_GOOGLE;
+
   return (
     <View style={styles.container}>
       <MapView
@@ -187,6 +218,9 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   retryButtonText: {
     color: "#fff",
@@ -222,5 +256,39 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "600",
+  },
+  webTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#333",
+    marginBottom: 8,
+  },
+  webSubtitle: {
+    fontSize: 16,
+    color: "#666",
+    marginBottom: 24,
+  },
+  pueblosList: {
+    width: "100%",
+    maxWidth: 400,
+    marginBottom: 24,
+  },
+  puebloItem: {
+    backgroundColor: "#f5f5f5",
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  puebloName: {
+    fontSize: 16,
+    color: "#333",
+    fontWeight: "500",
+  },
+  webNote: {
+    marginTop: 24,
+    fontSize: 12,
+    color: "#999",
+    fontStyle: "italic",
+    textAlign: "center",
   },
 });
