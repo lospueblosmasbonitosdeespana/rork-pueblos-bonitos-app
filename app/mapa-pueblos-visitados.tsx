@@ -1,46 +1,88 @@
-import { View, Text, StyleSheet } from 'react-native';
-import { MapPin } from 'lucide-react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import React, { useEffect, useState } from "react";
+import { Platform, View, Text, ActivityIndicator, StyleSheet, Image } from "react-native";
 
-const LPBE_RED = '#c1121f';
+export default function MapaPueblosVisitados() {
+  const [MapModule, setMapModule] = useState<any>(null);
+  const [pueblos, setPueblos] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-export default function MapaPueblosVisitadosScreen() {
-  return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.centerContainer}>
-        <MapPin size={64} color={LPBE_RED} />
-        <Text style={styles.message}>Mapa desactivado temporalmente</Text>
-        <Text style={styles.submessage}>
-          Esta función se encuentra en mantenimiento
-        </Text>
+  // 🔹 Cargar react-native-maps solo en móvil
+  useEffect(() => {
+    if (Platform.OS !== "web") {
+      import("react-native-maps")
+        .then((mod) => setMapModule(mod))
+        .catch(() => setMapModule(null));
+    }
+  }, []);
+
+  // 🔹 Cargar datos de pueblos
+  useEffect(() => {
+    fetch("https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/pueblos-mapa")
+      .then((res) => res.json())
+      .then((data) => {
+        setPueblos(Array.isArray(data) ? data : []);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
+  if (Platform.OS === "web") {
+    return (
+      <View style={styles.center}>
+        <Text>El mapa se muestra solo en la app móvil.</Text>
       </View>
-    </SafeAreaView>
+    );
+  }
+
+  if (!MapModule) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" />
+        <Text>Cargando mapa...</Text>
+      </View>
+    );
+  }
+
+  const { default: MapView, Marker, Callout } = MapModule;
+
+  return (
+    <MapView
+      style={{ flex: 1 }}
+      initialRegion={{
+        latitude: 40.2,
+        longitude: -3.7,
+        latitudeDelta: 6,
+        longitudeDelta: 6,
+      }}
+    >
+      {pueblos.map((p) => (
+        <Marker
+          key={p.id}
+          coordinate={{ latitude: p.lat, longitude: p.lng }}
+          title={p.nombre}
+        >
+          <Callout>
+            <View style={{ width: 150, alignItems: "center" }}>
+              {p.foto ? (
+                <Image
+                  source={{ uri: p.foto }}
+                  style={{ width: 120, height: 80, borderRadius: 8 }}
+                  resizeMode="cover"
+                />
+              ) : null}
+              <Text style={{ textAlign: "center", marginTop: 5 }}>{p.nombre}</Text>
+            </View>
+          </Callout>
+        </Marker>
+      ))}
+    </MapView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  center: {
     flex: 1,
-    backgroundColor: '#fff',
-  },
-  centerContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 32,
-    gap: 20,
-  },
-  message: {
-    fontSize: 18,
-    fontWeight: '600' as const,
-    color: '#1a1a1a',
-    textAlign: 'center',
-    marginTop: 16,
-  },
-  submessage: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-    marginTop: 8,
+    justifyContent: "center",
+    alignItems: "center",
   },
 });
