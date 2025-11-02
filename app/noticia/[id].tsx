@@ -107,6 +107,9 @@ export default function NoticiaDetalleScreen() {
               startInLoadingState={true}
               javaScriptEnabled={true}
               domStorageEnabled={true}
+              sharedCookiesEnabled={true}
+              thirdPartyCookiesEnabled={true}
+              incognito={false}
               cacheEnabled={true}
               injectedJavaScript={`
                 const style = document.createElement('style');

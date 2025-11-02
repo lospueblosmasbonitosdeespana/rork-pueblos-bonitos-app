@@ -15,6 +15,10 @@ export default function RutasScreen() {
         style={styles.webview}
         javaScriptEnabled={true}
         domStorageEnabled={true}
+        sharedCookiesEnabled={true}
+        thirdPartyCookiesEnabled={true}
+        incognito={false}
+        cacheEnabled={true}
         originWhitelist={["*"]}
         setSupportMultipleWindows={false}
         mixedContentMode="always"

@@ -395,6 +395,10 @@ export default function PuebloDetailScreen() {
             style={styles.webview}
             javaScriptEnabled={true}
             domStorageEnabled={true}
+            sharedCookiesEnabled={true}
+            thirdPartyCookiesEnabled={true}
+            incognito={false}
+            cacheEnabled={true}
             startInLoadingState={true}
             onLoadEnd={() => setMapLoading(false)}
             onError={(syntheticEvent) => {
@@ -445,6 +449,10 @@ export default function PuebloDetailScreen() {
             style={styles.webview}
             javaScriptEnabled={true}
             domStorageEnabled={true}
+            sharedCookiesEnabled={true}
+            thirdPartyCookiesEnabled={true}
+            incognito={false}
+            cacheEnabled={true}
             startInLoadingState={true}
             onLoadEnd={() => setExperienciasLoading(false)}
             onError={(syntheticEvent) => {
