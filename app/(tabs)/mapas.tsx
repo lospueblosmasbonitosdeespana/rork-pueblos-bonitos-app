@@ -1,11 +1,9 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, Platform, Text, ActivityIndicator } from 'react-native';
+import React from 'react';
+import { View, StyleSheet, Platform, Text } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { COLORS } from '@/constants/theme';
 
 export default function MapasScreen() {
-  const [loading, setLoading] = useState(true);
-
   if (Platform.OS === 'web') {
     return (
       <View style={styles.container}>
@@ -20,18 +18,12 @@ export default function MapasScreen() {
 
   return (
     <View style={styles.container}>
-      {loading && (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
-          <Text style={styles.loadingText}>Cargando mapa...</Text>
-        </View>
-      )}
       <WebView
         source={{ uri: 'https://lospueblosmasbonitosdeespana.org/pueblos/?app=1' }}
         style={styles.webview}
-        onLoadStart={() => setLoading(true)}
-        onLoadEnd={() => setLoading(false)}
-        onError={() => setLoading(false)}
+        startInLoadingState={true}
+        javaScriptEnabled={true}
+        domStorageEnabled={true}
       />
     </View>
   );
@@ -44,22 +36,6 @@ const styles = StyleSheet.create({
   },
   webview: {
     flex: 1,
-  },
-  loadingContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: COLORS.background,
-    zIndex: 1,
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 16,
-    color: COLORS.textSecondary,
   },
   webFallback: {
     flex: 1,
