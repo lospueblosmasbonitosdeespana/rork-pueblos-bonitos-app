@@ -11,6 +11,10 @@ export default function Mapas() {
         originWhitelist={['*']}
         javaScriptEnabled
         domStorageEnabled
+        sharedCookiesEnabled={true}
+        thirdPartyCookiesEnabled={true}
+        incognito={false}
+        cacheEnabled={true}
         allowsInlineMediaPlayback
         mixedContentMode="always"
         setSupportMultipleWindows={false}
