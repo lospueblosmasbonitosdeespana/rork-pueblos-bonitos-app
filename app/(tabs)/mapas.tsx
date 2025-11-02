@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, Platform, Text } from 'react-native';
+import { StyleSheet, Platform, View, Text } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { COLORS } from '@/constants/theme';
 
@@ -17,15 +17,15 @@ export default function MapasScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <WebView
-        source={{ uri: 'https://lospueblosmasbonitosdeespana.org/pueblos/?app=1' }}
-        style={styles.webview}
-        startInLoadingState={true}
-        javaScriptEnabled={true}
-        domStorageEnabled={true}
-      />
-    </View>
+    <WebView
+      source={{ uri: 'https://lospueblosmasbonitosdeespana.org/pueblos/?app=1' }}
+      style={styles.webview}
+      javaScriptEnabled={true}
+      domStorageEnabled={true}
+      scalesPageToFit={true}
+      bounces={false}
+      scrollEnabled={true}
+    />
   );
 }
 
@@ -36,6 +36,8 @@ const styles = StyleSheet.create({
   },
   webview: {
     flex: 1,
+    width: '100%',
+    height: '100%',
   },
   webFallback: {
     flex: 1,
