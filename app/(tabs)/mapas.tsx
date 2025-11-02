@@ -9,14 +9,14 @@ export default function Mapas() {
         source={{ uri: 'https://lospueblosmasbonitosdeespana.org/pueblos/?app=1' }}
         style={{ flex: 1 }}
         originWhitelist={['*']}
-        javaScriptEnabled
-        domStorageEnabled
-        startInLoadingState
-        contentInsetAdjustmentBehavior="never"
-        bounces={false}
-        overScrollMode="never"
+        javaScriptEnabled={true}
+        domStorageEnabled={true}
+        allowsInlineMediaPlayback={true}
+        mixedContentMode="always"
         setSupportMultipleWindows={false}
-        androidLayerType="hardware"
+        cacheEnabled={false}
+        startInLoadingState={true}
+        onError={(e) => console.log('WebView error:', e.nativeEvent)}
       />
     </View>
   );
