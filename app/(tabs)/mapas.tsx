@@ -18,7 +18,7 @@ export default function MapasScreen() {
     );
   }
 
-  const mapUrl = `https://maps.lospueblosmasbonitosdeespana.org/es/mapas#${Date.now()}`;
+  const mapUrl = 'https://lospueblosmasbonitosdeespana.org/pueblos/?app=1';
 
   return (
     <View style={styles.container}>
