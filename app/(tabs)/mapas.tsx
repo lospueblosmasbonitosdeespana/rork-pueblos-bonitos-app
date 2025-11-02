@@ -22,7 +22,7 @@ export default function MapasScreen() {
 
   const injectedJavaScript = `
     (function() {
-      function hideButtons() {
+      function applyStyles() {
         const style = document.createElement('style');
         style.innerHTML = \`
           .map-list-toggle,
@@ -32,33 +32,82 @@ export default function MapasScreen() {
           button[aria-label*="listado"],
           .toggle-buttons,
           .view-toggle,
-          .map-controls-top {
+          .map-controls-top,
+          .tab-buttons,
+          .view-switcher,
+          nav.navigation-tabs,
+          .switch-view-buttons {
             display: none !important;
+            visibility: hidden !important;
+            height: 0 !important;
+            overflow: hidden !important;
           }
           body, html {
             margin: 0 !important;
             padding: 0 !important;
             overflow-x: hidden !important;
+            height: 100% !important;
           }
           .map-container,
           .mapa-pueblos,
-          #map-wrapper {
+          #map-wrapper,
+          .pueblos-map-container,
+          #pueblos-map,
+          .map-view-container {
             margin-top: 0 !important;
             padding-top: 0 !important;
+            height: 100% !important;
+            width: 100% !important;
+          }
+          header, .site-header, .page-header {
+            display: none !important;
+          }
+          footer, .site-footer {
+            display: none !important;
+          }
+          main, .main-content, .content {
+            margin: 0 !important;
+            padding: 0 !important;
           }
         \`;
         document.head.appendChild(style);
       }
-      
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', hideButtons);
-      } else {
-        hideButtons();
+
+      function scrollToMap() {
+        window.scrollTo(0, 0);
+        const mapElements = [
+          document.querySelector('.map-container'),
+          document.querySelector('.mapa-pueblos'),
+          document.querySelector('#map-wrapper'),
+          document.querySelector('.pueblos-map-container'),
+          document.querySelector('#pueblos-map'),
+          document.querySelector('.map-view-container')
+        ];
+        
+        for (const element of mapElements) {
+          if (element) {
+            element.scrollIntoView({ behavior: 'instant', block: 'start' });
+            break;
+          }
+        }
       }
       
-      setTimeout(hideButtons, 500);
-      setTimeout(hideButtons, 1000);
-      setTimeout(hideButtons, 2000);
+      function init() {
+        applyStyles();
+        scrollToMap();
+      }
+      
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+      } else {
+        init();
+      }
+      
+      setTimeout(init, 100);
+      setTimeout(init, 300);
+      setTimeout(init, 500);
+      setTimeout(init, 1000);
+      setTimeout(init, 1500);
     })();
     true;
   `;
