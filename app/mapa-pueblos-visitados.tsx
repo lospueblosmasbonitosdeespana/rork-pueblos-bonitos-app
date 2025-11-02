@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Image, Text, ScrollView, StyleSheet } from "react-native";
+import { View, Image, Text, StyleSheet, TouchableOpacity, Linking } from "react-native";
 
 export default function MapaPueblosVisitados() {
   const [mapUrl, setMapUrl] = useState<string | null>(null);
@@ -14,7 +14,7 @@ export default function MapaPueblosVisitados() {
           return;
         }
 
-        // Limitamos a 50 marcadores para evitar el error de URL larga
+        // Limitamos a 50 pueblos para evitar límite de URL
         const limited = data.slice(0, 50);
         const markers = limited.map((p) => `${p.lat},${p.lng}`).join("|");
 
@@ -28,31 +28,52 @@ export default function MapaPueblosVisitados() {
       });
   }, []);
 
+  if (error) {
+    return (
+      <View style={styles.center}>
+        <Text style={styles.error}>{error}</Text>
+      </View>
+    );
+  }
+
+  if (!mapUrl) {
+    return (
+      <View style={styles.center}>
+        <Text>Cargando mapa...</Text>
+      </View>
+    );
+  }
+
   return (
-    <ScrollView contentContainerStyle={styles.center}>
-      {error && <Text style={styles.error}>{error}</Text>}
-      {mapUrl ? (
-        <>
-          <Text style={styles.text}>Mapa cargado desde Google Static API:</Text>
-          <Image
-            source={{ uri: mapUrl }}
-            style={{ width: 320, height: 320, borderRadius: 12 }}
-            resizeMode="cover"
-          />
-          <Text selectable style={styles.url}>
-            {mapUrl}
-          </Text>
-        </>
-      ) : (
-        !error && <Text>Cargando mapa...</Text>
-      )}
-    </ScrollView>
+    <View style={styles.container}>
+      <Text style={styles.title}>Mapa de Pueblos Visitados</Text>
+      <Image
+        source={{ uri: mapUrl }}
+        style={styles.map}
+        resizeMode="cover"
+      />
+      <TouchableOpacity
+        style={styles.button}
+        onPress={() => Linking.openURL(mapUrl)}
+      >
+        <Text style={styles.buttonText}>Abrir en Google Maps</Text>
+      </TouchableOpacity>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  center: { flexGrow: 1, alignItems: "center", justifyContent: "center", padding: 20 },
-  error: { color: "red", marginBottom: 10, textAlign: "center" },
-  url: { fontSize: 10, color: "#444", marginTop: 10 },
-  text: { fontSize: 14, marginVertical: 10 },
+  container: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#fff", padding: 20 },
+  center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#fff" },
+  title: { fontSize: 18, fontWeight: "600", marginBottom: 20 },
+  map: { width: 320, height: 320, borderRadius: 12 },
+  button: {
+    marginTop: 20,
+    backgroundColor: "#d60000",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+  },
+  buttonText: { color: "#fff", fontSize: 14, fontWeight: "500" },
+  error: { color: "red", textAlign: "center", paddingHorizontal: 20 },
 });
