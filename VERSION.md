@@ -192,3 +192,4 @@ Tabs:
 **© Asociación Los Pueblos Más Bonitos de España**
 
 **🎉 v2.8 – Login completo + Datos reales**
+
