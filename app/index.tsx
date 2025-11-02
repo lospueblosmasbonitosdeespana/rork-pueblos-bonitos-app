@@ -1,43 +1,43 @@
 import { router } from 'expo-router';
 import { Image } from 'expo-image';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View, ActivityIndicator } from 'react-native';
 
 export default function Index() {
   const [imageLoaded, setImageLoaded] = useState(false);
-  const [hasNavigated, setHasNavigated] = useState(false);
+  const hasNavigatedRef = useRef(false);
 
   useEffect(() => {
     console.log('📱 Splash screen montado');
     
     const fallbackTimer = setTimeout(() => {
-      if (!hasNavigated) {
+      if (!hasNavigatedRef.current) {
         console.log('⌛ Navegando a home (fallback timer)');
-        setHasNavigated(true);
+        hasNavigatedRef.current = true;
         router.replace('/(tabs)/home');
       }
-    }, 3000);
+    }, 2000);
 
     return () => {
       console.log('🔄 Limpiando splash screen');
       clearTimeout(fallbackTimer);
     };
-  }, [hasNavigated]);
+  }, []);
 
   useEffect(() => {
     if (!imageLoaded) return;
     
     console.log('🖼️ Imagen cargada, esperando antes de navegar...');
     const timer = setTimeout(() => {
-      if (!hasNavigated) {
+      if (!hasNavigatedRef.current) {
         console.log('✅ Navegando a home');
-        setHasNavigated(true);
+        hasNavigatedRef.current = true;
         router.replace('/(tabs)/home');
       }
-    }, 1500);
+    }, 1000);
 
     return () => clearTimeout(timer);
-  }, [imageLoaded, hasNavigated]);
+  }, [imageLoaded]);
 
   return (
     <View style={styles.container}>

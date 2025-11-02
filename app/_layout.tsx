@@ -1,9 +1,9 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import React, { useEffect } from "react";
+import React, { Component, useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { StatusBar } from "react-native";
+import { StatusBar, View, Text, StyleSheet, ScrollView } from "react-native";
 
 import { AuthProvider } from "@/contexts/auth";
 import { LanguageProvider } from "@/contexts/language";
@@ -13,6 +13,96 @@ import { trpc, trpcClient } from "@/lib/trpc";
 SplashScreen.preventAutoHideAsync();
 
 const queryClient = new QueryClient();
+
+class ErrorBoundary extends Component<
+  { children: React.ReactNode },
+  { hasError: boolean; error: Error | null; errorInfo: React.ErrorInfo | null }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null, errorInfo: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('❌ Error boundary capturó un error:', error, errorInfo);
+    this.setState({ error, errorInfo });
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <View style={errorStyles.container}>
+          <ScrollView contentContainerStyle={errorStyles.content}>
+            <Text style={errorStyles.title}>⚠️ Error en la App</Text>
+            <Text style={errorStyles.message}>
+              La aplicación encontró un error. Por favor, reinicia la app.
+            </Text>
+            <Text style={errorStyles.errorTitle}>Detalles del error:</Text>
+            <Text style={errorStyles.errorText}>
+              {this.state.error?.toString()}
+            </Text>
+            {this.state.errorInfo && (
+              <Text style={errorStyles.stackText}>
+                {this.state.errorInfo.componentStack}
+              </Text>
+            )}
+          </ScrollView>
+        </View>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
+const errorStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  content: {
+    padding: 20,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 16,
+    color: '#d60000',
+  },
+  message: {
+    fontSize: 16,
+    marginBottom: 16,
+    color: '#333',
+  },
+  errorTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginTop: 16,
+    marginBottom: 8,
+    color: '#666',
+  },
+  errorText: {
+    fontSize: 12,
+    color: '#d60000',
+    backgroundColor: '#f5f5f5',
+    padding: 12,
+    borderRadius: 8,
+    fontFamily: 'monospace',
+  },
+  stackText: {
+    fontSize: 10,
+    color: '#666',
+    backgroundColor: '#f5f5f5',
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 8,
+    fontFamily: 'monospace',
+  },
+});
 
 function RootLayoutNav() {
   useEffect(() => {
@@ -150,8 +240,8 @@ function RootLayoutNav() {
 export default function RootLayout() {
   console.log('🚀 RootLayout inicializando...');
   
-  try {
-    return (
+  return (
+    <ErrorBoundary>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <trpc.Provider client={trpcClient} queryClient={queryClient}>
           <QueryClientProvider client={queryClient}>
@@ -165,9 +255,6 @@ export default function RootLayout() {
           </QueryClientProvider>
         </trpc.Provider>
       </GestureHandlerRootView>
-    );
-  } catch (error) {
-    console.error('❌ Error fatal en RootLayout:', error);
-    throw error;
-  }
+    </ErrorBoundary>
+  );
 }
