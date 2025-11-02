@@ -20,6 +20,49 @@ export default function MapasScreen() {
 
   const mapUrl = 'https://lospueblosmasbonitosdeespana.org/pueblos/?app=1';
 
+  const injectedJavaScript = `
+    (function() {
+      function hideButtons() {
+        const style = document.createElement('style');
+        style.innerHTML = \`
+          .map-list-toggle,
+          .map-toggle-btn,
+          .list-toggle-btn,
+          button[aria-label*="mapa"],
+          button[aria-label*="listado"],
+          .toggle-buttons,
+          .view-toggle,
+          .map-controls-top {
+            display: none !important;
+          }
+          body, html {
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow-x: hidden !important;
+          }
+          .map-container,
+          .mapa-pueblos,
+          #map-wrapper {
+            margin-top: 0 !important;
+            padding-top: 0 !important;
+          }
+        \`;
+        document.head.appendChild(style);
+      }
+      
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', hideButtons);
+      } else {
+        hideButtons();
+      }
+      
+      setTimeout(hideButtons, 500);
+      setTimeout(hideButtons, 1000);
+      setTimeout(hideButtons, 2000);
+    })();
+    true;
+  `;
+
   return (
     <View style={styles.container}>
       {loading && (
@@ -33,9 +76,12 @@ export default function MapasScreen() {
         style={styles.webview}
         javaScriptEnabled={true}
         domStorageEnabled={true}
+        injectedJavaScript={injectedJavaScript}
         onLoadStart={() => setLoading(true)}
         onLoadEnd={() => setLoading(false)}
         onError={() => setLoading(false)}
+        scalesPageToFit={true}
+        scrollEnabled={true}
       />
     </View>
   );
