@@ -94,7 +94,15 @@ export default function ProfileScreen() {
   }
 
   const fullName = [user.first_name, user.last_name].filter(Boolean).join(' ') || user.name;
-  const displayAvatar = user.profile_photo || user.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&size=200&background=c1121f&color=fff`;
+  
+  let displayAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&size=200&background=c1121f&color=fff`;
+  
+  if (user.photo && user.photo.startsWith('http')) {
+    displayAvatar = user.photo;
+  } else if (user.profile_photo && !user.profile_photo.startsWith('http')) {
+    const userId = user.id || user.user_id;
+    displayAvatar = `https://lospueblosmasbonitosdeespana.org/wp-content/uploads/ultimatemember/${userId}/${user.profile_photo}`;
+  }
 
   const menuOptions = [
     {

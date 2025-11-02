@@ -10,6 +10,7 @@ const JWT_TOKEN_KEY = 'lpbe_jwt_token';
 
 interface LPBEUser {
   id: number;
+  user_id?: number;
   username: string;
   email: string;
   name: string;
@@ -18,6 +19,7 @@ interface LPBEUser {
   last_name?: string;
   avatar_url?: string;
   profile_photo?: string;
+  photo?: string;
 }
 
 interface AuthState {
