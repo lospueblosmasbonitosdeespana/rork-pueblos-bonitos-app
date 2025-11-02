@@ -4,7 +4,6 @@ import {
   ChevronRight,
   Key,
   LogOut,
-  Map,
   MapPin,
 
   Star,
@@ -131,13 +130,6 @@ export default function ProfileScreen() {
       label: 'Puntos Conseguidos',
       icon: Star,
       onPress: () => router.push('/puntos-conseguidos'),
-      active: true,
-    },
-    {
-      id: 'map',
-      label: 'Mapa de Pueblos Visitados',
-      icon: Map,
-      onPress: () => router.push('/mapa-pueblos-visitados'),
       active: true,
     },
     {

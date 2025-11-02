@@ -205,13 +205,6 @@ function RootLayoutNav() {
         }}
       />
       <Stack.Screen
-        name="mapa-pueblos-visitados"
-        options={{
-          headerTitle: "Mapa de Pueblos Visitados",
-          presentation: "card",
-        }}
-      />
-      <Stack.Screen
         name="guia-uso"
         options={{
           headerTitle: "Guía de uso",
