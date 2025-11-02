@@ -106,7 +106,7 @@ const errorStyles = StyleSheet.create({
 
 function RootLayoutNav() {
   useEffect(() => {
-    console.log('📱 RootLayoutNav montado');
+    console.log('📱 RootLayoutNav montado - cache cleared');
     const timer = setTimeout(() => {
       console.log('👋 Ocultando splash screen nativo');
       SplashScreen.hideAsync().catch(error => {
