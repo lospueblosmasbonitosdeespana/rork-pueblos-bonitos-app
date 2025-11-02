@@ -8,19 +8,6 @@ import { ActivityIndicator, Alert, Image, Platform, StyleSheet, Text, TouchableO
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/contexts/auth';
 
-let MapView: any = null;
-let Marker: any = null;
-let Callout: any = null;
-let PROVIDER_GOOGLE: any = null;
-
-if (Platform.OS !== 'web') {
-  const maps = require('react-native-maps');
-  MapView = maps.default;
-  Marker = maps.Marker;
-  Callout = maps.Callout;
-  PROVIDER_GOOGLE = maps.PROVIDER_GOOGLE;
-}
-
 const LPBE_RED = '#c1121f';
 const BLUE_VISITED = '#3b82f6';
 const GRAY_NOT_VISITED = '#d1d5db';
@@ -178,43 +165,6 @@ export default function MapaPueblosVisitadosScreen() {
     }
   }, []);
 
-  const handleMarkerPress = useCallback((pueblo: PuebloMapa) => {
-    console.log('🗺️ Marcador presionado:', pueblo.nombre);
-  }, []);
-
-  const handleCalloutPress = useCallback((pueblo: PuebloMapa) => {
-    console.log('📍 Abriendo ficha del pueblo:', pueblo.id);
-    router.push(`/pueblo/${pueblo.id}`);
-  }, []);
-
-  const markers = useMemo(() => {
-    return pueblos.map((pueblo) => {
-      const isVisited = visitedIds.has(pueblo.id);
-      return (
-        <Marker
-          key={pueblo.id}
-          coordinate={{ latitude: pueblo.lat, longitude: pueblo.lng }}
-          pinColor={isVisited ? BLUE_VISITED : GRAY_NOT_VISITED}
-          onPress={() => handleMarkerPress(pueblo)}
-        >
-          <Callout onPress={() => handleCalloutPress(pueblo)}>
-            <View style={styles.calloutContainer}>
-              {pueblo.foto ? (
-                <Image source={{ uri: pueblo.foto }} style={styles.calloutImage} resizeMode="cover" />
-              ) : (
-                <View style={styles.calloutImagePlaceholder}>
-                  <MapPin size={24} color="#999" />
-                </View>
-              )}
-              <Text style={styles.calloutTitle}>{pueblo.nombre}</Text>
-              <Text style={styles.calloutSubtitle}>{isVisited ? 'Visitado' : 'No visitado'}</Text>
-            </View>
-          </Callout>
-        </Marker>
-      );
-    });
-  }, [pueblos, visitedIds, handleMarkerPress, handleCalloutPress]);
-
   if (authLoading) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
@@ -274,6 +224,67 @@ export default function MapaPueblosVisitadosScreen() {
     );
   }
 
+  return <NativeMapView pueblos={pueblos} visitedIds={visitedIds} mapRef={mapRef} centerOnUserLocation={centerOnUserLocation} />;
+}
+
+function NativeMapView({
+  pueblos,
+  visitedIds,
+  mapRef,
+  centerOnUserLocation,
+}: {
+  pueblos: PuebloMapa[];
+  visitedIds: Set<number>;
+  mapRef: React.RefObject<any>;
+  centerOnUserLocation: () => void;
+}) {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const MapView = require('react-native-maps').default;
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const Marker = require('react-native-maps').Marker;
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const Callout = require('react-native-maps').Callout;
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const PROVIDER_GOOGLE = require('react-native-maps').PROVIDER_GOOGLE;
+
+  const handleMarkerPress = useCallback((pueblo: PuebloMapa) => {
+    console.log('🗺️ Marcador presionado:', pueblo.nombre);
+  }, []);
+
+  const handleCalloutPress = useCallback((pueblo: PuebloMapa) => {
+    console.log('📍 Abriendo ficha del pueblo:', pueblo.id);
+    router.push(`/pueblo/${pueblo.id}`);
+  }, []);
+
+  const markers = useMemo(() => {
+    return pueblos.map((pueblo) => {
+      const isVisited = visitedIds.has(pueblo.id);
+      return (
+        <Marker
+          key={pueblo.id}
+          coordinate={{ latitude: pueblo.lat, longitude: pueblo.lng }}
+          pinColor={isVisited ? BLUE_VISITED : GRAY_NOT_VISITED}
+          onPress={() => handleMarkerPress(pueblo)}
+        >
+          <Callout onPress={() => handleCalloutPress(pueblo)}>
+            <View style={styles.calloutContainer}>
+              {pueblo.foto ? (
+                <Image source={{ uri: pueblo.foto }} style={styles.calloutImage} resizeMode="cover" />
+              ) : (
+                <View style={styles.calloutImagePlaceholder}>
+                  <MapPin size={24} color="#999" />
+                </View>
+              )}
+              <Text style={styles.calloutTitle}>{pueblo.nombre}</Text>
+              <Text style={styles.calloutSubtitle}>{isVisited ? 'Visitado' : 'No visitado'}</Text>
+            </View>
+          </Callout>
+        </Marker>
+      );
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pueblos, visitedIds, handleMarkerPress, handleCalloutPress]);
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <MapView
@@ -288,6 +299,7 @@ export default function MapaPueblosVisitadosScreen() {
         showsUserLocation={true}
         showsMyLocationButton={false}
       >
+        {/* eslint-disable-next-line @rork/linters/general-no-raw-text */}
         {markers}
       </MapView>
 
