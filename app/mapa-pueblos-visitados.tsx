@@ -5,9 +5,21 @@ import * as Location from 'expo-location';
 import { MapPin, Navigation } from 'lucide-react-native';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Image, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import MapView, { Callout, Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/contexts/auth';
+
+let MapView: any = null;
+let Marker: any = null;
+let Callout: any = null;
+let PROVIDER_GOOGLE: any = null;
+
+if (Platform.OS !== 'web') {
+  const maps = require('react-native-maps');
+  MapView = maps.default;
+  Marker = maps.Marker;
+  Callout = maps.Callout;
+  PROVIDER_GOOGLE = maps.PROVIDER_GOOGLE;
+}
 
 const LPBE_RED = '#c1121f';
 const BLUE_VISITED = '#3b82f6';
@@ -35,7 +47,7 @@ export default function MapaPueblosVisitadosScreen() {
   const [visitedIds, setVisitedIds] = useState<Set<number>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const mapRef = useRef<MapView>(null);
+  const mapRef = useRef<any>(null);
 
   const loadCachedData = useCallback(async (): Promise<PuebloMapa[] | null> => {
     try {
@@ -250,6 +262,18 @@ export default function MapaPueblosVisitadosScreen() {
     );
   }
 
+  if (Platform.OS === 'web') {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <View style={styles.centerContainer}>
+          <MapPin size={64} color={LPBE_RED} />
+          <Text style={styles.webMessage}>El mapa se muestra solo en la app móvil.</Text>
+          <Text style={styles.webSubMessage}>Descarga la app para ver el mapa interactivo de pueblos visitados.</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <MapView
@@ -372,5 +396,20 @@ const styles = StyleSheet.create({
   calloutSubtitle: {
     fontSize: 12,
     color: '#666',
+  },
+  webMessage: {
+    fontSize: 18,
+    fontWeight: '600' as const,
+    color: '#1a1a1a',
+    textAlign: 'center',
+    marginTop: 16,
+  },
+  webSubMessage: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    marginTop: 8,
+    paddingHorizontal: 32,
+    lineHeight: 20,
   },
 });
