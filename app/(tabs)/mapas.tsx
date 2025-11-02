@@ -1,19 +1,43 @@
-import { View, Text, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { MapPin } from 'lucide-react-native';
-import { COLORS, SPACING, TYPOGRAPHY } from '@/constants/theme';
+import React, { useState } from 'react';
+import { View, StyleSheet, Platform, Text, ActivityIndicator } from 'react-native';
+import { WebView } from 'react-native-webview';
+import { COLORS } from '@/constants/theme';
 
 export default function MapasScreen() {
-  return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.centerContainer}>
-        <MapPin size={64} color={COLORS.primary} />
-        <Text style={styles.message}>Mapa desactivado temporalmente</Text>
-        <Text style={styles.submessage}>
-          Esta función se encuentra en mantenimiento
-        </Text>
+  const [loading, setLoading] = useState(true);
+
+  if (Platform.OS === 'web') {
+    return (
+      <View style={styles.container}>
+        <View style={styles.webFallback}>
+          <Text style={styles.webFallbackText}>
+            El mapa interactivo está disponible en la aplicación móvil
+          </Text>
+        </View>
       </View>
-    </SafeAreaView>
+    );
+  }
+
+  const mapUrl = `https://maps.lospueblosmasbonitosdeespana.org/es/mapas#${Date.now()}`;
+
+  return (
+    <View style={styles.container}>
+      {loading && (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+          <Text style={styles.loadingText}>Cargando mapa...</Text>
+        </View>
+      )}
+      <WebView
+        source={{ uri: mapUrl }}
+        style={styles.webview}
+        javaScriptEnabled={true}
+        domStorageEnabled={true}
+        onLoadStart={() => setLoading(true)}
+        onLoadEnd={() => setLoading(false)}
+        onError={() => setLoading(false)}
+      />
+    </View>
   );
 }
 
@@ -22,21 +46,33 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  centerContainer: {
+  webview: {
+    flex: 1,
+  },
+  loadingContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: COLORS.background,
+    zIndex: 1,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: COLORS.textSecondary,
+  },
+  webFallback: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: SPACING.xl,
-    gap: SPACING.md,
+    padding: 20,
   },
-  message: {
-    ...TYPOGRAPHY.h3,
-    color: COLORS.text,
-    textAlign: 'center',
-    marginTop: SPACING.md,
-  },
-  submessage: {
-    ...TYPOGRAPHY.body,
+  webFallbackText: {
+    fontSize: 16,
     color: COLORS.textSecondary,
     textAlign: 'center',
   },

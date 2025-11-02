@@ -81,7 +81,6 @@ export default function TabLayout() {
         options={{
           title: t.tabs.mapas,
           headerTitle: t.mapas.title,
-          headerShown: false,
           tabBarIcon: ({ color }) => <Map size={24} color={color} strokeWidth={1.5} />,
         }}
       />
