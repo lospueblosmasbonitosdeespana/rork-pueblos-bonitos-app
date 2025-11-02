@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, ActivityIndicator, StyleSheet } from "react-native";
-import { WebView } from "react-native-webview";
+import { View, Image, ActivityIndicator, StyleSheet, Dimensions } from "react-native";
 
 export default function MapaPueblosVisitados() {
   const [mapUrl, setMapUrl] = useState<string | null>(null);
@@ -15,7 +14,9 @@ export default function MapaPueblosVisitados() {
           .map((p) => `${p.lat},${p.lng}`)
           .join("|");
 
-        const url = `https://www.google.com/maps/embed/v1/view?key=AIzaSyBjA1ki2LTMj_aMmoNz9ND5OnanBYAD9KQ&center=40.2,-3.7&zoom=6&maptype=roadmap&markers=${markers}`;
+        const apiKey = "AIzaSyBjA1ki2LTMj_aMmoNz9ND5OnanBYAD9KQ";
+        const url = `https://maps.googleapis.com/maps/api/staticmap?center=40.2,-3.7&zoom=6&size=800x800&maptype=roadmap&markers=color:red|${markers}&key=${apiKey}`;
+
         setMapUrl(url);
       })
       .catch(() => setMapUrl(null));
@@ -30,13 +31,15 @@ export default function MapaPueblosVisitados() {
   }
 
   return (
-    <View style={{ flex: 1 }}>
-      <WebView
+    <View style={styles.center}>
+      <Image
         source={{ uri: mapUrl }}
-        startInLoadingState
-        renderLoading={() => (
-          <ActivityIndicator style={styles.center} size="large" />
-        )}
+        style={{
+          width: Dimensions.get("window").width - 20,
+          height: Dimensions.get("window").width - 20,
+          borderRadius: 12,
+        }}
+        resizeMode="cover"
       />
     </View>
   );
@@ -47,5 +50,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: "#f8f8f8",
   },
 });
