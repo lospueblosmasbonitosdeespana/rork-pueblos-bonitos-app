@@ -1,82 +1,99 @@
-import { useState } from 'react';
-import { View, ActivityIndicator, StyleSheet, Text, TouchableOpacity, SafeAreaView } from 'react-native';
+import { useState, useEffect } from 'react';
+import { View, ActivityIndicator, StyleSheet, Text, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
-import { X } from 'lucide-react-native';
-import { WebView } from 'react-native-webview';
+import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { COLORS, SPACING, TYPOGRAPHY } from '@/constants/theme';
 
-const MAPA_URL = 'https://maps.lospueblosmasbonitosdeespana.org/es/pueblos';
+interface PuebloMapa {
+  id: number;
+  nombre: string;
+  lat: number;
+  lng: number;
+  foto: string;
+}
+
+const API_URL = 'https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/pueblos-mapa';
 
 export default function MapasScreen() {
   const router = useRouter();
+  const [pueblos, setPueblos] = useState<PuebloMapa[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
+  useEffect(() => {
+    fetchPueblos();
+  }, []);
+
+  const fetchPueblos = async () => {
+    try {
+      console.log('📍 Cargando pueblos desde:', API_URL);
+      const response = await fetch(API_URL);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log(`✅ ${data.length} pueblos cargados`);
+      setPueblos(data);
+    } catch (err) {
+      console.error('❌ Error cargando pueblos:', err);
+      setError(true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleMarkerPress = (pueblo: PuebloMapa) => {
+    console.log('📍 Abriendo pueblo:', pueblo.nombre);
+    router.push(`/pueblo/${pueblo.id}`);
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.loader}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+        <Text style={styles.loadingText}>Cargando mapa...</Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>
+          No se pudo cargar el mapa.{"\n"}Verifica tu conexión a internet.
+        </Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.headerBar}>
-          <Text style={styles.headerTitle}>Mapa de Pueblos</Text>
-          <TouchableOpacity 
-            style={styles.closeButton}
-            onPress={() => router.back()}
-            activeOpacity={0.7}
-          >
-            <X size={24} color={COLORS.card} />
-            <Text style={styles.closeButtonText}>Volver a la app</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-      {error ? (
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>
-            No se pudo cargar el mapa.{"\n"}Verifica tu conexión a internet.
-          </Text>
-        </View>
-      ) : (
-        <>
-          <WebView
-            source={{ uri: MAPA_URL }}
-            style={styles.webview}
-            javaScriptEnabled={true}
-            domStorageEnabled={true}
-            startInLoadingState={true}
-            onLoadEnd={() => {
-              console.log('URL:', MAPA_URL, 'Status: cargado');
-              setLoading(false);
+      <MapView
+        style={styles.map}
+        provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
+        initialRegion={{
+          latitude: 40.2,
+          longitude: -3.7,
+          latitudeDelta: 8,
+          longitudeDelta: 8,
+        }}
+        showsUserLocation={true}
+        showsMyLocationButton={true}
+      >
+        {pueblos.map((pueblo) => (
+          <Marker
+            key={pueblo.id}
+            coordinate={{
+              latitude: pueblo.lat,
+              longitude: pueblo.lng,
             }}
-            onError={(syntheticEvent) => {
-              const { nativeEvent } = syntheticEvent;
-              console.log('❌ Error cargando mapa:', nativeEvent.description || 'Error desconocido');
-              setError(true);
-              setLoading(false);
-            }}
-            renderLoading={() => (
-              <View style={styles.loader}>
-                <ActivityIndicator size="large" color={COLORS.primary} />
-                <Text style={styles.loadingText}>Cargando mapa...</Text>
-              </View>
-            )}
-            geolocationEnabled={true}
-            allowsInlineMediaPlayback={true}
-            allowsBackForwardNavigationGestures={true}
-            injectedJavaScript={`
-              (function() {
-                const header = document.querySelector('header');
-                if (header) header.style.display = 'none';
-                const wpAdminBar = document.querySelector('#wpadminbar');
-                if (wpAdminBar) wpAdminBar.style.display = 'none';
-              })();
-            `}
+            title={pueblo.nombre}
+            onPress={() => handleMarkerPress(pueblo)}
           />
-          {loading && (
-            <View style={styles.loader}>
-              <ActivityIndicator size="large" color={COLORS.primary} />
-              <Text style={styles.loadingText}>Cargando mapa...</Text>
-            </View>
-          )}
-        </>
-      )}
+        ))}
+      </MapView>
     </View>
   );
 }
@@ -86,51 +103,11 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  safeArea: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 1000,
-    backgroundColor: COLORS.primary,
-  },
-  headerBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
-    backgroundColor: COLORS.primary,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 8,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700' as const,
-    color: COLORS.card,
-  },
-  closeButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    paddingVertical: SPACING.xs,
-    paddingHorizontal: SPACING.md,
-    borderRadius: 20,
-    gap: SPACING.xs,
-  },
-  closeButtonText: {
-    fontSize: 14,
-    fontWeight: '600' as const,
-    color: COLORS.card,
-  },
-  webview: {
+  map: {
     flex: 1,
   },
   loader: {
-    ...StyleSheet.absoluteFillObject,
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: COLORS.background,
