@@ -5,7 +5,6 @@ import { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 
 const API_BASE = 'https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1';
-const JWT_AUTH_URL = 'https://lospueblosmasbonitosdeespana.org/wp-json/jwt-auth/v1/token';
 const USER_ID_KEY = 'lpbe_user_id';
 const JWT_TOKEN_KEY = 'lpbe_jwt_token';
 
@@ -152,8 +151,8 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
 
   const login = async (credentials: LoginCredentials): Promise<{ success: boolean; error?: string }> => {
     try {
-      console.log('🔐 Autenticando con JWT...');
-      const jwtResponse = await fetch(JWT_AUTH_URL, {
+      console.log('🔐 Autenticando con LPBE...');
+      const loginResponse = await fetch(`${API_BASE}/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -164,24 +163,24 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
         }),
       });
 
-      if (!jwtResponse.ok) {
-        const errorData = await jwtResponse.json().catch(() => ({}));
-        console.error('❌ Error JWT:', errorData);
+      if (!loginResponse.ok) {
+        const errorData = await loginResponse.json().catch(() => ({}));
+        console.error('❌ Error login:', errorData);
         return { 
           success: false, 
           error: errorData.message || 'Credenciales incorrectas' 
         };
       }
 
-      const jwtData = await jwtResponse.json();
-      console.log('✅ JWT obtenido correctamente');
+      const loginData = await loginResponse.json();
+      console.log('✅ Login exitoso:', loginData);
 
-      if (!jwtData.token || !jwtData.user_id) {
+      if (!loginData.success || !loginData.user_id) {
         return { success: false, error: 'Respuesta del servidor inválida' };
       }
 
       console.log('📡 Obteniendo perfil completo del usuario...');
-      const userResponse = await fetch(`${API_BASE}/user-profile?user_id=${jwtData.user_id}`);
+      const userResponse = await fetch(`${API_BASE}/user-profile?user_id=${loginData.user_id}`);
 
       if (!userResponse.ok) {
         console.error('❌ Error obteniendo perfil de usuario');
@@ -195,12 +194,12 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
       }
 
       await setStoredUserId(user.id.toString());
-      await setStoredToken(jwtData.token);
+      await setStoredToken(loginData.token || 'lpbe_authenticated');
       
       setState({ 
         user: { ...user, role: 'subscriber' }, 
         userId: user.id.toString(), 
-        token: jwtData.token,
+        token: loginData.token || 'lpbe_authenticated',
         isLoading: false, 
         isAuthenticated: true 
       });
