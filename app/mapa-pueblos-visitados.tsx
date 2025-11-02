@@ -1,4 +1,3 @@
-
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import * as Location from 'expo-location';
@@ -28,6 +27,10 @@ interface CachedData {
   timestamp: number;
 }
 
+type MapViewType = any;
+type MarkerType = any;
+type CalloutType = any;
+
 export default function MapaPueblosVisitadosScreen() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const [pueblos, setPueblos] = useState<PuebloMapa[]>([]);
@@ -35,6 +38,28 @@ export default function MapaPueblosVisitadosScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const mapRef = useRef<any>(null);
+  
+  const [MapView, setMapView] = useState<MapViewType | null>(null);
+  const [Marker, setMarker] = useState<MarkerType | null>(null);
+  const [Callout, setCallout] = useState<CalloutType | null>(null);
+  const [PROVIDER_GOOGLE, setProviderGoogle] = useState<any>(null);
+
+  useEffect(() => {
+    if (Platform.OS !== 'web') {
+      import('react-native-maps')
+        .then((maps) => {
+          console.log('✅ react-native-maps cargado');
+          setMapView(() => maps.default);
+          setMarker(() => maps.Marker);
+          setCallout(() => maps.Callout);
+          setProviderGoogle(maps.PROVIDER_GOOGLE);
+        })
+        .catch((err) => {
+          console.error('❌ Error cargando react-native-maps:', err);
+          setError('Error cargando el mapa');
+        });
+    }
+  }, []);
 
   const loadCachedData = useCallback(async (): Promise<PuebloMapa[] | null> => {
     try {
@@ -131,11 +156,7 @@ export default function MapaPueblosVisitadosScreen() {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        if (Platform.OS === 'web') {
-          alert('Permiso de ubicación denegado');
-        } else {
-          Alert.alert('Permiso denegado', 'Necesitas activar los permisos de ubicación');
-        }
+        Alert.alert('Permiso denegado', 'Necesitas activar los permisos de ubicación');
         return;
       }
 
@@ -157,11 +178,7 @@ export default function MapaPueblosVisitadosScreen() {
       }
     } catch (error) {
       console.error('❌ Error obteniendo ubicación:', error);
-      if (Platform.OS === 'web') {
-        alert('Error al obtener tu ubicación');
-      } else {
-        Alert.alert('Error', 'No se pudo obtener tu ubicación');
-      }
+      Alert.alert('Error', 'No se pudo obtener tu ubicación');
     }
   }, []);
 
@@ -173,6 +190,18 @@ export default function MapaPueblosVisitadosScreen() {
     console.log('📍 Abriendo ficha del pueblo:', pueblo.id);
     router.push(`/pueblo/${pueblo.id}`);
   }, []);
+
+  if (Platform.OS === 'web') {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <View style={styles.centerContainer}>
+          <MapPin size={64} color={LPBE_RED} />
+          <Text style={styles.webMessage}>El mapa se muestra solo en la app móvil.</Text>
+          <Text style={styles.webSubMessage}>Descarga la app para ver el mapa interactivo de pueblos visitados.</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   if (authLoading) {
     return (
@@ -192,6 +221,17 @@ export default function MapaPueblosVisitadosScreen() {
           <TouchableOpacity style={styles.loginButton} onPress={() => router.push('/login')}>
             <Text style={styles.loginButtonText}>Iniciar sesión</Text>
           </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!MapView || !Marker || !Callout) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" color={LPBE_RED} />
+          <Text style={styles.loadingText}>Cargando mapa...</Text>
         </View>
       </SafeAreaView>
     );
@@ -221,56 +261,6 @@ export default function MapaPueblosVisitadosScreen() {
     );
   }
 
-  if (Platform.OS === 'web') {
-    return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <View style={styles.centerContainer}>
-          <MapPin size={64} color={LPBE_RED} />
-          <Text style={styles.webMessage}>El mapa se muestra solo en la app móvil.</Text>
-          <Text style={styles.webSubMessage}>Descarga la app para ver el mapa interactivo de pueblos visitados.</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  let MapView: any;
-  let Marker: any;
-  let Callout: any;
-  let PROVIDER_GOOGLE: any;
-
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const Maps = require('react-native-maps');
-  MapView = Maps.default;
-  Marker = Maps.Marker;
-  Callout = Maps.Callout;
-  PROVIDER_GOOGLE = Maps.PROVIDER_GOOGLE;
-
-  const markers = pueblos.map((pueblo) => {
-    const isVisited = visitedIds.has(pueblo.id);
-    return (
-      <Marker
-        key={pueblo.id}
-        coordinate={{ latitude: pueblo.lat, longitude: pueblo.lng }}
-        pinColor={isVisited ? BLUE_VISITED : GRAY_NOT_VISITED}
-        onPress={() => handleMarkerPress(pueblo)}
-      >
-        <Callout onPress={() => handleCalloutPress(pueblo)}>
-          <View style={styles.calloutContainer}>
-            {pueblo.foto ? (
-              <Image source={{ uri: pueblo.foto }} style={styles.calloutImage} resizeMode="cover" />
-            ) : (
-              <View style={styles.calloutImagePlaceholder}>
-                <MapPin size={24} color="#999" />
-              </View>
-            )}
-            <Text style={styles.calloutTitle}>{pueblo.nombre}</Text>
-            <Text style={styles.calloutSubtitle}>{isVisited ? 'Visitado' : 'No visitado'}</Text>
-          </View>
-        </Callout>
-      </Marker>
-    );
-  });
-
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <MapView
@@ -285,8 +275,31 @@ export default function MapaPueblosVisitadosScreen() {
         showsUserLocation={true}
         showsMyLocationButton={false}
       >
-        {/* eslint-disable-next-line @rork/linters/general-no-raw-text */}
-        {markers}
+        {pueblos.map((pueblo) => {
+          const isVisited = visitedIds.has(pueblo.id);
+          return (
+            <Marker
+              key={pueblo.id}
+              coordinate={{ latitude: pueblo.lat, longitude: pueblo.lng }}
+              pinColor={isVisited ? BLUE_VISITED : GRAY_NOT_VISITED}
+              onPress={() => handleMarkerPress(pueblo)}
+            >
+              <Callout onPress={() => handleCalloutPress(pueblo)}>
+                <View style={styles.calloutContainer}>
+                  {pueblo.foto ? (
+                    <Image source={{ uri: pueblo.foto }} style={styles.calloutImage} resizeMode="cover" />
+                  ) : (
+                    <View style={styles.calloutImagePlaceholder}>
+                      <MapPin size={24} color="#999" />
+                    </View>
+                  )}
+                  <Text style={styles.calloutTitle}>{pueblo.nombre}</Text>
+                  <Text style={styles.calloutSubtitle}>{isVisited ? 'Visitado' : 'No visitado'}</Text>
+                </View>
+              </Callout>
+            </Marker>
+          );
+        })}
       </MapView>
 
       <TouchableOpacity style={styles.locationButton} onPress={centerOnUserLocation}>
