@@ -113,6 +113,25 @@ export default function NoticiaDetalleScreen() {
               cacheEnabled={true}
               injectedJavaScript={`
                 (function() {
+                  // 1) QUITAR BREADCRUMBS (barra gris con enlaces)
+                  var bread = document.querySelector('div[style*="gray"]');
+                  if (bread) bread.remove();
+
+                  // 2) QUITAR ESPACIO SUPERIOR (barra gris y título)
+                  var topBar = document.querySelector('div[style*="height: 44"]');
+                  if (topBar) topBar.style.display = 'none';
+
+                  // 3) SUBIR TODO EL CONTENIDO
+                  document.body.style.paddingTop = '0';
+                  document.body.style.marginTop  = '0';
+                  if (document.querySelector('div')) {
+                    document.querySelector('div').style.marginTop = '0';
+                  }
+
+                  // 4) FONDO BLANCO LIMPIO
+                  document.body.style.background = '#fff';
+
+                  // 5) APLICAR ESTILOS CSS ADICIONALES
                   const style = document.createElement('style');
                   style.innerHTML = \`
                     header,
@@ -146,7 +165,8 @@ export default function NoticiaDetalleScreen() {
                     ul[class*="breadcrumb"],
                     ol[class*="breadcrumb"],
                     [class*="gem-breadcrumb"],
-                    [class*="thegem-breadcrumb"] {
+                    [class*="thegem-breadcrumb"],
+                    div[style*="gray"] {
                       display: none !important;
                       visibility: hidden !important;
                       height: 0 !important;
@@ -179,6 +199,7 @@ export default function NoticiaDetalleScreen() {
                       padding-top: 0 !important;
                       margin: 0 !important;
                       overflow-x: hidden !important;
+                      background: #fff !important;
                     }
 
                     .site-content,
@@ -207,6 +228,7 @@ export default function NoticiaDetalleScreen() {
                   \`;
                   document.head.appendChild(style);
 
+                  // 6) FUNCIÓN PARA OCULTAR BREADCRUMBS (ejecutada múltiples veces)
                   const hideBreadcrumbs = function() {
                     const selectors = [
                       '.breadcrumbs',
@@ -225,7 +247,9 @@ export default function NoticiaDetalleScreen() {
                       'ul[class*="breadcrumb"]',
                       'ol[class*="breadcrumb"]',
                       '[class*="gem-breadcrumb"]',
-                      '[class*="thegem-breadcrumb"]'
+                      '[class*="thegem-breadcrumb"]',
+                      'div[style*="gray"]',
+                      'div[style*="height: 44"]'
                     ];
                     
                     selectors.forEach(function(sel) {
@@ -244,11 +268,14 @@ export default function NoticiaDetalleScreen() {
                     });
                   };
 
+                  // 7) EJECUTAR MÚLTIPLES VECES
                   hideBreadcrumbs();
+                  setTimeout(hideBreadcrumbs, 100);
                   setTimeout(hideBreadcrumbs, 500);
                   setTimeout(hideBreadcrumbs, 1500);
                   setTimeout(hideBreadcrumbs, 3000);
 
+                  // 8) OBSERVADOR PARA CAMBIOS EN EL DOM
                   const observer = new MutationObserver(function() {
                     hideBreadcrumbs();
                   });
@@ -260,12 +287,9 @@ export default function NoticiaDetalleScreen() {
                     });
                   }
 
+                  // 9) SCROLL AL INICIO
                   setTimeout(function() {
-                    const article = document.querySelector('article, .post, .entry, main');
-                    if (article) {
-                      article.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                      window.scrollTo(0, 0);
-                    }
+                    window.scrollTo(0, 0);
                   }, 300);
                 })();
                 true;
