@@ -179,14 +179,39 @@ export default function MultiexperienciaDetailScreen() {
           )}
 
           {experiencia.tipo && (
-            <View style={styles.typeCard}>
-              <Text style={styles.typeLabel}>Tipo de experiencia</Text>
-              <Text style={styles.typeText}>
-                {experiencia.tipo === 'ruta' ? 'Ruta' : 
-                 experiencia.tipo === 'experiencia' ? 'Experiencia' : 
-                 experiencia.tipo === 'punto_interes' ? 'Punto de Interés' : 
-                 experiencia.tipo}
-              </Text>
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Información Adicional</Text>
+              <View style={styles.infoGrid}>
+                <View style={styles.infoItem}>
+                  <Text style={styles.infoLabel}>Tipo de experiencia</Text>
+                  <Text style={styles.infoValue}>
+                    {experiencia.tipo === 'ruta' ? 'Ruta' : 
+                     experiencia.tipo === 'experiencia' ? 'Experiencia' : 
+                     experiencia.tipo === 'punto_interes' ? 'Punto de Interés' : 
+                     experiencia.tipo}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          )}
+
+          {experiencia.multimedia && experiencia.multimedia.length > 0 && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Galería</Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.galleryContainer}
+              >
+                {experiencia.multimedia.map((imageUrl, index) => (
+                  <Image
+                    key={index}
+                    source={{ uri: imageUrl }}
+                    style={styles.galleryImage}
+                    contentFit="cover"
+                  />
+                ))}
+              </ScrollView>
             </View>
           )}
         </View>
@@ -327,22 +352,35 @@ const styles = StyleSheet.create({
     fontWeight: '600' as const,
     fontSize: 15,
   },
-  typeCard: {
-    backgroundColor: COLORS.primary + '15',
-    borderRadius: 12,
-    padding: SPACING.md,
-    marginTop: SPACING.md,
+  infoGrid: {
+    gap: SPACING.sm,
   },
-  typeLabel: {
+  infoItem: {
+    backgroundColor: COLORS.card,
+    borderRadius: 8,
+    padding: SPACING.sm,
+    ...SHADOWS.small,
+  },
+  infoLabel: {
     ...TYPOGRAPHY.caption,
     color: COLORS.textSecondary,
     fontSize: 11,
-    marginBottom: 4,
+    marginBottom: 2,
   },
-  typeText: {
+  infoValue: {
     ...TYPOGRAPHY.body,
-    color: COLORS.primary,
+    color: COLORS.text,
     fontWeight: '600' as const,
-    fontSize: 15,
+    fontSize: 14,
+  },
+  galleryContainer: {
+    gap: SPACING.sm,
+    paddingRight: SPACING.lg,
+  },
+  galleryImage: {
+    width: 280,
+    height: 200,
+    borderRadius: 12,
+    backgroundColor: COLORS.beige,
   },
 });
