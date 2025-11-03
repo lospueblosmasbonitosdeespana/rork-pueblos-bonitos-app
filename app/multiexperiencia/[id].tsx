@@ -14,17 +14,40 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { COLORS, SPACING, TYPOGRAPHY } from '@/constants/theme';
-import { fetchMultiexperienciaDetalle } from '@/services/api';
 
 const { width } = Dimensions.get('window');
+
+interface MultiexperienciaDetalle {
+  id: number;
+  nombre: string;
+  descripcion: string;
+  foto: string;
+  multimedia: string[];
+  latitud: string;
+  longitud: string;
+}
+
+async function fetchMultiexperienciaDetalle(id: string): Promise<MultiexperienciaDetalle> {
+  const url = `https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/multiexperiencia-detalle?id=${id}`;
+  console.log('🌐 Fetching multiexperiencia detalle:', url);
+  
+  const response = await fetch(url);
+  
+  if (!response.ok) {
+    console.error('❌ Error response:', await response.json());
+    throw new Error(`Error ${response.status}: No se pudo cargar el detalle de la experiencia`);
+  }
+  
+  const data = await response.json();
+  console.log('✅ Multiexperiencia detalle loaded:', data);
+  return data;
+}
 
 export default function MultiexperienciaDetailScreen() {
   const { id } = useLocalSearchParams();
   const experienciaId = Array.isArray(id) ? id[0] : id;
   
-  console.log('🆔 MultiexperienciaDetailScreen received id=', id);
-  console.log('🆔 processed experienciaId=', experienciaId);
-  console.log('🆔 experienciaId type=', typeof experienciaId);
+  console.log('🆔 MultiexperienciaDetailScreen id:', experienciaId);
 
   const experienciaQuery = useQuery({
     queryKey: ['multiexperiencia-detalle', experienciaId],
@@ -33,23 +56,6 @@ export default function MultiexperienciaDetailScreen() {
   });
 
   const experiencia = experienciaQuery.data;
-
-  const stripHtml = (html: string) => {
-    if (!html) return '';
-    return html
-      .replace(/<br\s*\/?>/gi, '\n')
-      .replace(/<\/p>/gi, '\n\n')
-      .replace(/<[^>]*>/g, '')
-      .replace(/&nbsp;/g, ' ')
-      .replace(/&amp;/g, '&')
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .replace(/&quot;/g, '"')
-      .replace(/&#039;/g, "'")
-      .replace(/&[a-zA-Z0-9#]+;/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
-  };
 
   if (experienciaQuery.isLoading) {
     return (
@@ -67,7 +73,6 @@ export default function MultiexperienciaDetailScreen() {
         />
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color={COLORS.primary} />
-          <Text style={styles.loadingText}>Cargando experiencia...</Text>
         </View>
       </SafeAreaView>
     );
@@ -88,7 +93,9 @@ export default function MultiexperienciaDetailScreen() {
           }}
         />
         <View style={styles.centerContainer}>
-          <Text style={styles.errorText}>No se ha encontrado información para esta experiencia.</Text>
+          <Text style={styles.errorText}>
+            No se pudo cargar la información de esta experiencia.
+          </Text>
         </View>
       </SafeAreaView>
     );
@@ -117,33 +124,27 @@ export default function MultiexperienciaDetailScreen() {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={true}
-        testID="multiexperiencia-detail-scroll"
       >
-        <Text style={styles.title} testID="multiexperiencia-title">{experiencia.nombre}</Text>
-
-        {experiencia.descripcion && (
-          <View style={styles.textSection}>
-            <Text style={styles.description}>
-              {stripHtml(experiencia.descripcion)}
-            </Text>
-          </View>
-        )}
+        <Text style={styles.title}>{experiencia.nombre}</Text>
 
         {allImages.length > 0 && (
-          <View style={styles.photosSection} testID="multiexperiencia-galeria">
+          <View style={styles.gallery}>
             {allImages.map((imageUrl, index) => (
               <Image
                 key={index}
                 source={{ uri: imageUrl }}
-                style={styles.photoImage}
+                style={styles.galleryImage}
                 contentFit="cover"
               />
             ))}
           </View>
         )}
 
-        <View style={styles.mapSection} testID="multiexperiencia-mapa">
-          <Text style={styles.mapPlaceholder}>Mapa disponible en la web</Text>
+        <View style={styles.mapContainer}>
+          <Text style={styles.mapLabel}>Mapa</Text>
+          <View style={styles.mapPlaceholder}>
+            <Text style={styles.mapText}>Mapa disponible en la web</Text>
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -163,58 +164,52 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: SPACING.xl * 2,
+    paddingBottom: SPACING.xl,
   },
   centerContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: SPACING.xl,
-  },
-  loadingText: {
-    ...TYPOGRAPHY.body,
-    color: '#6B7280',
-    marginTop: SPACING.md,
   },
   errorText: {
     ...TYPOGRAPHY.body,
     color: '#6B7280',
     textAlign: 'center',
+    paddingHorizontal: SPACING.lg,
   },
   title: {
-    ...TYPOGRAPHY.h1,
-    color: COLORS.text,
+    fontSize: 24,
+    fontWeight: '700' as const,
+    color: '#1F2937',
     paddingHorizontal: SPACING.lg,
-    paddingTop: SPACING.lg,
-    paddingBottom: SPACING.md,
+    paddingVertical: SPACING.lg,
   },
-  textSection: {
-    paddingHorizontal: SPACING.lg,
-    paddingBottom: SPACING.lg,
+  gallery: {
+    width: width,
   },
-  description: {
-    ...TYPOGRAPHY.body,
-    color: '#6B7280',
-    lineHeight: 24,
-  },
-  photosSection: {
-    paddingBottom: SPACING.lg,
-  },
-  photoImage: {
+  galleryImage: {
     width: width,
     height: 250,
     backgroundColor: '#F5F5F5',
-    marginBottom: 1,
   },
-  mapSection: {
+  mapContainer: {
     paddingHorizontal: SPACING.lg,
-    paddingBottom: SPACING.lg,
+    paddingTop: SPACING.xl,
+  },
+  mapLabel: {
+    fontSize: 18,
+    fontWeight: '600' as const,
+    color: '#1F2937',
+    marginBottom: SPACING.md,
   },
   mapPlaceholder: {
-    ...TYPOGRAPHY.body,
-    color: '#6B7280',
-    textAlign: 'center',
-    padding: SPACING.xl,
     backgroundColor: '#F5F5F5',
+    height: 200,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  mapText: {
+    fontSize: 14,
+    color: '#6B7280',
   },
 });
