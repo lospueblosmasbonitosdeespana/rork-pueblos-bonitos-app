@@ -112,58 +112,81 @@ export default function NoticiaDetalleScreen() {
               incognito={false}
               cacheEnabled={true}
               injectedJavaScript={`
-                const style = document.createElement('style');
-                style.innerHTML = \`
-                  header,
-                  .site-header,
-                  .main-navigation,
-                  nav,
-                  .nav-menu,
-                  #masthead,
-                  .header,
-                  .menu,
-                  .top-bar {
-                    display: none !important;
-                  }
+                (function() {
+                  const style = document.createElement('style');
+                  style.innerHTML = \`
+                    header,
+                    .site-header,
+                    .main-navigation,
+                    nav,
+                    .nav-menu,
+                    #masthead,
+                    .header,
+                    .menu,
+                    .top-bar,
+                    footer,
+                    .site-footer,
+                    #colophon {
+                      display: none !important;
+                    }
 
-                  .post-navigation,
-                  .nav-previous,
-                  .nav-next,
-                  .navigation.post-navigation,
-                  .nav-links,
-                  .post-nav-links {
-                    display: none !important;
-                  }
+                    .post-navigation,
+                    .nav-previous,
+                    .nav-next,
+                    .navigation.post-navigation,
+                    .nav-links,
+                    .post-nav-links {
+                      display: none !important;
+                    }
 
-                  .post-thumbnail img,
-                  .wp-post-image,
-                  .entry-image img,
-                  .featured-image img {
-                    width: 100% !important;
-                    height: auto !important;
-                    object-fit: cover !important;
-                    max-width: 100% !important;
-                  }
+                    .post-thumbnail img,
+                    .wp-post-image,
+                    .entry-image img,
+                    .featured-image img {
+                      width: 100% !important;
+                      height: auto !important;
+                      object-fit: cover !important;
+                      max-width: 100% !important;
+                    }
 
-                  body {
-                    padding-top: 0 !important;
-                    margin-top: 0 !important;
-                    overflow-x: hidden !important;
-                  }
+                    body {
+                      padding: 16px !important;
+                      margin: 0 !important;
+                      overflow-x: hidden !important;
+                    }
 
-                  .site-content,
-                  .entry-content,
-                  article {
-                    max-width: 100% !important;
-                    overflow-x: hidden !important;
-                  }
+                    .site-content,
+                    .entry-content,
+                    article,
+                    main {
+                      max-width: 100% !important;
+                      width: 100% !important;
+                      overflow-x: hidden !important;
+                      margin: 0 !important;
+                      padding: 0 !important;
+                    }
 
-                  .entry-content img {
-                    max-width: 100% !important;
-                    height: auto !important;
-                  }
-                \`;
-                document.head.appendChild(style);
+                    .entry-content img {
+                      max-width: 100% !important;
+                      height: auto !important;
+                    }
+
+                    .entry-title,
+                    .post-title,
+                    h1 {
+                      margin-top: 0 !important;
+                    }
+                  \`;
+                  document.head.appendChild(style);
+
+                  setTimeout(function() {
+                    const article = document.querySelector('article, .post, .entry, main');
+                    if (article) {
+                      article.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      window.scrollTo(0, 0);
+                    }
+                  }, 300);
+                })();
                 true;
               `}
               scalesPageToFit={true}
