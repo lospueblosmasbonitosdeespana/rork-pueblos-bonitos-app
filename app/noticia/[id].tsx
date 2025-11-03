@@ -134,6 +134,9 @@ export default function NoticiaDetalleScreen() {
                     .breadcrumb,
                     .bread-crumb,
                     .bread-crumbs,
+                    .thegem-template-breadcrumbs,
+                    .elementor-widget-breadcrumbs,
+                    .gem-breadcrumbs,
                     nav[aria-label="breadcrumb"],
                     nav[aria-label="Breadcrumb"],
                     #breadcrumbs,
@@ -141,8 +144,13 @@ export default function NoticiaDetalleScreen() {
                     .yoast-breadcrumbs,
                     div[class*="breadcrumb"],
                     ul[class*="breadcrumb"],
-                    ol[class*="breadcrumb"] {
+                    ol[class*="breadcrumb"],
+                    [class*="gem-breadcrumb"],
+                    [class*="thegem-breadcrumb"] {
                       display: none !important;
+                      visibility: hidden !important;
+                      height: 0 !important;
+                      overflow: hidden !important;
                     }
 
                     .post-navigation,
@@ -198,9 +206,18 @@ export default function NoticiaDetalleScreen() {
                   document.head.appendChild(style);
 
                   setTimeout(function() {
-                    const breadcrumbs = document.querySelectorAll('.breadcrumbs, .breadcrumb, [class*="breadcrumb"]');
+                    const breadcrumbs = document.querySelectorAll(
+                      '.breadcrumbs, .breadcrumb, [class*="breadcrumb"], ' +
+                      '.thegem-template-breadcrumbs, .elementor-widget-breadcrumbs, ' +
+                      '.gem-breadcrumbs, [class*="gem-breadcrumb"], [class*="thegem-breadcrumb"]'
+                    );
                     breadcrumbs.forEach(function(el) {
-                      if (el) el.style.display = 'none';
+                      if (el) {
+                        el.style.display = 'none';
+                        el.style.visibility = 'hidden';
+                        el.style.height = '0';
+                        el.style.overflow = 'hidden';
+                      }
                     });
 
                     const article = document.querySelector('article, .post, .entry, main');
