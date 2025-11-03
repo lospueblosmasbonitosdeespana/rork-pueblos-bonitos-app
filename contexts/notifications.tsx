@@ -127,10 +127,30 @@ export const [NotificationsProvider, useNotifications] = createContextHook(() =>
         );
         
         if (!response.ok) {
+          console.warn('⚠️ Notificaciones endpoint returned status:', response.status);
           return getDemoNotifications();
         }
         
-        const data = await response.json();
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          console.warn('⚠️ Notificaciones endpoint returned non-JSON content-type:', contentType);
+          return getDemoNotifications();
+        }
+        
+        const text = await response.text();
+        if (!text || text.trim().length === 0) {
+          console.warn('⚠️ Notificaciones endpoint returned empty response');
+          return getDemoNotifications();
+        }
+        
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch (parseError: any) {
+          console.error('❌ JSON parse error in notifications:', parseError.message);
+          console.error('❌ Response text (first 200 chars):', text.substring(0, 200));
+          return getDemoNotifications();
+        }
         
         if (Array.isArray(data)) {
           const mapped = data.map((item: any) => ({
@@ -177,11 +197,28 @@ export const [NotificationsProvider, useNotifications] = createContextHook(() =>
       );
 
       if (!response.ok) {
+        console.warn('⚠️ Failed to register token, status:', response.status);
         throw new Error('Failed to register token');
       }
 
-      const result = await response.json();
-      return result;
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        console.warn('⚠️ Register token returned non-JSON:', contentType);
+        return { success: true };
+      }
+
+      const text = await response.text();
+      if (!text || text.trim().length === 0) {
+        return { success: true };
+      }
+
+      try {
+        const result = JSON.parse(text);
+        return result;
+      } catch (parseError: any) {
+        console.error('❌ JSON parse error in register-token:', parseError.message);
+        return { success: true };
+      }
     },
     onSuccess: async (_, token) => {
       await AsyncStorage.setItem(TOKEN_STORAGE_KEY, token);
