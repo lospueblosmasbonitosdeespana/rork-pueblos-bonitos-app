@@ -11,6 +11,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
 
 import { useNotifications } from '@/contexts/notifications';
 import { Notificacion } from '@/types/api';
@@ -53,19 +54,24 @@ export default function CentroNotificaciones() {
 
     if (item.enlace && item.enlace.trim() !== '') {
       try {
-        let enlaceConParametro = item.enlace;
-        if (!enlaceConParametro.includes('?app=1')) {
-          enlaceConParametro = enlaceConParametro.includes('?') 
-            ? `${enlaceConParametro}&app=1` 
-            : `${enlaceConParametro}?app=1`;
+        if (item.tipo === 'noticia') {
+          const encodedLink = encodeURIComponent(item.enlace);
+          router.push(`/noticia/${item.id}?link=${encodedLink}` as any);
+        } else {
+          let enlaceConParametro = item.enlace;
+          if (!enlaceConParametro.includes('?app=1')) {
+            enlaceConParametro = enlaceConParametro.includes('?') 
+              ? `${enlaceConParametro}&app=1` 
+              : `${enlaceConParametro}?app=1`;
+          }
+          
+          const canOpen = await Linking.canOpenURL(enlaceConParametro);
+          if (canOpen) {
+            await Linking.openURL(enlaceConParametro);
+          }
         }
-        
-        const canOpen = await Linking.canOpenURL(enlaceConParametro);
-        if (canOpen) {
-          await Linking.openURL(enlaceConParametro);
-        }
-      } catch {
-        // Silent error
+      } catch (error) {
+        console.error('❌ Error opening notification:', error);
       }
     }
   };
