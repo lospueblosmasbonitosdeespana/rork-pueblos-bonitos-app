@@ -107,21 +107,51 @@ export default function MultiexperienciaDetailScreen() {
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
+        showsVerticalScrollIndicator={true}
+        testID="multiexperiencia-detail-scroll"
       >
-        {experiencia.foto && (
-          <Image
-            source={{ uri: experiencia.foto }}
-            style={styles.headerImage}
-            contentFit="cover"
-          />
-        )}
-
         <View style={styles.content}>
-          <Text style={styles.title}>{experiencia.nombre}</Text>
+          <Text style={styles.title} testID="multiexperiencia-title">{experiencia.nombre}</Text>
+
+          {experiencia.descripcion && (
+            <View style={styles.section} testID="multiexperiencia-intro">
+              <Text style={styles.sectionTitle}>Presentación</Text>
+              <Text style={styles.description}>
+                {stripHtml(experiencia.descripcion)}
+              </Text>
+            </View>
+          )}
+
+          {(experiencia.multimedia && experiencia.multimedia.length > 0) || experiencia.foto ? (
+            <View style={styles.section} testID="multiexperiencia-galeria">
+              <Text style={styles.sectionTitle}>Fotos</Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={true}
+                contentContainerStyle={styles.galleryContainer}
+                testID="multiexperiencia-photos-scroll"
+              >
+                {experiencia.foto && (
+                  <Image
+                    source={{ uri: experiencia.foto }}
+                    style={styles.galleryImage}
+                    contentFit="cover"
+                  />
+                )}
+                {experiencia.multimedia?.map((imageUrl, index) => (
+                  <Image
+                    key={index}
+                    source={{ uri: imageUrl }}
+                    style={styles.galleryImage}
+                    contentFit="cover"
+                  />
+                ))}
+              </ScrollView>
+            </View>
+          ) : null}
 
           {(experiencia.pueblo_nombre || experiencia.provincia || experiencia.comunidad_autonoma) && (
-            <View style={styles.locationCard}>
+            <View style={styles.locationCard} testID="multiexperiencia-location">
               <MapPin size={20} color={COLORS.primary} />
               <View style={styles.locationInfo}>
                 {experiencia.pueblo_nombre && (
@@ -137,7 +167,7 @@ export default function MultiexperienciaDetailScreen() {
           )}
 
           {(experiencia.tiempo || experiencia.kilometros || experiencia.duracion || experiencia.dificultad) && (
-            <View style={styles.metaContainer}>
+            <View style={styles.metaContainer} testID="multiexperiencia-meta">
               {(experiencia.tiempo || experiencia.duracion) && (
                 <View style={styles.metaCard}>
                   <Clock size={18} color={COLORS.primary} />
@@ -169,15 +199,6 @@ export default function MultiexperienciaDetailScreen() {
             </View>
           )}
 
-          {experiencia.descripcion && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Descripción</Text>
-              <Text style={styles.description}>
-                {stripHtml(experiencia.descripcion)}
-              </Text>
-            </View>
-          )}
-
           {experiencia.tipo && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Información Adicional</Text>
@@ -192,26 +213,6 @@ export default function MultiexperienciaDetailScreen() {
                   </Text>
                 </View>
               </View>
-            </View>
-          )}
-
-          {experiencia.multimedia && experiencia.multimedia.length > 0 && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Galería</Text>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.galleryContainer}
-              >
-                {experiencia.multimedia.map((imageUrl, index) => (
-                  <Image
-                    key={index}
-                    source={{ uri: imageUrl }}
-                    style={styles.galleryImage}
-                    contentFit="cover"
-                  />
-                ))}
-              </ScrollView>
             </View>
           )}
         </View>
@@ -255,6 +256,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 280,
     backgroundColor: COLORS.beige,
+    borderRadius: 12,
   },
   content: {
     padding: SPACING.lg,
@@ -378,8 +380,8 @@ const styles = StyleSheet.create({
     paddingRight: SPACING.lg,
   },
   galleryImage: {
-    width: 280,
-    height: 200,
+    width: 300,
+    height: 210,
     borderRadius: 12,
     backgroundColor: COLORS.beige,
   },
