@@ -130,6 +130,21 @@ export default function NoticiaDetalleScreen() {
                       display: none !important;
                     }
 
+                    .breadcrumbs,
+                    .breadcrumb,
+                    .bread-crumb,
+                    .bread-crumbs,
+                    nav[aria-label="breadcrumb"],
+                    nav[aria-label="Breadcrumb"],
+                    #breadcrumbs,
+                    .rank-math-breadcrumb,
+                    .yoast-breadcrumbs,
+                    div[class*="breadcrumb"],
+                    ul[class*="breadcrumb"],
+                    ol[class*="breadcrumb"] {
+                      display: none !important;
+                    }
+
                     .post-navigation,
                     .nav-previous,
                     .nav-next,
@@ -151,6 +166,7 @@ export default function NoticiaDetalleScreen() {
 
                     body {
                       padding: 16px !important;
+                      padding-top: 0 !important;
                       margin: 0 !important;
                       overflow-x: hidden !important;
                     }
@@ -164,6 +180,7 @@ export default function NoticiaDetalleScreen() {
                       overflow-x: hidden !important;
                       margin: 0 !important;
                       padding: 0 !important;
+                      padding-top: 0 !important;
                     }
 
                     .entry-content img {
@@ -175,11 +192,17 @@ export default function NoticiaDetalleScreen() {
                     .post-title,
                     h1 {
                       margin-top: 0 !important;
+                      padding-top: 16px !important;
                     }
                   \`;
                   document.head.appendChild(style);
 
                   setTimeout(function() {
+                    const breadcrumbs = document.querySelectorAll('.breadcrumbs, .breadcrumb, [class*="breadcrumb"]');
+                    breadcrumbs.forEach(function(el) {
+                      if (el) el.style.display = 'none';
+                    });
+
                     const article = document.querySelector('article, .post, .entry, main');
                     if (article) {
                       article.scrollIntoView({ behavior: 'smooth', block: 'start' });
