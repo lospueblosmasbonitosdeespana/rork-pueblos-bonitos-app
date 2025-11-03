@@ -151,6 +151,8 @@ export default function NoticiaDetalleScreen() {
                       visibility: hidden !important;
                       height: 0 !important;
                       overflow: hidden !important;
+                      position: absolute !important;
+                      left: -9999px !important;
                     }
 
                     .post-navigation,
@@ -205,21 +207,60 @@ export default function NoticiaDetalleScreen() {
                   \`;
                   document.head.appendChild(style);
 
-                  setTimeout(function() {
-                    const breadcrumbs = document.querySelectorAll(
-                      '.breadcrumbs, .breadcrumb, [class*="breadcrumb"], ' +
-                      '.thegem-template-breadcrumbs, .elementor-widget-breadcrumbs, ' +
-                      '.gem-breadcrumbs, [class*="gem-breadcrumb"], [class*="thegem-breadcrumb"]'
-                    );
-                    breadcrumbs.forEach(function(el) {
-                      if (el) {
-                        el.style.display = 'none';
-                        el.style.visibility = 'hidden';
-                        el.style.height = '0';
-                        el.style.overflow = 'hidden';
-                      }
+                  const hideBreadcrumbs = function() {
+                    const selectors = [
+                      '.breadcrumbs',
+                      '.breadcrumb',
+                      '.bread-crumb',
+                      '.bread-crumbs',
+                      '.thegem-template-breadcrumbs',
+                      '.elementor-widget-breadcrumbs',
+                      '.gem-breadcrumbs',
+                      'nav[aria-label="breadcrumb"]',
+                      'nav[aria-label="Breadcrumb"]',
+                      '#breadcrumbs',
+                      '.rank-math-breadcrumb',
+                      '.yoast-breadcrumbs',
+                      'div[class*="breadcrumb"]',
+                      'ul[class*="breadcrumb"]',
+                      'ol[class*="breadcrumb"]',
+                      '[class*="gem-breadcrumb"]',
+                      '[class*="thegem-breadcrumb"]'
+                    ];
+                    
+                    selectors.forEach(function(sel) {
+                      const elements = document.querySelectorAll(sel);
+                      elements.forEach(function(el) {
+                        if (el) {
+                          el.style.display = 'none';
+                          el.style.visibility = 'hidden';
+                          el.style.height = '0';
+                          el.style.overflow = 'hidden';
+                          el.style.position = 'absolute';
+                          el.style.left = '-9999px';
+                          el.remove();
+                        }
+                      });
                     });
+                  };
 
+                  hideBreadcrumbs();
+                  setTimeout(hideBreadcrumbs, 500);
+                  setTimeout(hideBreadcrumbs, 1500);
+                  setTimeout(hideBreadcrumbs, 3000);
+
+                  const observer = new MutationObserver(function() {
+                    hideBreadcrumbs();
+                  });
+                  
+                  if (document.body) {
+                    observer.observe(document.body, { 
+                      childList: true, 
+                      subtree: true 
+                    });
+                  }
+
+                  setTimeout(function() {
                     const article = document.querySelector('article, .post, .entry, main');
                     if (article) {
                       article.scrollIntoView({ behavior: 'smooth', block: 'start' });
