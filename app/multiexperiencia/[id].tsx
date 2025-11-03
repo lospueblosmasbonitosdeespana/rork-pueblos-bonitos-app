@@ -13,8 +13,6 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { COLORS, SPACING, TYPOGRAPHY } from '@/constants/theme';
-
 const { width } = Dimensions.get('window');
 
 interface MultiexperienciaDetalle {
@@ -29,17 +27,18 @@ interface MultiexperienciaDetalle {
 
 async function fetchMultiexperienciaDetalle(id: string): Promise<MultiexperienciaDetalle> {
   const url = `https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/multiexperiencia-detalle?id=${id}`;
-  console.log('🌐 Fetching multiexperiencia detalle:', url);
+  console.log('🌐 Fetching multiexperiencia detalle from:', url);
   
   const response = await fetch(url);
   
   if (!response.ok) {
-    console.error('❌ Error response:', await response.json());
+    const errorData = await response.json().catch(() => ({}));
+    console.error('❌ Error response:', errorData);
     throw new Error(`Error ${response.status}: No se pudo cargar el detalle de la experiencia`);
   }
   
   const data = await response.json();
-  console.log('✅ Multiexperiencia detalle loaded:', data);
+  console.log('✅ Multiexperiencia detalle loaded successfully:', data);
   return data;
 }
 
@@ -47,7 +46,7 @@ export default function MultiexperienciaDetailScreen() {
   const { id } = useLocalSearchParams();
   const experienciaId = Array.isArray(id) ? id[0] : id;
   
-  console.log('🆔 MultiexperienciaDetailScreen id:', experienciaId);
+  console.log('🆔 Loading MultiexperienciaDetailScreen with id:', experienciaId);
 
   const experienciaQuery = useQuery({
     queryKey: ['multiexperiencia-detalle', experienciaId],
@@ -66,19 +65,24 @@ export default function MultiexperienciaDetailScreen() {
             title: 'Cargando...',
             headerLeft: () => (
               <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                <ArrowLeft size={24} color={COLORS.text} />
+                <ArrowLeft size={24} color="#1F2937" />
               </TouchableOpacity>
             ),
+            headerStyle: {
+              backgroundColor: '#FFFFFF',
+            },
+            headerTintColor: '#1F2937',
           }}
         />
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
+          <ActivityIndicator size="large" color="#7A1C1C" />
         </View>
       </SafeAreaView>
     );
   }
 
   if (experienciaQuery.error || !experiencia) {
+    console.error('❌ Error loading experiencia:', experienciaQuery.error);
     return (
       <SafeAreaView style={styles.container} edges={['bottom']}>
         <Stack.Screen
@@ -87,9 +91,13 @@ export default function MultiexperienciaDetailScreen() {
             title: 'Error',
             headerLeft: () => (
               <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                <ArrowLeft size={24} color={COLORS.text} />
+                <ArrowLeft size={24} color="#1F2937" />
               </TouchableOpacity>
             ),
+            headerStyle: {
+              backgroundColor: '#FFFFFF',
+            },
+            headerTintColor: '#1F2937',
           }}
         />
         <View style={styles.centerContainer}>
@@ -106,6 +114,8 @@ export default function MultiexperienciaDetailScreen() {
     ...(experiencia.multimedia || []),
   ];
 
+  console.log('📸 Total images to display:', allImages.length);
+
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <Stack.Screen
@@ -114,9 +124,13 @@ export default function MultiexperienciaDetailScreen() {
           title: experiencia.nombre,
           headerLeft: () => (
             <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-              <ArrowLeft size={24} color={COLORS.text} />
+              <ArrowLeft size={24} color="#1F2937" />
             </TouchableOpacity>
           ),
+          headerStyle: {
+            backgroundColor: '#FFFFFF',
+          },
+          headerTintColor: '#1F2937',
         }}
       />
 
@@ -131,7 +145,7 @@ export default function MultiexperienciaDetailScreen() {
           <View style={styles.gallery}>
             {allImages.map((imageUrl, index) => (
               <Image
-                key={index}
+                key={`image-${index}`}
                 source={{ uri: imageUrl }}
                 style={styles.galleryImage}
                 contentFit="cover"
@@ -143,7 +157,10 @@ export default function MultiexperienciaDetailScreen() {
         <View style={styles.mapContainer}>
           <Text style={styles.mapLabel}>Mapa</Text>
           <View style={styles.mapPlaceholder}>
-            <Text style={styles.mapText}>Mapa disponible en la web</Text>
+            <Text style={styles.mapText}>
+              Ubicación: {experiencia.latitud}, {experiencia.longitud}
+            </Text>
+            <Text style={styles.mapSubtext}>Mapa disponible en la web</Text>
           </View>
         </View>
       </ScrollView>
@@ -157,14 +174,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   backButton: {
-    padding: SPACING.sm,
-    marginLeft: SPACING.xs,
+    padding: 8,
+    marginLeft: 4,
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: SPACING.xl,
+    paddingBottom: 32,
   },
   centerContainer: {
     flex: 1,
@@ -172,17 +189,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   errorText: {
-    ...TYPOGRAPHY.body,
+    fontSize: 16,
     color: '#6B7280',
     textAlign: 'center',
-    paddingHorizontal: SPACING.lg,
+    paddingHorizontal: 24,
   },
   title: {
     fontSize: 24,
     fontWeight: '700' as const,
     color: '#1F2937',
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.lg,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 16,
   },
   gallery: {
     width: width,
@@ -191,25 +209,32 @@ const styles = StyleSheet.create({
     width: width,
     height: 250,
     backgroundColor: '#F5F5F5',
+    marginBottom: 2,
   },
   mapContainer: {
-    paddingHorizontal: SPACING.lg,
-    paddingTop: SPACING.xl,
+    paddingHorizontal: 20,
+    paddingTop: 32,
   },
   mapLabel: {
     fontSize: 18,
     fontWeight: '600' as const,
     color: '#1F2937',
-    marginBottom: SPACING.md,
+    marginBottom: 12,
   },
   mapPlaceholder: {
     backgroundColor: '#F5F5F5',
     height: 200,
     justifyContent: 'center',
     alignItems: 'center',
+    borderRadius: 8,
   },
   mapText: {
     fontSize: 14,
+    color: '#374151',
+    marginBottom: 4,
+  },
+  mapSubtext: {
+    fontSize: 12,
     color: '#6B7280',
   },
 });
