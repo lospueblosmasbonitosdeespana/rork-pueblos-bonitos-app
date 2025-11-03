@@ -463,49 +463,27 @@ export async function fetchMultiexperienciaDetalle(
     return cached.data;
   }
   
-  const url = `https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/multiexperiencia-detalle?id=${experienciaId}`;
-  console.log(`🔍 Cargando desde: ${url}`);
+  console.log('🔍 Buscando experiencia en el listado completo...');
   
   try {
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-      },
+    const todasExperiencias = await fetchMultiexperiencias();
+    console.log('📦 Total experiencias disponibles:', todasExperiencias.length);
+    
+    const experiencia = todasExperiencias.find(exp => {
+      const expData = exp as any;
+      const expId = String(expData.id || exp._ID);
+      return expId === String(experienciaId);
     });
     
-    console.log('📊 Status:', response.status, 'OK:', response.ok);
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('❌ Error response:', errorText.substring(0, 200));
-      throw new Error(`Error ${response.status}: No se pudo cargar el detalle de la experiencia`);
+    if (!experiencia) {
+      console.error('❌ No se encontró experiencia con ID:', experienciaId);
+      throw new Error('No se ha encontrado información para esta experiencia');
     }
     
-    const data = await response.json();
-    console.log('📦 Detalle recibido:', Array.isArray(data) ? `Array con ${data.length} elementos` : typeof data);
-    console.log('📦 detalle len=', Array.isArray(data) ? data.length : 1);
+    console.log('✅ Experiencia encontrada:', experiencia.nombre);
+    multiexperienciaDetailCache.set(experienciaId, { data: experiencia, timestamp: now });
     
-    if (Array.isArray(data)) {
-      if (data.length === 0) {
-        console.error('❌ API devolvió array vacío');
-        throw new Error('No se ha encontrado información para esta experiencia');
-      }
-      const detalle = data[0];
-      multiexperienciaDetailCache.set(experienciaId, { data: detalle, timestamp: now });
-      console.log('✅ Detalle cargado y cacheado (de array)');
-      return detalle;
-    }
-    
-    if (!data || typeof data !== 'object') {
-      console.error('❌ Response is not valid:', typeof data);
-      throw new Error('La respuesta no es válida');
-    }
-    
-    multiexperienciaDetailCache.set(experienciaId, { data, timestamp: now });
-    
-    console.log('✅ Detalle cargado y cacheado');
-    return data;
+    return experiencia;
   } catch (error: any) {
     console.error('❌ Error cargando detalle:', error);
     console.error('❌ Error name:', error.name);
