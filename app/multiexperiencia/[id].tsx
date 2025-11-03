@@ -38,7 +38,14 @@ async function fetchMultiexperienciaDetalle(id: string): Promise<Multiexperienci
   }
   
   const data = await response.json();
-  console.log('✅ Multiexperiencia detalle loaded successfully:', data);
+  console.log('✅ Multiexperiencia detalle loaded successfully');
+  console.log('📊 DATA COMPLETO:', JSON.stringify(data, null, 2));
+  console.log('📊 Título:', data?.nombre);
+  console.log('📊 Foto principal:', data?.foto);
+  console.log('📊 Multimedia array:', data?.multimedia);
+  console.log('📊 Total multimedia:', data?.multimedia?.length || 0);
+  console.log('📊 Latitud:', data?.latitud);
+  console.log('📊 Longitud:', data?.longitud);
   return data;
 }
 
@@ -46,7 +53,9 @@ export default function MultiexperienciaDetailScreen() {
   const { id } = useLocalSearchParams();
   const experienciaId = Array.isArray(id) ? id[0] : id;
   
-  console.log('🆔 Loading MultiexperienciaDetailScreen with id:', experienciaId);
+  console.log('🆔 ===== MULTIEXPERIENCIA DETALLE SCREEN =====');
+  console.log('🆔 ID recibido:', experienciaId);
+  console.log('🆔 Tipo de ID:', typeof experienciaId);
 
   const experienciaQuery = useQuery({
     queryKey: ['multiexperiencia-detalle', experienciaId],
@@ -114,7 +123,11 @@ export default function MultiexperienciaDetailScreen() {
     ...(experiencia.multimedia || []),
   ];
 
-  console.log('📸 Total images to display:', allImages.length);
+  console.log('📸 ===== GALERÍA DE IMÁGENES =====');
+  console.log('📸 Foto principal:', experiencia.foto || 'NO HAY');
+  console.log('📸 Multimedia array completo:', experiencia.multimedia);
+  console.log('📸 Total imágenes a mostrar:', allImages.length);
+  console.log('📸 URLs de todas las imágenes:', allImages);
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
