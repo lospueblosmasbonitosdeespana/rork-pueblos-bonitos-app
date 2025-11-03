@@ -1,5 +1,5 @@
 // template
-const tintColorLight = "#2f95dc";
+const tintColorLight = "#7A1C1C";
 
 export default {
   light: {
@@ -7,6 +7,6 @@ export default {
     background: "#fff",
     tint: tintColorLight,
     tabIconDefault: "#ccc",
-    tabIconSelected: tintColorLight,
+    tabIconSelected: "#7A1C1C",
   },
 };

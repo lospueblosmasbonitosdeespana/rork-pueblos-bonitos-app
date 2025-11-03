@@ -1,6 +1,6 @@
 export const COLORS = {
-  primary: '#0A64D2',
-  secondary: '#55A3FF',
+  primary: '#7A1C1C',
+  secondary: '#7A1C1C',
   green: '#43a047',
   yellow: '#fbc02d',
   red: '#E53935',
@@ -12,7 +12,7 @@ export const COLORS = {
   error: '#E53935',
   success: '#10B981',
   beige: '#EEF2F7',
-  gold: '#55A3FF',
+  gold: '#7A1C1C',
 } as const;
 
 export const SPACING = {
