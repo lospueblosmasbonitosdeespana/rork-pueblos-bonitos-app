@@ -166,22 +166,27 @@ export default function PuebloDetailScreen() {
 
   const openDirections = () => {
     const lat = lugar.latitud;
-    const lon = lugar.longitud;
+    const lng = lugar.longitud;
     
-    if (!lat || !lon) {
-      console.warn('⚠️ No hay coordenadas disponibles para este pueblo');
+    console.log('🗺️ Abriendo direcciones:', { lat, lng, pueblo: lugar.nombre });
+    
+    if (!lat || !lng || lat === 0 || lng === 0) {
+      console.warn('⚠️ No hay coordenadas válidas para este pueblo:', { lat, lng });
       return;
     }
 
     const url = Platform.select({
-      ios: `maps://app?saddr=Current%20Location&daddr=${lat},${lon}`,
-      android: `google.navigation:q=${lat},${lon}`,
-      default: `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`
+      ios: `maps://?q=${lat},${lng}`,
+      android: `geo:${lat},${lng}?q=${lat},${lng}`,
+      default: `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`
     });
 
-    Linking.openURL(url).catch((err) => {
+    console.log('🔗 URL del mapa:', url);
+    
+    Linking.openURL(url!).catch((err) => {
       console.error('❌ Error al abrir el mapa', err);
-      const fallbackUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`;
+      const fallbackUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+      console.log('🔗 Usando URL fallback:', fallbackUrl);
       Linking.openURL(fallbackUrl);
     });
   };
