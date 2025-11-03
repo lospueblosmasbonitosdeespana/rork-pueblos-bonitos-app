@@ -97,8 +97,12 @@ async function registerForPushNotificationsAsync() {
     }
 
     return token.data;
-  } catch (error) {
-    console.error('❌ Error registering for push notifications:', error);
+  } catch (error: any) {
+    if (error?.message?.includes('503') || error?.message?.includes('no healthy upstream')) {
+      console.warn('⚠️ Expo push service temporarily unavailable. Will retry later.');
+    } else {
+      console.error('❌ Error registering for push notifications:', error);
+    }
     return null;
   }
 }
@@ -188,6 +192,7 @@ export const [NotificationsProvider, useNotifications] = createContextHook(() =>
 
   useEffect(() => {
     let isMounted = true;
+    let retryTimeout: NodeJS.Timeout | null = null;
 
     async function setupPushNotifications() {
       const storedToken = await AsyncStorage.getItem(TOKEN_STORAGE_KEY);
@@ -202,6 +207,13 @@ export const [NotificationsProvider, useNotifications] = createContextHook(() =>
       if (token && isMounted) {
         setExpoPushToken(token);
         registerToken(token);
+      } else if (!token && isMounted) {
+        console.log('⏳ Will retry push notification registration in 30 seconds...');
+        retryTimeout = setTimeout(() => {
+          if (isMounted) {
+            setupPushNotifications();
+          }
+        }, 30000);
       }
     }
 
@@ -215,6 +227,9 @@ export const [NotificationsProvider, useNotifications] = createContextHook(() =>
 
     return () => {
       isMounted = false;
+      if (retryTimeout) {
+        clearTimeout(retryTimeout);
+      }
       notificationListener.remove();
       responseListener.remove();
     };
