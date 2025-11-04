@@ -1,4 +1,4 @@
-import { MapPin, Star } from 'lucide-react-native';
+import { Edit3, MapPin, Save, Star } from 'lucide-react-native';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -208,6 +208,97 @@ export default function PueblosVisitadosScreen() {
       const original = new Map<string, PuebloVisita>();
       pueblos.forEach(p => original.set(p.pueblo_id, { ...p }));
       setOriginalState(original);
+    }
+  };
+
+  const handleDirectToggle = async (pueblo: PuebloVisita) => {
+    if (!user?.id || pueblo.tipo === 'auto') return;
+
+    const newChecked = pueblo.checked === 1 ? 0 : 1;
+    
+    setPueblos(prevPueblos =>
+      prevPueblos.map(p =>
+        p.pueblo_id === pueblo.pueblo_id ? { ...p, checked: newChecked } : p
+      )
+    );
+
+    try {
+      const response = await fetch('https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/visita-update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: user.id,
+          pueblo_id: pueblo.pueblo_id,
+          checked: newChecked,
+          tipo: 'manual',
+          estrellas: pueblo.estrellas,
+        }),
+      });
+
+      if (response.ok) {
+        await fetchPueblosVisitados(true);
+      } else {
+        setPueblos(prevPueblos =>
+          prevPueblos.map(p =>
+            p.pueblo_id === pueblo.pueblo_id ? { ...p, checked: pueblo.checked } : p
+          )
+        );
+        if (Platform.OS === 'web') {
+          alert('Error al actualizar la visita');
+        } else {
+          Alert.alert('Error', 'No se pudo actualizar la visita');
+        }
+      }
+    } catch (err) {
+      console.error('Error updating visit:', err);
+      setPueblos(prevPueblos =>
+        prevPueblos.map(p =>
+          p.pueblo_id === pueblo.pueblo_id ? { ...p, checked: pueblo.checked } : p
+        )
+      );
+    }
+  };
+
+  const handleDirectStarChange = async (pueblo: PuebloVisita, newStars: number) => {
+    if (!user?.id) return;
+
+    const previousStars = pueblo.estrellas;
+
+    setPueblos(prevPueblos =>
+      prevPueblos.map(p =>
+        p.pueblo_id === pueblo.pueblo_id ? { ...p, estrellas: newStars } : p
+      )
+    );
+
+    try {
+      const response = await fetch('https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/visita-update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: user.id,
+          pueblo_id: pueblo.pueblo_id,
+          checked: pueblo.checked,
+          tipo: pueblo.tipo,
+          estrellas: newStars,
+        }),
+      });
+
+      if (response.ok) {
+        await fetchPueblosVisitados(true);
+      } else {
+        setPueblos(prevPueblos =>
+          prevPueblos.map(p =>
+            p.pueblo_id === pueblo.pueblo_id ? { ...p, estrellas: previousStars } : p
+          )
+        );
+      }
+    } catch (err) {
+      console.error('Error updating stars:', err);
+      setPueblos(prevPueblos =>
+        prevPueblos.map(p =>
+          p.pueblo_id === pueblo.pueblo_id ? { ...p, estrellas: previousStars } : p
+        )
+      );
     }
   };
 
@@ -434,19 +525,19 @@ export default function PueblosVisitadosScreen() {
                       </View>
                     )}
                   </View>
-                  {isEditing && canToggle && (
+                  {canToggle && (
                     <TouchableOpacity
                       style={[
                         styles.toggleButton,
-                        item.checked === 1 ? styles.toggleButtonBorrar : styles.toggleButtonVisitado,
+                        item.checked === 1 ? styles.toggleButtonChecked : styles.toggleButtonUnchecked,
                       ]}
-                      onPress={() => handleToggleVisita(item)}
+                      onPress={() => isEditing ? handleToggleVisita(item) : handleDirectToggle(item)}
                     >
                       <Text style={[
                         styles.toggleButtonText,
-                        item.checked === 1 ? styles.toggleButtonTextBorrar : styles.toggleButtonTextVisitado,
+                        item.checked === 1 ? styles.toggleButtonTextChecked : styles.toggleButtonTextUnchecked,
                       ]}>
-                        {item.checked === 1 ? 'Borrar' : 'Visitado'}
+                        {item.checked === 1 ? '✓' : '○'}
                       </Text>
                     </TouchableOpacity>
                   )}
@@ -463,8 +554,7 @@ export default function PueblosVisitadosScreen() {
                   {[1, 2, 3, 4, 5].map((star) => (
                     <TouchableOpacity
                       key={star}
-                      onPress={() => isEditing && handleChangeStars(item, star)}
-                      disabled={!isEditing}
+                      onPress={() => isEditing ? handleChangeStars(item, star) : handleDirectStarChange(item, star)}
                       style={{ marginRight: 8 }}
                     >
                       <Star
@@ -487,6 +577,29 @@ export default function PueblosVisitadosScreen() {
           );
         }}
       />
+
+      {isEditing && (
+        <TouchableOpacity
+          style={styles.editFab}
+          onPress={toggleEditMode}
+          disabled={isSaving}
+        >
+          {isSaving ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Save size={24} color="#fff" />
+          )}
+        </TouchableOpacity>
+      )}
+
+      {!isEditing && (
+        <TouchableOpacity
+          style={styles.editFab}
+          onPress={toggleEditMode}
+        >
+          <Edit3 size={24} color="#fff" />
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
@@ -636,20 +749,40 @@ const styles = StyleSheet.create({
     backgroundColor: '#22c55e',
     borderColor: '#22c55e',
   },
-  toggleButtonBorrar: {
-    backgroundColor: '#dc2626',
-    borderColor: '#dc2626',
+  toggleButtonChecked: {
+    backgroundColor: '#22c55e',
+    borderColor: '#22c55e',
+  },
+  toggleButtonUnchecked: {
+    backgroundColor: '#e5e7eb',
+    borderColor: '#d1d5db',
   },
   toggleButtonText: {
-    fontSize: 12,
-    fontWeight: '600' as const,
+    fontSize: 16,
+    fontWeight: '700' as const,
     color: '#666',
   },
-  toggleButtonTextVisitado: {
+  toggleButtonTextChecked: {
     color: '#fff',
   },
-  toggleButtonTextBorrar: {
-    color: '#fff',
+  toggleButtonTextUnchecked: {
+    color: '#6b7280',
+  },
+  editFab: {
+    position: 'absolute' as const,
+    right: 20,
+    bottom: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: LPBE_RED,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 8,
   },
   starsContainer: {
     flexDirection: 'row',
