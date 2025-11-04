@@ -117,13 +117,7 @@ export const [NotificationsProvider, useNotifications] = createContextHook(() =>
     queryFn: async () => {
       try {
         const response = await fetch(
-          'https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/notificaciones',
-          {
-            method: 'GET',
-            headers: {
-              'Accept': 'application/json',
-            },
-          }
+          'https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/notificaciones'
         );
         
         if (!response.ok) {
@@ -131,26 +125,7 @@ export const [NotificationsProvider, useNotifications] = createContextHook(() =>
           return getDemoNotifications();
         }
         
-        const contentType = response.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/json')) {
-          console.log('⚠️ Notificaciones response is not JSON:', contentType);
-          return getDemoNotifications();
-        }
-        
-        const text = await response.text();
-        if (!text || text.trim().length === 0) {
-          console.log('⚠️ Notificaciones returned empty response');
-          return getDemoNotifications();
-        }
-        
-        let data;
-        try {
-          data = JSON.parse(text);
-        } catch (parseError) {
-          console.error('❌ JSON parse error in notificaciones:', parseError);
-          console.log('📦 First 200 chars of response:', text.substring(0, 200));
-          return getDemoNotifications();
-        }
+        const data = await response.json();
         
         if (Array.isArray(data)) {
           const mapped = data.map((item: any) => ({
@@ -166,7 +141,8 @@ export const [NotificationsProvider, useNotifications] = createContextHook(() =>
         }
         
         return getDemoNotifications();
-      } catch {
+      } catch (error) {
+        console.error('❌ Error loading notifications:', error);
         return getDemoNotifications();
       }
     },
@@ -201,27 +177,7 @@ export const [NotificationsProvider, useNotifications] = createContextHook(() =>
         throw new Error('Failed to register token');
       }
 
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        console.log('⚠️ Register token response is not JSON:', contentType);
-        return { success: false };
-      }
-
-      const text = await response.text();
-      if (!text || text.trim().length === 0) {
-        console.log('⚠️ Register token returned empty response');
-        return { success: false };
-      }
-
-      let result;
-      try {
-        result = JSON.parse(text);
-      } catch (parseError) {
-        console.error('❌ JSON parse error in register token:', parseError);
-        console.log('📦 First 200 chars of response:', text.substring(0, 200));
-        return { success: false };
-      }
-      return result;
+      return await response.json();
     },
     onSuccess: async (_, token) => {
       await AsyncStorage.setItem(TOKEN_STORAGE_KEY, token);

@@ -50,25 +50,9 @@ export default function PuebloDetailScreen() {
       try {
         const response = await fetch(`https://lospueblosmasbonitosdeespana.org/wp-json/jet-cct/multimedia?id_lugar=${id}`);
         if (!response.ok) {
-          console.log('⚠️ Multimedia response not OK:', response.status);
           return [];
         }
-        
-        const contentType = response.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/json')) {
-          console.log('⚠️ Multimedia response is not JSON:', contentType);
-          return [];
-        }
-        
-        const text = await response.text();
-        console.log('📦 Multimedia raw response (first 200 chars):', text.substring(0, 200));
-        
-        if (!text || text.trim().length === 0) {
-          console.log('⚠️ Empty response');
-          return [];
-        }
-        
-        const data = JSON.parse(text);
+        const data = await response.json();
         return Array.isArray(data) ? data : [];
       } catch (error) {
         console.error('❌ Error loading multimedia:', error);
@@ -82,8 +66,6 @@ export default function PuebloDetailScreen() {
   const semaforo = semaforoQuery.data;
   const experiencias = experienciasQuery.data || [];
   const multimedia = multimediaQuery.data || [];
-
-  console.log('📸 Fotos del pueblo', multimedia);
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
