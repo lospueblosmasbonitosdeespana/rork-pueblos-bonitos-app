@@ -203,17 +203,37 @@ export default function PueblosVisitadosScreen() {
     if (isEditing) {
       await saveChanges();
     } else {
+      console.log('✏️  ACTIVANDO MODO EDICIÓN');
       setIsEditing(true);
-      setEditChanges({});
+      
       const original = new Map<string, PuebloVisita>();
-      pueblos.forEach(p => original.set(p.pueblo_id, { ...p }));
+      const initialChanges: EditChanges = {};
+      
+      pueblos.forEach(p => {
+        original.set(p.pueblo_id, { ...p });
+        initialChanges[p.pueblo_id] = {
+          checked: p.checked,
+          tipo: p.tipo,
+          estrellas: p.estrellas,
+          originalChecked: p.checked,
+        };
+      });
+      
       setOriginalState(original);
+      setEditChanges(initialChanges);
+      
+      console.log('📋 Estado original guardado:', original.size, 'pueblos');
     }
   };
 
 
 
   const saveChanges = async () => {
+    if (isSaving) {
+      console.log('⚠️  Guardado ya en progreso, ignorando...');
+      return;
+    }
+
     try {
       if (!user || !user.id) {
         console.error('❌ No se pudo obtener el usuario actual');
@@ -247,6 +267,8 @@ export default function PueblosVisitadosScreen() {
         return hasChanges;
       });
 
+      console.log(`📊 Pueblos modificados encontrados: ${modifiedEntries.length}`);
+      
       if (modifiedEntries.length === 0) {
         console.log('⚠️  No hay cambios para guardar');
         if (Platform.OS === 'web') {
@@ -255,11 +277,11 @@ export default function PueblosVisitadosScreen() {
           Alert.alert('Info', 'No hay cambios para guardar.');
         }
         setIsEditing(false);
+        setEditChanges({});
         return;
       }
 
       console.log(`💾 Guardando ${modifiedEntries.length} cambios...`);
-
       setIsSaving(true);
 
       const results = await Promise.all(
@@ -272,30 +294,39 @@ export default function PueblosVisitadosScreen() {
             tipo: 'manual',
           };
 
-          console.log(`📤 Enviando pueblo ${pueblo_id}:`, payload);
+          console.log(`📤 Enviando pueblo ${pueblo_id}:`, JSON.stringify(payload));
 
-          const response = await fetch(
-            'https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/visita-update',
-            {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify(payload),
+          try {
+            const response = await fetch(
+              'https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/visita-update',
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload),
+              }
+            );
+
+            console.log(`📡 Response status para ${pueblo_id}:`, response.status);
+
+            if (!response.ok) {
+              const errorText = await response.text();
+              console.warn(`⚠️  Error guardando pueblo ${pueblo_id}:`, response.status, errorText);
+              return { success: false, pueblo_id, status: response.status, error: errorText };
+            } else {
+              const responseData = await response.json();
+              console.log(`✅ Pueblo ${pueblo_id} guardado correctamente:`, responseData);
+              return { success: true, pueblo_id };
             }
-          );
-
-          if (!response.ok) {
-            const errorText = await response.text();
-            console.warn(`⚠️  Error guardando pueblo ${pueblo_id}:`, response.status, errorText);
-            return { success: false, pueblo_id, status: response.status, error: errorText };
-          } else {
-            const responseData = await response.json();
-            console.log(`✅ Pueblo ${pueblo_id} guardado correctamente:`, responseData);
-            return { success: true, pueblo_id };
+          } catch (fetchError) {
+            console.error(`❌ Error de red guardando pueblo ${pueblo_id}:`, fetchError);
+            return { success: false, pueblo_id, error: String(fetchError) };
           }
         })
       );
+
+      console.log('📊 Resultados del guardado:', results);
 
       const failedResults = results.filter(r => !r.success);
       
@@ -347,6 +378,7 @@ export default function PueblosVisitadosScreen() {
 
       setIsEditing(false);
       setEditChanges({});
+      setOriginalState(new Map());
       
     } catch (err) {
       console.error('❌ Error al guardar los cambios:', err);
@@ -361,7 +393,18 @@ export default function PueblosVisitadosScreen() {
   };
 
   const handleToggleVisita = (pueblo: PuebloVisita) => {
-    if (!user?.id || pueblo.tipo === 'auto' || !isEditing) return;
+    if (!isEditing) {
+      console.log('⚠️  Toggle ignorado: modo edición desactivado');
+      return;
+    }
+    if (!user?.id) {
+      console.log('⚠️  Toggle ignorado: no hay usuario');
+      return;
+    }
+    if (pueblo.tipo === 'auto') {
+      console.log('⚠️  Toggle ignorado: pueblo geolocalizado');
+      return;
+    }
 
     const newChecked = pueblo.checked === 1 ? 0 : 1;
     
@@ -372,7 +415,8 @@ export default function PueblosVisitadosScreen() {
       [pueblo.pueblo_id]: {
         checked: newChecked,
         tipo: 'manual',
-        estrellas: editChanges[pueblo.pueblo_id]?.estrellas ?? pueblo.estrellas,
+        estrellas: prev[pueblo.pueblo_id]?.estrellas ?? pueblo.estrellas,
+        originalChecked: prev[pueblo.pueblo_id]?.originalChecked ?? pueblo.checked,
       },
     }));
 
@@ -384,7 +428,14 @@ export default function PueblosVisitadosScreen() {
   };
 
   const handleChangeStars = (pueblo: PuebloVisita, newStars: number) => {
-    if (!user?.id || !isEditing) return;
+    if (!isEditing) {
+      console.log('⚠️  Estrellas ignoradas: modo edición desactivado');
+      return;
+    }
+    if (!user?.id) {
+      console.log('⚠️  Estrellas ignoradas: no hay usuario');
+      return;
+    }
 
     console.log(`⭐ Cambiar estrellas pueblo ${pueblo.nombre}: ${pueblo.estrellas} → ${newStars}`);
 
@@ -395,6 +446,7 @@ export default function PueblosVisitadosScreen() {
         checked: currentChanges?.checked ?? pueblo.checked,
         tipo: currentChanges?.tipo ?? pueblo.tipo,
         estrellas: newStars,
+        originalChecked: currentChanges?.originalChecked ?? pueblo.checked,
       },
     }));
 
