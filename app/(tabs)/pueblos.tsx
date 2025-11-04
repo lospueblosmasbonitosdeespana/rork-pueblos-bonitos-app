@@ -237,10 +237,11 @@ export default function PueblosScreen() {
                   <Image
                     source={{ uri: banderaUrl }}
                     style={{
-                      width: 28,
-                      height: 18,
-                      borderRadius: 2,
-                      marginRight: 10,
+                      width: 60,
+                      height: 40,
+                      borderRadius: 4,
+                      marginRight: 12,
+                      resizeMode: 'contain' as const,
                     }}
                   />
                 ) : null;
