@@ -109,7 +109,11 @@ export async function fetchLugaresStable(): Promise<Lugar[]> {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
       },
+      cache: 'no-store',
     });
     
     if (!response.ok) {
@@ -326,7 +330,11 @@ export async function fetchMultiexperiencias(): Promise<Multiexperiencia[]> {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
       },
+      cache: 'no-store',
     });
     
     console.log('📊 Status:', response.status, 'OK:', response.ok);
@@ -398,7 +406,11 @@ export async function fetchExperienciasByPueblo(
       method: 'GET',
       headers: {
         'Accept': 'application/json',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
       },
+      cache: 'no-store',
     });
     
     console.log('📊 Status:', response.status, 'OK:', response.ok);

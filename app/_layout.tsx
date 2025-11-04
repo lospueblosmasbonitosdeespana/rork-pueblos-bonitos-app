@@ -4,6 +4,7 @@ import * as SplashScreen from "expo-splash-screen";
 import React, { Component, useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { StatusBar, View, Text, StyleSheet, ScrollView } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { AuthProvider } from "@/contexts/auth";
 import { LanguageProvider } from "@/contexts/language";
@@ -12,7 +13,16 @@ import { trpc, trpcClient } from "@/lib/trpc";
 
 SplashScreen.preventAutoHideAsync();
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 0,
+      gcTime: 0,
+      refetchOnMount: 'always',
+      refetchOnWindowFocus: true,
+    },
+  },
+});
 
 class ErrorBoundary extends Component<
   { children: React.ReactNode },
@@ -106,7 +116,25 @@ const errorStyles = StyleSheet.create({
 
 function RootLayoutNav() {
   useEffect(() => {
-    console.log('📱 RootLayoutNav montado - cache cleared');
+    console.log('📱 RootLayoutNav montado - iniciando limpieza de caché');
+    
+    const clearAllCache = async () => {
+      try {
+        console.log('🧹 Limpiando AsyncStorage...');
+        await AsyncStorage.clear();
+        console.log('✅ AsyncStorage limpiado');
+      } catch (error) {
+        console.error('❌ Error limpiando AsyncStorage:', error);
+      }
+    };
+    
+    clearAllCache();
+    
+    console.log('🧹 Limpiando caché de React Query...');
+    queryClient.clear();
+    queryClient.invalidateQueries();
+    console.log('✅ Caché de React Query limpiado');
+    
     const timer = setTimeout(() => {
       console.log('👋 Ocultando splash screen nativo');
       SplashScreen.hideAsync().catch(error => {

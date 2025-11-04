@@ -138,8 +138,10 @@ export default function PueblosScreen() {
   const lugaresQuery = useQuery({
     queryKey: ['lugares'],
     queryFn: fetchLugares,
-    staleTime: Infinity,
-    gcTime: Infinity,
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
   });
 
   const lugares = lugaresQuery.data || [];

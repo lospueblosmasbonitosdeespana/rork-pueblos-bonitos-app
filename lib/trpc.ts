@@ -20,6 +20,18 @@ export const trpcClient = createTRPCClient<AppRouter>({
     httpLink({
       url: `${getBaseUrl()}/api/trpc`,
       transformer: superjson,
+      fetch(url, options) {
+        return fetch(url, {
+          ...options,
+          cache: 'no-store',
+          headers: {
+            ...options?.headers,
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0',
+          },
+        });
+      },
     }),
   ],
 });
