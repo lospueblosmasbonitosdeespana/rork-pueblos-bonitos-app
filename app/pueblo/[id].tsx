@@ -168,10 +168,13 @@ export default function PuebloDetailScreen() {
     const lat = lugar.latitud;
     const lng = lugar.longitud;
     
-    console.log('🗺️ Abriendo direcciones:', { lat, lng, pueblo: lugar.nombre });
+    console.log('🗺️🗺️🗺️ BOTÓN PRESIONADO - Abriendo direcciones 🗺️🗺️🗺️');
+    console.log('📍 Coordenadas:', { lat, lng, latType: typeof lat, lngType: typeof lng });
+    console.log('🏘️ Pueblo:', lugar.nombre);
     
     if (!lat || !lng || lat === 0 || lng === 0) {
-      console.warn('⚠️ No hay coordenadas válidas para este pueblo:', { lat, lng });
+      console.warn('⚠️⚠️⚠️ NO HAY COORDENADAS VÁLIDAS:', { lat, lng });
+      alert(`No hay coordenadas válidas para este pueblo.\nlat: ${lat}\nlng: ${lng}`);
       return;
     }
 
@@ -181,13 +184,19 @@ export default function PuebloDetailScreen() {
       default: `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`
     });
 
-    console.log('🔗 URL del mapa:', url);
+    console.log('🔗 URL del mapa generada:', url);
+    console.log('📱 Platform.OS:', Platform.OS);
     
-    Linking.openURL(url!).catch((err) => {
-      console.error('❌ Error al abrir el mapa', err);
+    Linking.openURL(url!).then(() => {
+      console.log('✅ Mapa abierto exitosamente');
+    }).catch((err) => {
+      console.error('❌ Error al abrir el mapa:', err);
       const fallbackUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
-      console.log('🔗 Usando URL fallback:', fallbackUrl);
-      Linking.openURL(fallbackUrl);
+      console.log('🔗 Intentando con URL fallback:', fallbackUrl);
+      Linking.openURL(fallbackUrl).catch((fallbackErr) => {
+        console.error('❌ Error también con fallback:', fallbackErr);
+        alert(`Error al abrir el mapa: ${err.message}`);
+      });
     });
   };
 

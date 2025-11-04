@@ -222,6 +222,8 @@ export default function PueblosScreen() {
   };
 
   const renderPueblo = ({ item }: { item: Lugar }) => {
+    const banderaUrl = item.bandera || (item.comunidad_autonoma ? banderas[normalizar(item.comunidad_autonoma)] : null);
+    
     return (
       <TouchableOpacity
         style={[styles.listItem, { backgroundColor: COLORS.card, borderBottomColor: COLORS.border }]}
@@ -229,28 +231,20 @@ export default function PueblosScreen() {
         activeOpacity={0.7}
       >
         <View style={styles.listItemContent}>
+          {banderaUrl ? (
+            <Image
+              source={{ uri: banderaUrl }}
+              style={styles.banderaImage}
+              resizeMode="contain"
+            />
+          ) : (
+            <View style={styles.banderaPlaceholder} />
+          )}
           <View style={styles.puebloInfo}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              {(() => {
-                const banderaUrl = item.bandera || (item.comunidad_autonoma ? banderas[normalizar(item.comunidad_autonoma)] : null);
-                return banderaUrl ? (
-                  <Image
-                    source={{ uri: banderaUrl }}
-                    style={{
-                      width: 60,
-                      height: 40,
-                      borderRadius: 4,
-                      marginRight: 12,
-                      resizeMode: 'contain' as const,
-                    }}
-                  />
-                ) : null;
-              })()}
-              <Text style={[styles.puebloName, { color: COLORS.text }]}>{item.nombre}</Text>
-            </View>
+            <Text style={[styles.puebloName, { color: COLORS.text }]}>{item.nombre}</Text>
             {item.provincia && (
               <Text style={[styles.puebloLocation, { color: COLORS.textSecondary }]}>
-                {`${item.provincia}${item.comunidad_autonoma ? `, ${item.comunidad_autonoma}` : ''}`}
+                {item.provincia}{item.comunidad_autonoma ? `, ${item.comunidad_autonoma}` : ''}
               </Text>
             )}
           </View>
@@ -483,9 +477,19 @@ const styles = StyleSheet.create({
   },
   listItemContent: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     paddingVertical: SPACING.md,
     paddingHorizontal: SPACING.lg,
+    gap: SPACING.sm,
+  },
+  banderaImage: {
+    width: 60,
+    height: 40,
+    borderRadius: 4,
+  },
+  banderaPlaceholder: {
+    width: 60,
+    height: 40,
   },
   puebloInfo: {
     flex: 1,
@@ -496,7 +500,6 @@ const styles = StyleSheet.create({
   },
   puebloLocation: {
     ...TYPOGRAPHY.caption,
-    marginBottom: SPACING.xs,
   },
   emptyContainer: {
     padding: SPACING.xl,
