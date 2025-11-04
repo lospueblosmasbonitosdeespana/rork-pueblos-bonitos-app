@@ -228,8 +228,9 @@ export default function PueblosVisitadosScreen() {
       console.log('═══════════════════════════════════════');
       console.log('💾 INICIANDO GUARDADO DE CAMBIOS');
       console.log('═══════════════════════════════════════');
-      console.log('📋 EditChanges:', editChanges);
+      console.log('📋 EditChanges completo:', JSON.stringify(editChanges, null, 2));
       console.log('👤 User ID:', user.id);
+      console.log('🗺️  Original State size:', originalState.size);
 
       const modifiedEntries = Object.entries(editChanges).filter(([pueblo_id, changes]) => {
         const original = originalState.get(pueblo_id);
@@ -360,9 +361,11 @@ export default function PueblosVisitadosScreen() {
   };
 
   const handleToggleVisita = (pueblo: PuebloVisita) => {
-    if (!user?.id || pueblo.tipo === 'auto') return;
+    if (!user?.id || pueblo.tipo === 'auto' || !isEditing) return;
 
     const newChecked = pueblo.checked === 1 ? 0 : 1;
+    
+    console.log(`🔄 Toggle pueblo ${pueblo.nombre}: checked ${pueblo.checked} → ${newChecked}`);
     
     setEditChanges(prev => ({
       ...prev,
@@ -381,7 +384,9 @@ export default function PueblosVisitadosScreen() {
   };
 
   const handleChangeStars = (pueblo: PuebloVisita, newStars: number) => {
-    if (!user?.id) return;
+    if (!user?.id || !isEditing) return;
+
+    console.log(`⭐ Cambiar estrellas pueblo ${pueblo.nombre}: ${pueblo.estrellas} → ${newStars}`);
 
     const currentChanges = editChanges[pueblo.pueblo_id];
     setEditChanges(prev => ({
