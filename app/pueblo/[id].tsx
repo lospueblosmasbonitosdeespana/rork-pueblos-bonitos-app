@@ -165,8 +165,8 @@ export default function PuebloDetailScreen() {
   const experienciasUrl = `https://lospueblosmasbonitosdeespana.org/experiencias-public/?id_lugar=${id}&app=1`;
 
   const openDirections = () => {
-    const lat = lugar.latitud;
-    const lng = lugar.longitud;
+    const lat = lugar.lat;
+    const lng = lugar.lng;
     
     console.log('🗺️🗺️🗺️ BOTÓN PRESIONADO - Abriendo direcciones 🗺️🗺️🗺️');
     console.log('📍 Coordenadas:', { lat, lng, latType: typeof lat, lngType: typeof lng });
@@ -255,7 +255,7 @@ export default function PuebloDetailScreen() {
           <View style={styles.locationContainer}>
             <MapPin size={16} color={COLORS.textSecondary} />
             <Text style={styles.locationText}>
-              {lugar.provincia}, {lugar.comunidad_autonoma}
+              {lugar.provincia}, {lugar.comunidad}
             </Text>
           </View>
 

@@ -159,7 +159,7 @@ export default function PueblosScreen() {
     if (selectedComunidad !== 'Todas') {
       const selectedKey = COMUNIDADES_MAP[selectedComunidad];
       filtered = filtered.filter((lugar) => {
-        const key = normalizar(lugar.comunidad_autonoma);
+        const key = normalizar(lugar.comunidad);
         return key === selectedKey;
       });
     }
@@ -171,8 +171,8 @@ export default function PueblosScreen() {
           distance: calculateDistance(
             userLocation.latitude,
             userLocation.longitude,
-            lugar.latitud,
-            lugar.longitud
+            lugar.lat,
+            lugar.lng
           ),
         }))
         .sort((a, b) => a.distance - b.distance)
@@ -222,7 +222,7 @@ export default function PueblosScreen() {
   };
 
   const renderPueblo = ({ item }: { item: Lugar }) => {
-    const banderaUrl = item.bandera || (item.comunidad_autonoma ? banderas[normalizar(item.comunidad_autonoma)] : null);
+    const banderaUrl = item.bandera || (item.comunidad ? banderas[normalizar(item.comunidad)] : null);
     
     return (
       <TouchableOpacity
@@ -244,7 +244,7 @@ export default function PueblosScreen() {
             <Text style={[styles.puebloName, { color: COLORS.text }]}>{item.nombre}</Text>
             {item.provincia && (
               <Text style={[styles.puebloLocation, { color: COLORS.textSecondary }]}>
-                {item.provincia}{item.comunidad_autonoma ? `, ${item.comunidad_autonoma}` : ''}
+                {item.provincia}{item.comunidad ? `, ${item.comunidad}` : ''}
               </Text>
             )}
           </View>

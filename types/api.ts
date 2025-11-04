@@ -3,12 +3,12 @@ export interface Lugar {
   nombre: string;
   descripcion: string;
   provincia: string;
-  comunidad_autonoma: string;
-  latitud: number;
-  longitud: number;
+  comunidad: string;
+  lat: number;
+  lng: number;
   multimedia: string[];
   imagen_principal: string | null;
-  bandera?: string;
+  bandera: string;
   multiexperiencias_pueblos?: string[];
   tipo?: string;
   cct_slug: string;
