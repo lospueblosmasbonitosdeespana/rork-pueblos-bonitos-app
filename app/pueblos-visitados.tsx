@@ -214,86 +214,148 @@ export default function PueblosVisitadosScreen() {
 
 
   const saveChanges = async () => {
-    if (!user?.id || Object.keys(editChanges).length === 0) {
-      setIsEditing(false);
-      setEditChanges({});
-      return;
-    }
-
-    setIsSaving(true);
     try {
-      const modifiedEntries = Object.entries(editChanges).filter(([pueblo_id, changes]) => {
-        const original = originalState.get(pueblo_id);
-        if (!original) return true;
-        return original.checked !== changes.checked || original.estrellas !== changes.estrellas;
-      });
-
-      if (modifiedEntries.length === 0) {
-        setIsEditing(false);
-        setEditChanges({});
+      if (!user || !user.id) {
+        console.error('❌ No se pudo obtener el usuario actual');
+        if (Platform.OS === 'web') {
+          alert('No se pudo obtener el usuario actual.');
+        } else {
+          Alert.alert('Error', 'No se pudo obtener el usuario actual.');
+        }
         return;
       }
 
-      const promises = modifiedEntries.map(([pueblo_id, changes]) => 
-        fetch('https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/visita-update', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
+      console.log('═══════════════════════════════════════');
+      console.log('💾 INICIANDO GUARDADO DE CAMBIOS');
+      console.log('═══════════════════════════════════════');
+      console.log('📋 EditChanges:', editChanges);
+      console.log('👤 User ID:', user.id);
+
+      const modifiedEntries = Object.entries(editChanges).filter(([pueblo_id, changes]) => {
+        const original = originalState.get(pueblo_id);
+        if (!original) {
+          console.log(`✨ Pueblo ${pueblo_id} es nuevo (no en estado original)`);
+          return true;
+        }
+        const hasChanges = original.checked !== changes.checked || original.estrellas !== changes.estrellas;
+        if (hasChanges) {
+          console.log(`✏️  Pueblo ${pueblo_id} modificado:`);
+          console.log(`   Original: checked=${original.checked}, estrellas=${original.estrellas}`);
+          console.log(`   Nuevo: checked=${changes.checked}, estrellas=${changes.estrellas}`);
+        }
+        return hasChanges;
+      });
+
+      if (modifiedEntries.length === 0) {
+        console.log('⚠️  No hay cambios para guardar');
+        if (Platform.OS === 'web') {
+          alert('No hay cambios para guardar.');
+        } else {
+          Alert.alert('Info', 'No hay cambios para guardar.');
+        }
+        setIsEditing(false);
+        return;
+      }
+
+      console.log(`💾 Guardando ${modifiedEntries.length} cambios...`);
+
+      setIsSaving(true);
+
+      const results = await Promise.all(
+        modifiedEntries.map(async ([pueblo_id, changes]) => {
+          const payload = {
             user_id: user.id,
-            pueblo_id,
+            pueblo_id: pueblo_id,
             checked: changes.checked,
+            estrellas: changes.estrellas || 0,
             tipo: 'manual',
-            estrellas: changes.estrellas,
-          }),
+          };
+
+          console.log(`📤 Enviando pueblo ${pueblo_id}:`, payload);
+
+          const response = await fetch(
+            'https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/visita-update',
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(payload),
+            }
+          );
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.warn(`⚠️  Error guardando pueblo ${pueblo_id}:`, response.status, errorText);
+            return { success: false, pueblo_id, status: response.status, error: errorText };
+          } else {
+            const responseData = await response.json();
+            console.log(`✅ Pueblo ${pueblo_id} guardado correctamente:`, responseData);
+            return { success: true, pueblo_id };
+          }
         })
       );
 
-      const results = await Promise.all(promises);
-      const allSuccessful = results.every(res => res.ok);
-
-      if (allSuccessful) {
-        await fetchPueblosVisitados(true);
-        
-        try {
-          const puntosRes = await fetch(`https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/puntos?user_id=${user.id}`, {
-            headers: { 'Content-Type': 'application/json' },
-          });
-          
-          if (puntosRes.ok) {
-            const puntosData = await puntosRes.json();
-            console.log('═══════════════════════════════════════');
-            console.log('✅ [SINCRONIZACIÓN POST-GUARDADO]');
-            console.log('═══════════════════════════════════════');
-            console.log('📥 Datos del endpoint /lpbe/v1/puntos:');
-            console.log(`  🎯 Puntos totales: ${puntosData.puntos_totales}`);
-            console.log(`  🏘️  Total pueblos: ${puntosData.total_pueblos}`);
-            console.log(`  🏆 Nivel: ${puntosData.nivel}`);
-            console.log(`  🎖️  Siguiente: ${puntosData.nivel_siguiente}`);
-            console.log('═══════════════════════════════════════');
-          }
-        } catch (err) {
-          console.warn('⚠️  Error al sincronizar puntos:', err);
-        }
+      const failedResults = results.filter(r => !r.success);
+      
+      if (failedResults.length > 0) {
+        console.error('❌ Algunos pueblos fallaron al guardar:', failedResults);
+        const failedNames = failedResults.map(r => {
+          const pueblo = pueblos.find(p => p.pueblo_id === r.pueblo_id);
+          return pueblo?.nombre || r.pueblo_id;
+        }).join(', ');
         
         if (Platform.OS === 'web') {
-          alert('Cambios guardados con éxito');
+          alert(`Error al guardar algunos pueblos: ${failedNames}`);
         } else {
-          Alert.alert('Éxito', 'Cambios guardados con éxito');
+          Alert.alert('Error parcial', `No se pudieron guardar: ${failedNames}`);
         }
       } else {
-        throw new Error('Error al guardar algunos cambios');
+        console.log('✅ Todos los cambios guardados correctamente');
+        
+        if (Platform.OS === 'web') {
+          alert('✅ Cambios guardados correctamente.');
+        } else {
+          Alert.alert('✅ Éxito', 'Cambios guardados correctamente.');
+        }
       }
+
+      console.log('🔄 Recargando lista de pueblos...');
+      await fetchPueblosVisitados(true);
+      
+      try {
+        const puntosRes = await fetch(`https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/puntos?user_id=${user.id}`, {
+          headers: { 'Content-Type': 'application/json' },
+        });
+        
+        if (puntosRes.ok) {
+          const puntosData = await puntosRes.json();
+          console.log('═══════════════════════════════════════');
+          console.log('✅ [SINCRONIZACIÓN POST-GUARDADO]');
+          console.log('═══════════════════════════════════════');
+          console.log('📥 Datos del endpoint /lpbe/v1/puntos:');
+          console.log(`  🎯 Puntos totales: ${puntosData.puntos_totales}`);
+          console.log(`  🏘️  Total pueblos: ${puntosData.total_pueblos}`);
+          console.log(`  🏆 Nivel: ${puntosData.nivel}`);
+          console.log(`  🎖️  Siguiente: ${puntosData.nivel_siguiente}`);
+          console.log('═══════════════════════════════════════');
+        }
+      } catch (err) {
+        console.warn('⚠️  Error al sincronizar puntos:', err);
+      }
+
+      setIsEditing(false);
+      setEditChanges({});
+      
     } catch (err) {
-      console.error('Error saving changes:', err);
+      console.error('❌ Error al guardar los cambios:', err);
       if (Platform.OS === 'web') {
-        alert('Error al guardar los cambios');
+        alert('Error al guardar los cambios. Inténtalo de nuevo.');
       } else {
-        Alert.alert('Error', 'No se pudieron guardar todos los cambios');
+        Alert.alert('Error', 'Error al guardar los cambios. Inténtalo de nuevo.');
       }
     } finally {
       setIsSaving(false);
-      setIsEditing(false);
-      setEditChanges({});
     }
   };
 
