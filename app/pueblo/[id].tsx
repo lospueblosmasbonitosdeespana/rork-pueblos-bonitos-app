@@ -237,7 +237,7 @@ export default function PuebloDetailScreen() {
           <View style={styles.locationContainer}>
             <MapPin size={16} color={COLORS.textSecondary} />
             <Text style={styles.locationText}>
-              {lugar.provincia}, {lugar.comunidad}
+              {lugar.provincia}{lugar.comunidad ? `, ${lugar.comunidad}` : ''}
             </Text>
           </View>
 
