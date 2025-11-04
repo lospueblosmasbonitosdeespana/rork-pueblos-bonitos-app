@@ -13,6 +13,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { useAuth } from '@/contexts/auth';
 
@@ -352,7 +353,25 @@ export default function PueblosVisitadosScreen() {
         }
       }
 
-      console.log('🔄 Recargando lista de pueblos...');
+      console.log('═══════════════════════════════════════');
+      console.log('🧹 LIMPIANDO CACHÉS...');
+      console.log('═══════════════════════════════════════');
+      
+      try {
+        const keysToRemove = [
+          'pueblos-visitados-cache',
+          'puntos-cache',
+          'pueblos-data',
+          'user-points',
+        ];
+        
+        await AsyncStorage.multiRemove(keysToRemove);
+        console.log('✅ AsyncStorage limpiado:', keysToRemove.join(', '));
+      } catch (storageError) {
+        console.warn('⚠️ Error al limpiar AsyncStorage:', storageError);
+      }
+
+      console.log('🔄 Refetch inmediato de endpoints actualizados...');
       
       try {
         const visitadosRes = await fetch(
@@ -458,24 +477,35 @@ export default function PueblosVisitadosScreen() {
       }
       
       try {
-        const puntosRes = await fetch(`https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/puntos?user_id=${user.id}`, {
-          headers: { 'Content-Type': 'application/json' },
-        });
+        console.log('📊 Refetching /lpbe/v1/puntos...');
+        const puntosRes = await fetch(
+          `https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/puntos?user_id=${user.id}&_t=${Date.now()}`,
+          { 
+            headers: { 
+              'Content-Type': 'application/json',
+              'Cache-Control': 'no-cache, no-store, must-revalidate',
+              'Pragma': 'no-cache',
+            },
+          }
+        );
         
         if (puntosRes.ok) {
-          const puntosData = await puntosRes.json();
+          const puntosDataUpdated = await puntosRes.json();
+          setPuntosData(puntosDataUpdated);
           console.log('═══════════════════════════════════════');
-          console.log('✅ [SINCRONIZACIÓN POST-GUARDADO]');
+          console.log('✅ [SINCRONIZACIÓN POST-GUARDADO - REFETCH]');
           console.log('═══════════════════════════════════════');
-          console.log('📥 Datos del endpoint /lpbe/v1/puntos:');
-          console.log(`  🎯 Puntos totales: ${puntosData.puntos_totales}`);
-          console.log(`  🏘️  Total pueblos: ${puntosData.total_pueblos}`);
-          console.log(`  🏆 Nivel: ${puntosData.nivel}`);
-          console.log(`  🎖️  Siguiente: ${puntosData.nivel_siguiente}`);
+          console.log('📥 Datos REFETCH /lpbe/v1/puntos:');
+          console.log(`  🎯 Puntos totales: ${puntosDataUpdated.puntos_totales}`);
+          console.log(`  🏘️  Total pueblos: ${puntosDataUpdated.total_pueblos}`);
+          console.log(`  🏆 Nivel: ${puntosDataUpdated.nivel}`);
+          console.log(`  🎖️  Siguiente: ${puntosDataUpdated.nivel_siguiente}`);
           console.log('═══════════════════════════════════════');
+        } else {
+          console.warn('⚠️ Error al refetch /lpbe/v1/puntos:', puntosRes.status);
         }
       } catch (err) {
-        console.warn('⚠️  Error al sincronizar puntos:', err);
+        console.warn('⚠️  Error al refetch puntos:', err);
       }
 
       setIsEditing(false);
