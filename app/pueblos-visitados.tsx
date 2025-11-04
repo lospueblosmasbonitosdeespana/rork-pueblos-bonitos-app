@@ -353,7 +353,109 @@ export default function PueblosVisitadosScreen() {
       }
 
       console.log('🔄 Recargando lista de pueblos...');
-      await fetchPueblosVisitados(true);
+      
+      try {
+        const visitadosRes = await fetch(
+          `https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/pueblos-visitados?user_id=${user.id}`,
+          { headers: { 'Content-Type': 'application/json' } }
+        );
+        
+        if (visitadosRes.ok) {
+          const visitadosData = await visitadosRes.json();
+          console.log('📥 Datos actualizados del endpoint pueblos-visitados:', visitadosData.length, 'registros');
+          
+          const liteRes = await fetch(
+            `https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/pueblos-lite`,
+            { headers: { 'Content-Type': 'application/json' } }
+          );
+          
+          const puntosLugaresRes = await fetch(
+            `https://lospueblosmasbonitosdeespana.org/wp-json/jet-cct/lugar`,
+            { headers: { 'Content-Type': 'application/json' } }
+          );
+          
+          if (liteRes.ok && puntosLugaresRes.ok) {
+            const liteData = await liteRes.json();
+            const puntosLugaresData = await puntosLugaresRes.json();
+            
+            const puntosMap = new Map<string, number>();
+            if (Array.isArray(puntosLugaresData)) {
+              puntosLugaresData.forEach((lugar: any) => {
+                if (lugar._ID && lugar.puntos) {
+                  puntosMap.set(String(lugar._ID), Number(lugar.puntos) || 0);
+                }
+              });
+            }
+            
+            const pueblosMap = new Map<string, PuebloVisita>();
+            
+            visitadosData.forEach((pueblo: PuebloVisita) => {
+              const puebloId = parseInt(pueblo.pueblo_id);
+              if (puebloId <= 200) {
+                const puntosDelPueblo = puntosMap.get(pueblo.pueblo_id) || 0;
+                const puebloConPuntos = { ...pueblo, puntos: puntosDelPueblo };
+                
+                const existing = pueblosMap.get(pueblo.pueblo_id);
+                if (!existing) {
+                  pueblosMap.set(pueblo.pueblo_id, puebloConPuntos);
+                } else {
+                  const existingDate = existing.fecha_visita ? new Date(existing.fecha_visita).getTime() : 0;
+                  const currentDate = pueblo.fecha_visita ? new Date(pueblo.fecha_visita).getTime() : 0;
+                  
+                  if (currentDate > existingDate) {
+                    pueblosMap.set(pueblo.pueblo_id, puebloConPuntos);
+                  } else if (currentDate === existingDate && pueblo.tipo === 'manual' && existing.tipo === 'auto') {
+                    pueblosMap.set(pueblo.pueblo_id, puebloConPuntos);
+                  }
+                }
+              }
+            });
+            
+            liteData.forEach((pueblo: any) => {
+              const puebloId = parseInt(pueblo.id);
+              if (puebloId <= 200 && !pueblosMap.has(pueblo.id?.toString())) {
+                const puntosDelPueblo = puntosMap.get(pueblo.id?.toString()) || 0;
+                pueblosMap.set(pueblo.id?.toString(), {
+                  _ID: pueblo.id?.toString() || '',
+                  pueblo_id: pueblo.id?.toString() || '',
+                  nombre: pueblo.nombre || '',
+                  provincia: pueblo.provincia || '',
+                  comunidad_autonoma: pueblo.comunidad_autonoma || '',
+                  imagen_principal: pueblo.imagen_principal || '',
+                  estrellas: 0,
+                  tipo: 'manual',
+                  checked: 0,
+                  puntos: puntosDelPueblo,
+                });
+              }
+            });
+            
+            const pueblosList = Array.from(pueblosMap.values());
+            
+            const listaSinDuplicados = Object.values(
+              pueblosList.reduce((acc: { [key: string]: PuebloVisita }, item) => {
+                const key = item.pueblo_id || item._ID;
+                if (!acc[key]) acc[key] = item;
+                return acc;
+              }, {})
+            );
+            
+            const sorted = listaSinDuplicados.sort((a, b) => {
+              if (a.checked !== b.checked) {
+                return b.checked - a.checked;
+              }
+              const nameA = a.nombre || '';
+              const nameB = b.nombre || '';
+              return nameA.localeCompare(nameB);
+            });
+            
+            setPueblos(sorted);
+            console.log('✅ Estado local actualizado con', sorted.length, 'pueblos');
+          }
+        }
+      } catch (err) {
+        console.warn('⚠️  Error al recargar pueblos visitados:', err);
+      }
       
       try {
         const puntosRes = await fetch(`https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/puntos?user_id=${user.id}`, {
