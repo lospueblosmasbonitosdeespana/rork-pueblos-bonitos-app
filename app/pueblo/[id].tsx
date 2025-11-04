@@ -232,7 +232,16 @@ export default function PuebloDetailScreen() {
         </View>
 
         <View style={styles.content}>
-          <Text style={styles.title}>{lugar.nombre}</Text>
+          <View style={styles.titleContainer}>
+            <Text style={styles.title}>{lugar.nombre}</Text>
+            {lugar.bandera && (
+              <Image 
+                source={{ uri: lugar.bandera }} 
+                style={styles.banderaImage}
+                contentFit="contain"
+              />
+            )}
+          </View>
 
           <View style={styles.locationContainer}>
             <MapPin size={16} color={COLORS.textSecondary} />
@@ -543,10 +552,21 @@ const styles = StyleSheet.create({
   content: {
     padding: SPACING.lg,
   },
+  titleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: SPACING.sm,
+  },
   title: {
     ...TYPOGRAPHY.h1,
     color: COLORS.text,
-    marginBottom: SPACING.sm,
+    flex: 1,
+  },
+  banderaImage: {
+    width: 60,
+    height: 40,
+    marginLeft: SPACING.sm,
   },
   locationContainer: {
     flexDirection: 'row',
