@@ -211,96 +211,7 @@ export default function PueblosVisitadosScreen() {
     }
   };
 
-  const handleDirectToggle = async (pueblo: PuebloVisita) => {
-    if (!user?.id || pueblo.tipo === 'auto') return;
 
-    const newChecked = pueblo.checked === 1 ? 0 : 1;
-    
-    setPueblos(prevPueblos =>
-      prevPueblos.map(p =>
-        p.pueblo_id === pueblo.pueblo_id ? { ...p, checked: newChecked } : p
-      )
-    );
-
-    try {
-      const response = await fetch('https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/visita-update', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          user_id: user.id,
-          pueblo_id: pueblo.pueblo_id,
-          checked: newChecked,
-          tipo: 'manual',
-          estrellas: pueblo.estrellas,
-        }),
-      });
-
-      if (response.ok) {
-        await fetchPueblosVisitados(true);
-      } else {
-        setPueblos(prevPueblos =>
-          prevPueblos.map(p =>
-            p.pueblo_id === pueblo.pueblo_id ? { ...p, checked: pueblo.checked } : p
-          )
-        );
-        if (Platform.OS === 'web') {
-          alert('Error al actualizar la visita');
-        } else {
-          Alert.alert('Error', 'No se pudo actualizar la visita');
-        }
-      }
-    } catch (err) {
-      console.error('Error updating visit:', err);
-      setPueblos(prevPueblos =>
-        prevPueblos.map(p =>
-          p.pueblo_id === pueblo.pueblo_id ? { ...p, checked: pueblo.checked } : p
-        )
-      );
-    }
-  };
-
-  const handleDirectStarChange = async (pueblo: PuebloVisita, newStars: number) => {
-    if (!user?.id) return;
-
-    const previousStars = pueblo.estrellas;
-
-    setPueblos(prevPueblos =>
-      prevPueblos.map(p =>
-        p.pueblo_id === pueblo.pueblo_id ? { ...p, estrellas: newStars } : p
-      )
-    );
-
-    try {
-      const response = await fetch('https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/visita-update', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          user_id: user.id,
-          pueblo_id: pueblo.pueblo_id,
-          checked: pueblo.checked,
-          tipo: pueblo.tipo,
-          estrellas: newStars,
-        }),
-      });
-
-      if (response.ok) {
-        await fetchPueblosVisitados(true);
-      } else {
-        setPueblos(prevPueblos =>
-          prevPueblos.map(p =>
-            p.pueblo_id === pueblo.pueblo_id ? { ...p, estrellas: previousStars } : p
-          )
-        );
-      }
-    } catch (err) {
-      console.error('Error updating stars:', err);
-      setPueblos(prevPueblos =>
-        prevPueblos.map(p =>
-          p.pueblo_id === pueblo.pueblo_id ? { ...p, estrellas: previousStars } : p
-        )
-      );
-    }
-  };
 
   const saveChanges = async () => {
     if (!user?.id || Object.keys(editChanges).length === 0) {
@@ -525,13 +436,13 @@ export default function PueblosVisitadosScreen() {
                       </View>
                     )}
                   </View>
-                  {canToggle && (
+                  {canToggle && isEditing && (
                     <TouchableOpacity
                       style={[
                         styles.toggleButton,
                         item.checked === 1 ? styles.toggleButtonChecked : styles.toggleButtonUnchecked,
                       ]}
-                      onPress={() => isEditing ? handleToggleVisita(item) : handleDirectToggle(item)}
+                      onPress={() => handleToggleVisita(item)}
                     >
                       <Text style={[
                         styles.toggleButtonText,
@@ -550,22 +461,39 @@ export default function PueblosVisitadosScreen() {
                   )}
                 </View>
 
-                <View style={styles.starsContainer}>
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <TouchableOpacity
-                      key={star}
-                      onPress={() => isEditing ? handleChangeStars(item, star) : handleDirectStarChange(item, star)}
-                      style={{ marginRight: 8 }}
-                    >
+                {isEditing && (
+                  <View style={styles.starsContainer}>
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <TouchableOpacity
+                        key={star}
+                        onPress={() => handleChangeStars(item, star)}
+                        style={{ marginRight: 8 }}
+                      >
+                        <Star
+                          size={24}
+                          color={star <= item.estrellas ? '#FFD700' : '#ddd'}
+                          fill={star <= item.estrellas ? '#FFD700' : 'transparent'}
+                          strokeWidth={2}
+                        />
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+                
+                {!isEditing && item.estrellas > 0 && (
+                  <View style={styles.starsContainer}>
+                    {[1, 2, 3, 4, 5].map((star) => (
                       <Star
+                        key={star}
                         size={24}
                         color={star <= item.estrellas ? '#FFD700' : '#ddd'}
                         fill={star <= item.estrellas ? '#FFD700' : 'transparent'}
                         strokeWidth={2}
+                        style={{ marginRight: 8 }}
                       />
-                    </TouchableOpacity>
-                  ))}
-                </View>
+                    ))}
+                  </View>
+                )}
 
                 {item.fecha_visita && (
                   <Text style={styles.fechaVisita}>
