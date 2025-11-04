@@ -225,6 +225,7 @@ export default function PueblosScreen() {
 
   const renderPueblo = ({ item }: { item: Lugar }) => {
     const banderaUrl = item.bandera || (item.comunidad ? banderas[normalizar(item.comunidad)] : null);
+    const hasValidBandera = banderaUrl && banderaUrl.trim() !== '';
     
     return (
       <TouchableOpacity
@@ -233,7 +234,7 @@ export default function PueblosScreen() {
         activeOpacity={0.7}
       >
         <View style={styles.listItemContent}>
-          {banderaUrl ? (
+          {hasValidBandera ? (
             <Image
               source={{ uri: banderaUrl }}
               style={styles.banderaImage}

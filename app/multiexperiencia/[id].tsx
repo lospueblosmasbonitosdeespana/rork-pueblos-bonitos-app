@@ -119,9 +119,9 @@ export default function MultiexperienciaDetailScreen() {
   }
 
   const allImages = [
-    ...(experiencia.foto ? [experiencia.foto] : []),
+    ...(experiencia.foto && experiencia.foto.trim() !== '' ? [experiencia.foto] : []),
     ...(experiencia.multimedia || []),
-  ];
+  ].filter(url => url && url.trim() !== '');
 
   console.log('📸 ===== GALERÍA DE IMÁGENES =====');
   console.log('📸 Foto principal:', experiencia.foto || 'NO HAY');
@@ -157,12 +157,14 @@ export default function MultiexperienciaDetailScreen() {
         {allImages.length > 0 && (
           <View style={styles.gallery}>
             {allImages.map((imageUrl, index) => (
-              <Image
-                key={`image-${index}`}
-                source={{ uri: imageUrl }}
-                style={styles.galleryImage}
-                contentFit="cover"
-              />
+              imageUrl && imageUrl.trim() !== '' ? (
+                <Image
+                  key={`image-${index}`}
+                  source={{ uri: imageUrl }}
+                  style={styles.galleryImage}
+                  contentFit="cover"
+                />
+              ) : null
             ))}
           </View>
         )}

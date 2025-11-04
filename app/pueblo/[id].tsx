@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Stack, useLocalSearchParams, router } from 'expo-router';
 import { Image } from 'expo-image';
 import { MapPin, Map, X, Route, Wind } from 'lucide-react-native';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Modal, ActivityIndicator, SafeAreaView, FlatList, Dimensions, Platform, Linking } from 'react-native';
 import { WebView } from 'react-native-webview';
 
@@ -30,18 +30,21 @@ export default function PuebloDetailScreen() {
     queryKey: ['lugar', id],
     queryFn: () => fetchLugar(id),
     enabled: !!id,
+    refetchOnMount: true,
   });
 
   const semaforoQuery = useQuery({
     queryKey: ['semaforo', id],
     queryFn: () => fetchSemaforoByPueblo(id),
     enabled: !!id,
+    refetchOnMount: true,
   });
 
   const experienciasQuery = useQuery({
     queryKey: ['experiencias', id],
     queryFn: () => fetchExperienciasByPueblo(id),
     enabled: !!id,
+    refetchOnMount: true,
   });
 
   const multimediaQuery = useQuery({
@@ -60,6 +63,7 @@ export default function PuebloDetailScreen() {
       }
     },
     enabled: !!id,
+    refetchOnMount: true,
   });
 
   const lugar = lugarQuery.data;
@@ -69,6 +73,13 @@ export default function PuebloDetailScreen() {
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
+
+  useEffect(() => {
+    setCurrentImageIndex(0);
+    if (flatListRef.current) {
+      flatListRef.current.scrollToOffset({ offset: 0, animated: false });
+    }
+  }, [id]);
 
   console.log('📊 experiencias=', experiencias);
   console.log('📊 exp completo=', experiencias.map(e => ({
@@ -198,12 +209,16 @@ export default function PuebloDetailScreen() {
               setCurrentImageIndex(index);
             }}
             renderItem={({ item }) => (
-              <Image 
-                source={{ uri: item }} 
-                style={styles.headerImage} 
-                contentFit="cover"
-                onError={(e) => console.log('❌ Error cargando imagen', e)}
-              />
+              item && item.trim() !== '' ? (
+                <Image 
+                  source={{ uri: item }} 
+                  style={styles.headerImage} 
+                  contentFit="cover"
+                  onError={(e) => console.log('❌ Error cargando imagen', e)}
+                />
+              ) : (
+                <View style={styles.headerImage} />
+              )
             )}
             keyExtractor={(item, index) => `image-${index}`}
           />
@@ -225,7 +240,7 @@ export default function PuebloDetailScreen() {
         <View style={styles.content}>
           <View style={styles.titleContainer}>
             <Text style={styles.title}>{lugar.nombre}</Text>
-            {lugar.bandera && (
+            {lugar.bandera && lugar.bandera.trim() !== '' && (
               <Image 
                 source={{ uri: lugar.bandera }} 
                 style={styles.banderaImage}
@@ -339,7 +354,7 @@ export default function PuebloDetailScreen() {
                     }}
                     activeOpacity={0.7}
                   >
-                    {exp.foto && (
+                    {exp.foto && exp.foto.trim() !== '' && (
                       <Image 
                         source={{ uri: exp.foto }} 
                         style={styles.experienciaImage} 
