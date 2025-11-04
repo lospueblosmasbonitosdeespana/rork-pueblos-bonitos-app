@@ -24,48 +24,48 @@ import { fetchLugares } from '@/services/api';
 import { Lugar } from '@/types/api';
 
 const banderas: Record<string, string> = {
-  "andalucia": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_Andalucia.png",
-  "andalucía": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_Andalucia.png",
+  "andalucia": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/11/Flag_of_Andalucia.png",
+  "andalucía": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/11/Flag_of_Andalucia.png",
 
-  "aragon": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Bandera_Aragon_escudo.png",
+  "aragon": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/11/Bandera_Aragon_escudo.png",
 
-  "principado de asturias": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_Asturias.png",
-  "asturias": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_Asturias.png",
-  "asturias ": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_Asturias.png",
+  "principado de asturias": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/11/Flag_of_Asturias.png",
+  "asturias": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/11/Flag_of_Asturias.png",
+  "asturias ": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/11/Flag_of_Asturias.png",
 
-  "islas baleares": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_the_Balearic_Islands.png",
+  "islas baleares": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/11/Flag_of_the_Balearic_Islands.png",
 
-  "canarias": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_the_Canary_Islands.png",
+  "canarias": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/11/Flag_of_the_Canary_Islands.png",
 
-  "cantabria": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_Cantabria.png",
+  "cantabria": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/11/Flag_of_Cantabria.png",
 
-  "castilla y leon": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_Castile_and_Leon.png",
+  "castilla y leon": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/11/Flag_of_Castile_and_Leon.png",
 
-  "castilla - la mancha": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_Castile-La_Mancha.png",
+  "castilla - la mancha": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/11/Flag_of_Castile-La_Mancha.png",
 
-  "cataluña": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_Catalonia.png",
-  "cataluna": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_Catalonia.png",
-  "catalunya": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_Catalonia.png",
+  "cataluña": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/11/Flag_of_Catalonia.png",
+  "cataluna": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/11/Flag_of_Catalonia.png",
+  "catalunya": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/11/Flag_of_Catalonia.png",
 
-  "comunidad valenciana": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_Valencian_Community.png",
-  "valencia": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_Valencian_Community.png",
+  "comunidad valenciana": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/11/Flag_of_Valencian_Community.png",
+  "valencia": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/11/Flag_of_Valencian_Community.png",
 
-  "extremadura": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_Extremadura__Spain__with_coat_of_arms_.png",
+  "extremadura": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/11/Flag_of_Extremadura__Spain__with_coat_of_arms_.png",
 
-  "galicia": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_Galicia.png",
+  "galicia": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/11/Flag_of_Galicia.png",
 
-  "la rioja": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_La_Rioja.png",
+  "la rioja": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/11/Flag_of_La_Rioja.png",
 
-  "comunidad de madrid": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_the_Community_of_Madrid.png",
-  "madrid": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_the_Community_of_Madrid.png",
+  "comunidad de madrid": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/11/Flag_of_the_Community_of_Madrid.png",
+  "madrid": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/11/Flag_of_the_Community_of_Madrid.png",
 
-  "navarra": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Bandera_de_Navarra.png",
-  "comunidad foral de navarra": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Bandera_de_Navarra.png",
+  "navarra": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/11/Bandera_de_Navarra.png",
+  "comunidad foral de navarra": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/11/Bandera_de_Navarra.png",
 
-  "pais vasco": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_the_Basque_Country.png",
-  "país vasco": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_the_Basque_Country.png",
-  "murcia": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_the_Region_of_Murcia.png",
-  "region de murcia": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/10/Flag_of_the_Region_of_Murcia.png",
+  "pais vasco": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/11/Flag_of_the_Basque_Country.png",
+  "país vasco": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/11/Flag_of_the_Basque_Country.png",
+  "murcia": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/11/Flag_of_the_Region_of_Murcia.png",
+  "region de murcia": "https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2025/11/Flag_of_the_Region_of_Murcia.png",
 };
 
 const normalizar = (nombre = "") =>
@@ -231,12 +231,11 @@ export default function PueblosScreen() {
         <View style={styles.listItemContent}>
           <View style={styles.puebloInfo}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              {item.comunidad_autonoma && (() => {
-                const key = normalizar(item.comunidad_autonoma);
-                const bandera = banderas[key];
-                return bandera ? (
+              {(() => {
+                const banderaUrl = item.bandera || (item.comunidad_autonoma ? banderas[normalizar(item.comunidad_autonoma)] : null);
+                return banderaUrl ? (
                   <Image
-                    source={{ uri: bandera }}
+                    source={{ uri: banderaUrl }}
                     style={{
                       width: 28,
                       height: 18,

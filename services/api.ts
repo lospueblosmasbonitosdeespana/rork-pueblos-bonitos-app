@@ -140,6 +140,7 @@ export async function fetchLugaresStable(): Promise<Lugar[]> {
         multimedia: [],
         latitud: item.latitud || 0,
         longitud: item.longitud || 0,
+        bandera: item.bandera || undefined,
         cct_slug: item.slug || '',
         cct_modified: item.modified || '',
         cct_created: item.created || '',

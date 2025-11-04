@@ -8,6 +8,7 @@ export interface Lugar {
   longitud: number;
   multimedia: string[];
   imagen_principal: string | null;
+  bandera?: string;
   multiexperiencias_pueblos?: string[];
   tipo?: string;
   cct_slug: string;
