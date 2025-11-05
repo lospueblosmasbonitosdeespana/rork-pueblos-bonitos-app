@@ -153,6 +153,16 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
   const login = async (credentials: LoginCredentials): Promise<{ success: boolean; error?: string }> => {
     try {
       console.log('🔐 Autenticando con LPBE...');
+      
+      console.log('🧹 Limpiando AsyncStorage completo antes de login...');
+      if (Platform.OS === 'web') {
+        localStorage.clear();
+      } else {
+        const AsyncStorage = await import('@react-native-async-storage/async-storage').then(m => m.default);
+        await AsyncStorage.clear();
+      }
+      console.log('✅ AsyncStorage limpiado');
+      
       const loginResponse = await fetch(`${API_BASE}/login`, {
         method: 'POST',
         headers: {

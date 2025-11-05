@@ -18,8 +18,11 @@ const queryClient = new QueryClient({
     queries: {
       staleTime: 0,
       gcTime: 0,
-      refetchOnMount: 'always',
+      refetchOnMount: true,
+      refetchOnReconnect: true,
       refetchOnWindowFocus: true,
+      retry: 3,
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 3000),
     },
   },
 });

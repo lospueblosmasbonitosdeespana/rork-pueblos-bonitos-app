@@ -1,5 +1,6 @@
 import { Edit3, MapPin, Save, Star } from 'lucide-react-native';
 import React, { useCallback, useEffect, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   ActivityIndicator,
   Alert,
@@ -51,6 +52,7 @@ interface PuntosData {
 
 export default function PueblosVisitadosScreen() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [pueblos, setPueblos] = useState<PuebloVisita[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -339,6 +341,12 @@ export default function PueblosVisitadosScreen() {
       
       (async () => {
         try {
+          console.log('🧹 Limpiando React Query...');
+          queryClient.invalidateQueries({ queryKey: ['pueblos-visitados'] });
+          queryClient.invalidateQueries({ queryKey: ['puntos'] });
+          queryClient.invalidateQueries({ queryKey: ['pueblos-lite'] });
+          console.log('✅ React Query invalidado');
+          
           const keysToRemove = await AsyncStorage.getAllKeys();
           const lpbeKeys = keysToRemove.filter(key => 
             key.startsWith('@lpbe_') || 
@@ -354,6 +362,9 @@ export default function PueblosVisitadosScreen() {
         } catch (storageError) {
           console.warn('⚠️ Error limpiando AsyncStorage:', storageError);
         }
+        
+        console.log('⏱️ Esperando 1 segundo antes de refetch...');
+        await new Promise(resolve => setTimeout(resolve, 1000));
 
         const [puntosRes, visitadosRes, liteRes, lugaresRes] = await Promise.all([
           fetch(

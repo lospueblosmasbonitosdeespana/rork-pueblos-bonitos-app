@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { ArrowLeft, LogIn } from 'lucide-react-native';
 import React, { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   ActivityIndicator,
   Alert,
@@ -22,6 +23,7 @@ const LPBE_RED = '#c1121f';
 
 export default function LoginScreen() {
   const { login } = useAuth();
+  const queryClient = useQueryClient();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -46,6 +48,11 @@ export default function LoginScreen() {
     }
 
     setIsLoading(true);
+    
+    console.log('🧹 Limpiando React Query antes de login...');
+    queryClient.clear();
+    console.log('✅ React Query limpiado');
+    
     const result = await login({ username: trimmedUsername, password: trimmedPassword });
     setIsLoading(false);
 
