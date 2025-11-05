@@ -269,7 +269,7 @@ export default function PueblosVisitadosScreen() {
       }
 
       console.log('═══════════════════════════════════════');
-      console.log('💾 INICIANDO GUARDADO OPTIMIZADO PARALELO');
+      console.log('💾 INICIANDO GUARDADO CON BATCH THROTTLING');
       console.log('═══════════════════════════════════════');
 
       const modifiedEntries = Object.entries(editChanges).filter(([pueblo_id, changes]) => {
@@ -293,88 +293,106 @@ export default function PueblosVisitadosScreen() {
       }
 
       setIsSaving(true);
-      console.log('⚡ Enviando todas las peticiones en paralelo...');
 
-      const results = await Promise.allSettled(
-        modifiedEntries.map(async ([pueblo_id, changes]) => {
-          const pueblo = pueblos.find(p => p.pueblo_id === pueblo_id);
-          const puebloNombre = pueblo?.nombre || pueblo_id;
+      const BATCH_SIZE = 15;
+      const BATCH_DELAY = 200;
+      const totalBatches = Math.ceil(modifiedEntries.length / BATCH_SIZE);
+      
+      console.log(`🎯 Dividiendo en ${totalBatches} lotes de máximo ${BATCH_SIZE} pueblos`);
 
-          const payload = {
-            user_id: user.id,
-            pueblo_id: pueblo_id,
-            checked: changes.checked,
-            estrellas: changes.estrellas || 0,
-            tipo: 'manual',
-          };
+      const allResults: { success: boolean; pueblo_id: string; nombre: string; error?: string }[] = [];
 
-          console.log(`📤 Enviando: ${puebloNombre}`);
+      for (let batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
+        const start = batchIndex * BATCH_SIZE;
+        const end = Math.min(start + BATCH_SIZE, modifiedEntries.length);
+        const batch = modifiedEntries.slice(start, end);
+        
+        console.log(`📦 Procesando lote ${batchIndex + 1}/${totalBatches} (${batch.length} pueblos)`);
 
-          try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 10000);
+        const batchResults = await Promise.allSettled(
+          batch.map(async ([pueblo_id, changes]) => {
+            const pueblo = pueblos.find(p => p.pueblo_id === pueblo_id);
+            const puebloNombre = pueblo?.nombre || pueblo_id;
 
-            const response = await fetch(
-              'https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/visita-update',
-              {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
-                signal: controller.signal,
+            const payload = {
+              user_id: user.id,
+              pueblo_id: pueblo_id,
+              checked: changes.checked,
+              estrellas: changes.estrellas || 0,
+              tipo: 'manual',
+            };
+
+            console.log(`📤 Enviando: ${puebloNombre}`);
+
+            try {
+              const controller = new AbortController();
+              const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+              const response = await fetch(
+                'https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/visita-update',
+                {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(payload),
+                  signal: controller.signal,
+                }
+              );
+
+              clearTimeout(timeoutId);
+
+              if (!response.ok) {
+                const errorText = await response.text();
+                console.warn(`⚠️  Error guardando ${puebloNombre}:`, response.status);
+                return { success: false, pueblo_id, nombre: puebloNombre, error: errorText };
               }
-            );
-
-            clearTimeout(timeoutId);
-
-            if (!response.ok) {
-              const errorText = await response.text();
-              console.warn(`⚠️  Error guardando ${puebloNombre}:`, response.status);
-              return { success: false, pueblo_id, nombre: puebloNombre, error: errorText };
+              
+              console.log(`✅ ${puebloNombre} guardado correctamente`);
+              return { success: true, pueblo_id, nombre: puebloNombre };
+            } catch (error: any) {
+              if (error.name === 'AbortError') {
+                console.warn(`⏱️ Timeout guardando ${puebloNombre}`);
+                return { success: false, pueblo_id, nombre: puebloNombre, error: 'Timeout' };
+              }
+              console.warn(`⚠️  Error de red guardando ${puebloNombre}:`, error.message);
+              return { success: false, pueblo_id, nombre: puebloNombre, error: error.message };
             }
-            
-            console.log(`✅ ${puebloNombre} guardado correctamente`);
-            return { success: true, pueblo_id, nombre: puebloNombre };
-          } catch (error: any) {
-            if (error.name === 'AbortError') {
-              console.warn(`⏱️ Timeout guardando ${puebloNombre}`);
-              return { success: false, pueblo_id, nombre: puebloNombre, error: 'Timeout' };
-            }
-            console.warn(`⚠️  Error de red guardando ${puebloNombre}:`, error.message);
-            return { success: false, pueblo_id, nombre: puebloNombre, error: error.message };
+          })
+        );
+
+        batchResults.forEach(result => {
+          if (result.status === 'fulfilled') {
+            allResults.push(result.value);
+          } else {
+            console.warn('⚠️  Petición rechazada:', result.reason);
+            allResults.push({ success: false, pueblo_id: 'unknown', nombre: 'desconocido', error: result.reason?.message || 'Error' });
           }
-        })
-      );
+        });
 
-      const successResults = results.filter(r => r.status === 'fulfilled' && r.value.success);
-      const failedResults = results.filter(r => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.success));
+        console.log(`✅ Lote ${batchIndex + 1}/${totalBatches} completado`);
+
+        if (batchIndex < totalBatches - 1) {
+          console.log(`⏱️ Esperando ${BATCH_DELAY}ms antes del siguiente lote...`);
+          await new Promise(resolve => setTimeout(resolve, BATCH_DELAY));
+        }
+      }
+
+      const successResults = allResults.filter(r => r.success);
+      const failedResults = allResults.filter(r => !r.success);
       
       console.log(`✅ Guardados correctamente: ${successResults.length}`);
       console.log(`❌ Fallaron: ${failedResults.length}`);
+
+      if (failedResults.length > 0) {
+        console.error('❌ Pueblos que fallaron:', failedResults.map(r => r.nombre).join(', '));
+      }
 
       setIsSaving(false);
       setIsEditing(false);
       setEditChanges({});
       setOriginalState(new Map());
       
-      if (failedResults.length > 0) {
-        const failedNames = failedResults.map(r => {
-          if (r.status === 'fulfilled' && r.value.nombre) {
-            return r.value.nombre;
-          }
-          const pueblo_id = r.status === 'fulfilled' ? r.value.pueblo_id : 'desconocido';
-          const pueblo = pueblos.find(p => p.pueblo_id === pueblo_id);
-          return pueblo?.nombre || pueblo_id;
-        }).join(', ');
-        
-        console.error('❌ Pueblos que fallaron:', failedNames);
-        
-        if (Platform.OS === 'web') {
-          alert(`⚠️ Algunos pueblos no se guardaron: ${failedNames}`);
-        } else {
-          Alert.alert('Guardado parcial', `No se guardaron: ${failedNames}`);
-        }
-      } else {
-        console.log('✅ ¡Todos los cambios guardados correctamente!');
+      if (successResults.length > 0) {
+        console.log('✅ ¡Cambios guardados correctamente!');
         
         if (Platform.OS === 'web') {
           alert('✅ Cambios guardados correctamente');
