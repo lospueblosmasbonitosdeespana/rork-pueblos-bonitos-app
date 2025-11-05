@@ -172,9 +172,6 @@ export default function CuentaInfoScreen() {
             'https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/upload-profile-photo',
             {
               method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${token}`,
-              },
               body: formData,
             }
           );
