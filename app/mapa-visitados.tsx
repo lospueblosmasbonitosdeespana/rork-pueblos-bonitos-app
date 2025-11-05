@@ -76,16 +76,30 @@ export default function MapaVisitadosScreen() {
         />
       ) : (
         <WebView
-          source={{ uri: webViewUrl }}
+          source={{ 
+            uri: webViewUrl,
+            headers: {
+              'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            }
+          }}
           style={styles.webview}
           startInLoadingState
           javaScriptEnabled
           domStorageEnabled
-          cacheEnabled
+          cacheEnabled={false}
           originWhitelist={['*']}
           mixedContentMode="always"
           allowsInlineMediaPlayback
           mediaPlaybackRequiresUserAction={false}
+          scalesPageToFit
+          onError={(syntheticEvent) => {
+            const { nativeEvent } = syntheticEvent;
+            console.error('WebView error: ', nativeEvent);
+          }}
+          onHttpError={(syntheticEvent) => {
+            const { nativeEvent } = syntheticEvent;
+            console.warn('WebView HTTP error: ', nativeEvent.statusCode);
+          }}
         />
       )}
     </View>
