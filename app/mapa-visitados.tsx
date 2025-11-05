@@ -47,7 +47,7 @@ export default function MapaVisitadosScreen() {
     );
   }
 
-  const webViewUrl = `https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/mapa-visitados-html?user_id=${user.id}`;
+  const webViewUrl = `https://lospueblosmasbonitosdeespana.org/lpbe-mapa-visitados/?user_id=${user.id}`;
 
   return (
     <View style={styles.container}>
