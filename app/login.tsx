@@ -38,9 +38,9 @@ export default function LoginScreen() {
   const passwordInputRef = React.useRef<TextInput>(null);
 
   const [, googleResponse, googlePromptAsync] = Google.useAuthRequest({
-    iosClientId: '1081426318925-oa71cbdce7jq5p0oaub6k7hep9k10e2p.apps.googleusercontent.com',
-    androidClientId: '1081426318925-t9te7mktcsboi1hj32j87qdjr8kvqpml.apps.googleusercontent.com',
-    webClientId: '1081426318925-s78gq8tlgm7o6k6k6bhglqf7jvcnk5eh.apps.googleusercontent.com',
+    iosClientId: '668620158239-8bb43ohkh0f2cp8d8tc97a5aoglp2ua9.apps.googleusercontent.com',
+    androidClientId: '668620158239-pnessev4surmlsjael5htsem06fcllvn.apps.googleusercontent.com',
+    webClientId: '668620158239-to6rkbe6grl7nrk7uj903actvr4g5hv.apps.googleusercontent.com',
   });
 
   React.useEffect(() => {
