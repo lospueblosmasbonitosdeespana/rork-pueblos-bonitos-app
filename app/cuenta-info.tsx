@@ -209,6 +209,8 @@ export default function CuentaInfoScreen() {
           const photoUrl = uploadData.photo_url;
           console.log('✅ URL de la foto:', photoUrl);
           
+          const photoUrlWithTimestamp = `${photoUrl}?t=${Date.now()}`;
+          
           setSyncedData(prev => prev ? { ...prev, photo: photoUrl } : null);
           
           updateUser({ 
@@ -420,8 +422,8 @@ export default function CuentaInfoScreen() {
             disabled={isUploading}
           >
             <Image
-              key={displayAvatar}
-              source={{ uri: displayAvatar }}
+              key={`${displayAvatar}-${Date.now()}`}
+              source={{ uri: `${displayAvatar}?t=${Date.now()}` }}
               style={styles.avatar}
               resizeMode="cover"
             />

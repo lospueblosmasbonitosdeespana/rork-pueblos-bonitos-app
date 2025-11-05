@@ -160,8 +160,8 @@ export default function ProfileScreen() {
           <View style={styles.header}>
             <View style={styles.avatarContainer}>
               <Image
-                key={displayAvatar}
-                source={{ uri: displayAvatar }}
+                key={`${displayAvatar}-${user.photo || user.profile_photo || user.avatar_url || ''}`}
+                source={{ uri: `${displayAvatar}?t=${Date.now()}` }}
                 style={styles.avatar}
                 resizeMode="cover"
               />
