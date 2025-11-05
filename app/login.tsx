@@ -137,13 +137,16 @@ export default function LoginScreen() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          provider: 'apple',
           access_token: credential.identityToken,
         }),
       });
 
       const result = await response.json();
+      console.log('HTTP status:', response.status);
+      console.log('Respuesta del servidor:', result);
 
-      if (response.ok && result.success && result.user_id) {
+      if (response.ok && result && result.user_id) {
         const loginResult = await socialLogin(result.user_id.toString());
 
         if (loginResult.success) {
