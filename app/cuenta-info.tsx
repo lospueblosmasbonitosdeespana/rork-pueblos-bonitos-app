@@ -201,45 +201,53 @@ export default function CuentaInfoScreen() {
           const uploadData = await uploadResponse.json();
           console.log('✅ Imagen subida correctamente:', uploadData);
           
-          if (!uploadData.success || !uploadData.photo) {
+          if (!uploadData.success || !uploadData.photo_url) {
             console.error('❌ Respuesta inesperada del servidor:', uploadData);
             throw new Error('No se recibió la URL de la foto');
           }
           
-          const photoUrl = uploadData.photo;
+          const photoUrl = uploadData.photo_url;
           console.log('✅ URL de la foto:', photoUrl);
           
-          console.log('🔄 Actualizando perfil con la nueva URL...');
-          const updateResponse = await fetch(
-            'https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/user-profile',
-            {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-              },
-              body: JSON.stringify({
-                user_id: user.id,
-                photo: photoUrl,
-              }),
-            }
-          );
+          setSyncedData(prev => prev ? { ...prev, photo: photoUrl } : null);
+          updateUser({ profile_photo: photoUrl, photo: photoUrl });
           
-          if (!updateResponse.ok) {
-            console.error('❌ Error actualizando perfil con la nueva foto');
-            throw new Error('Error al actualizar el perfil');
+          console.log('🔄 Refrescando perfil completo...');
+          try {
+            const profileResponse = await fetch(
+              `https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/user-profile?user_id=${user.id}`,
+              {
+                method: 'GET',
+                headers: {
+                  'Accept': 'application/json',
+                },
+              }
+            );
+            
+            if (profileResponse.ok) {
+              const profileData = await profileResponse.json();
+              console.log('✅ Perfil refrescado:', profileData);
+              setSyncedData({
+                id: profileData.id || user.id,
+                name: profileData.name || '',
+                email: profileData.email || '',
+                username: profileData.username || '',
+                photo: profileData.photo || photoUrl,
+              });
+              updateUser({
+                profile_photo: profileData.photo || photoUrl,
+                photo: profileData.photo || photoUrl,
+                name: profileData.name,
+              });
+            }
+          } catch (refreshError) {
+            console.warn('⚠️ No se pudo refrescar el perfil completo, pero la foto se subió:', refreshError);
           }
           
-          const updateData = await updateResponse.json();
-          console.log('✅ Perfil actualizado:', updateData);
-          
-          setSyncedData(prev => prev ? { ...prev, photo: photoUrl } : null);
-          updateUser({ profile_photo: photoUrl });
-          
           if (Platform.OS === 'web') {
-            alert('Foto de perfil actualizada correctamente');
+            alert('✅ Foto actualizada correctamente');
           } else {
-            Alert.alert('Éxito', 'Foto de perfil actualizada correctamente', [{ text: 'OK' }]);
+            Alert.alert('✅ Éxito', 'Foto actualizada correctamente', [{ text: 'OK' }]);
           }
         } catch (error: any) {
           console.error('❌ Error en upload/update:', error);
