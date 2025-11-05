@@ -82,6 +82,10 @@ export default function MapaVisitadosScreen() {
           javaScriptEnabled
           domStorageEnabled
           cacheEnabled
+          originWhitelist={['*']}
+          mixedContentMode="always"
+          allowsInlineMediaPlayback
+          mediaPlaybackRequiresUserAction={false}
         />
       )}
     </View>
