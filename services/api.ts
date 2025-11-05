@@ -834,9 +834,6 @@ export async function uploadProfilePhoto(
     const uploadResponse = await fetch(uploadUrl, {
       method: 'POST',
       body: formData,
-      headers: {
-        'Accept': 'application/json',
-      },
     });
     
     console.log('📊 Upload Status:', uploadResponse.status);
