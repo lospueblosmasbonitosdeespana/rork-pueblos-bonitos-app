@@ -5,7 +5,7 @@ import {
   Key,
   LogOut,
   MapPin,
-
+  Map,
   Star,
   User,
   FileText,
@@ -125,6 +125,13 @@ export default function ProfileScreen() {
       label: 'Pueblos Visitados',
       icon: MapPin,
       onPress: () => router.push('/pueblos-visitados'),
+      active: true,
+    },
+    {
+      id: 'visited-map',
+      label: 'Mapa visitados',
+      icon: Map,
+      onPress: () => router.push('/mapa-visitados'),
       active: true,
     },
     {
