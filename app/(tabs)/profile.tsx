@@ -94,13 +94,15 @@ export default function ProfileScreen() {
 
   const fullName = [user.first_name, user.last_name].filter(Boolean).join(' ') || user.name;
   
-  let displayAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&size=200&background=c1121f&color=fff`;
+  let displayAvatar = user.photo || user.profile_photo || user.avatar_url;
   
-  if (user.photo && user.photo.startsWith('http')) {
-    displayAvatar = user.photo;
-  } else if (user.profile_photo && !user.profile_photo.startsWith('http')) {
+  if (displayAvatar && displayAvatar.startsWith('http')) {
+    
+  } else if (displayAvatar && !displayAvatar.startsWith('http')) {
     const userId = user.id || user.user_id;
-    displayAvatar = `https://lospueblosmasbonitosdeespana.org/wp-content/uploads/ultimatemember/${userId}/${user.profile_photo}`;
+    displayAvatar = `https://lospueblosmasbonitosdeespana.org/wp-content/uploads/ultimatemember/${userId}/${displayAvatar}`;
+  } else {
+    displayAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&size=200&background=c1121f&color=fff`;
   }
 
   const menuOptions = [
@@ -158,6 +160,7 @@ export default function ProfileScreen() {
           <View style={styles.header}>
             <View style={styles.avatarContainer}>
               <Image
+                key={displayAvatar}
                 source={{ uri: displayAvatar }}
                 style={styles.avatar}
                 resizeMode="cover"

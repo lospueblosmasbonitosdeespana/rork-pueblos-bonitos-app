@@ -210,7 +210,12 @@ export default function CuentaInfoScreen() {
           console.log('✅ URL de la foto:', photoUrl);
           
           setSyncedData(prev => prev ? { ...prev, photo: photoUrl } : null);
-          updateUser({ profile_photo: photoUrl, photo: photoUrl });
+          
+          updateUser({ 
+            photo: photoUrl,
+            profile_photo: photoUrl,
+            avatar_url: photoUrl
+          });
           
           console.log('🔄 Refrescando perfil completo...');
           try {
@@ -227,16 +232,21 @@ export default function CuentaInfoScreen() {
             if (profileResponse.ok) {
               const profileData = await profileResponse.json();
               console.log('✅ Perfil refrescado:', profileData);
+              
+              const finalPhotoUrl = profileData.photo || photoUrl;
+              
               setSyncedData({
                 id: profileData.id || user.id,
                 name: profileData.name || '',
                 email: profileData.email || '',
                 username: profileData.username || '',
-                photo: profileData.photo || photoUrl,
+                photo: finalPhotoUrl,
               });
+              
               updateUser({
-                profile_photo: profileData.photo || photoUrl,
-                photo: profileData.photo || photoUrl,
+                photo: finalPhotoUrl,
+                profile_photo: finalPhotoUrl,
+                avatar_url: finalPhotoUrl,
                 name: profileData.name,
               });
             }
@@ -387,7 +397,8 @@ export default function CuentaInfoScreen() {
   const displayName = syncedData.name || user.name;
   const displayEmail = syncedData.email || user.email;
   const displayUsername = syncedData.username || user.username;
-  const displayAvatar = syncedData.photo || user.profile_photo || user.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&size=200&background=c1121f&color=fff`;
+  
+  const displayAvatar = syncedData.photo || user.photo || user.profile_photo || user.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&size=200&background=c1121f&color=fff`;
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -409,6 +420,7 @@ export default function CuentaInfoScreen() {
             disabled={isUploading}
           >
             <Image
+              key={displayAvatar}
               source={{ uri: displayAvatar }}
               style={styles.avatar}
               resizeMode="cover"
