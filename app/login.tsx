@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as Google from 'expo-auth-session/providers/google';
+import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import {
   ActivityIndicator,
@@ -100,6 +101,9 @@ export default function LoginScreen() {
 
   const handleGoogleLogin = async () => {
     try {
+      const redirectUri = AuthSession.makeRedirectUri();
+      console.log('🔍 Redirect URI usada por la app:', redirectUri);
+      console.log('📱 Platform:', Platform.OS);
       await googlePromptAsync();
     } catch (error) {
       console.error('Google prompt error:', error);
