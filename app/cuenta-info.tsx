@@ -177,9 +177,9 @@ export default function CuentaInfoScreen() {
           );
           
           if (!uploadResponse.ok) {
-            const errorData = await uploadResponse.json().catch(() => ({}));
-            console.error('❌ Error subiendo imagen:', errorData);
-            throw new Error('Error al subir la imagen');
+            const errorText = await uploadResponse.text().catch(() => '');
+            console.error('❌ Error subiendo imagen (status:', uploadResponse.status, '):', errorText.substring(0, 300));
+            throw new Error(`Error al subir la imagen (código ${uploadResponse.status})`);
           }
           
           const uploadData = await uploadResponse.json();
@@ -227,10 +227,13 @@ export default function CuentaInfoScreen() {
           }
         } catch (error: any) {
           console.error('❌ Error en upload/update:', error);
+          const errorMessage = error?.message || 'Error desconocido al actualizar la foto';
+          console.error('📝 Mensaje de error:', errorMessage);
+          
           if (Platform.OS === 'web') {
-            alert('Error al actualizar la foto. Inténtalo de nuevo.');
+            alert(`Error: ${errorMessage}`);
           } else {
-            Alert.alert('Error', 'Error al actualizar la foto. Inténtalo de nuevo.', [{ text: 'OK' }]);
+            Alert.alert('Error', errorMessage, [{ text: 'OK' }]);
           }
         } finally {
           setIsUploading(false);
