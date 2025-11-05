@@ -334,11 +334,11 @@ export default function PueblosVisitadosScreen() {
         console.log('✅ Respuesta del servidor:', result);
 
         if (!result.success) {
-          throw new Error(result.message || 'Error desconocido al guardar');
+          throw new Error('Error guardando pueblos');
         }
 
-        console.log(`✅ Guardados: ${result.guardados}, Fallidos: ${result.fallidos}`);
-        console.log(`📝 Mensaje: ${result.message}`);
+        console.log(`✅ Guardados: ${result.guardados || 0}, Fallidos: ${result.fallidos || 0}`);
+        console.log(`📝 Mensaje: ${result.message || 'OK'}`);
 
         setIsSaving(false);
         setIsEditing(false);
@@ -348,7 +348,7 @@ export default function PueblosVisitadosScreen() {
         if (Platform.OS === 'web') {
           alert('✅ Cambios guardados correctamente');
         } else {
-          Alert.alert('✅ Guardado', 'Cambios guardados correctamente');
+          Alert.alert('✅ Cambios guardados correctamente');
         }
 
         console.log('🔄 Iniciando sincronización en segundo plano...');
