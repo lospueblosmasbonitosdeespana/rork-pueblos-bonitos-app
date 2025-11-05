@@ -133,12 +133,11 @@ export default function LoginScreen() {
         return;
       }
 
-      const response = await fetch('https://lospueblosmasbonitosdeespana.org/wp-json/nextend-social-login/v1/auth', {
+      const response = await fetch('https://lospueblosmasbonitosdeespana.org/wp-json/nextend-social-login/v1/apple/get_user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          provider: 'apple',
-          token: credential.identityToken,
+          access_token: credential.identityToken,
         }),
       });
 
