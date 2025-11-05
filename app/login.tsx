@@ -2,6 +2,9 @@ import { router } from 'expo-router';
 import { ArrowLeft, LogIn } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import * as AppleAuthentication from 'expo-apple-authentication';
+import * as Google from 'expo-auth-session/providers/google';
+import * as WebBrowser from 'expo-web-browser';
 import {
   ActivityIndicator,
   Alert,
@@ -21,14 +24,24 @@ import { useAuth } from '@/contexts/auth';
 
 const LPBE_RED = '#c1121f';
 
+WebBrowser.maybeCompleteAuthSession();
+
 export default function LoginScreen() {
-  const { login } = useAuth();
+  const { login, socialLogin } = useAuth();
   const queryClient = useQueryClient();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [isAppleLoading, setIsAppleLoading] = useState(false);
   const fadeAnim = useState(new Animated.Value(0))[0];
   const passwordInputRef = React.useRef<TextInput>(null);
+
+  const [, googleResponse, googlePromptAsync] = Google.useAuthRequest({
+    iosClientId: '1081426318925-oa71cbdce7jq5p0oaub6k7hep9k10e2p.apps.googleusercontent.com',
+    androidClientId: '1081426318925-t9te7mktcsboi1hj32j87qdjr8kvqpml.apps.googleusercontent.com',
+    webClientId: '1081426318925-s78gq8tlgm7o6k6k6bhglqf7jvcnk5eh.apps.googleusercontent.com',
+  });
 
   React.useEffect(() => {
     Animated.timing(fadeAnim, {
@@ -36,7 +49,122 @@ export default function LoginScreen() {
       duration: 600,
       useNativeDriver: true,
     }).start();
-  }, []);
+  }, [fadeAnim]);
+
+  const handleGoogleSuccess = React.useCallback(async (authentication: any) => {
+    if (!authentication?.idToken) {
+      Alert.alert('Error', 'No se pudo obtener el token de Google');
+      return;
+    }
+
+    setIsGoogleLoading(true);
+    queryClient.clear();
+
+    try {
+      const response = await fetch('https://lospueblosmasbonitosdeespana.org/wp-json/um/v1/social-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          provider: 'google',
+          token: authentication.idToken,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success && result.user_id) {
+        const loginResult = await socialLogin(result.user_id.toString());
+
+        if (loginResult.success) {
+          router.replace('/(tabs)/profile');
+        } else {
+          Alert.alert('Error', 'No se pudo completar el inicio de sesión con Google.');
+        }
+      } else {
+        Alert.alert('Error', result.message || 'No se pudo completar el inicio de sesión con Google.');
+      }
+    } catch (error) {
+      console.error('Google login error:', error);
+      Alert.alert('Error', 'No se pudo completar el inicio de sesión. Inténtalo de nuevo.');
+    } finally {
+      setIsGoogleLoading(false);
+    }
+  }, [socialLogin, queryClient]);
+
+  React.useEffect(() => {
+    if (googleResponse?.type === 'success') {
+      handleGoogleSuccess(googleResponse.authentication);
+    }
+  }, [googleResponse, handleGoogleSuccess]);
+
+
+  const handleGoogleLogin = async () => {
+    try {
+      await googlePromptAsync();
+    } catch (error) {
+      console.error('Google prompt error:', error);
+      Alert.alert('Error', 'No se pudo iniciar el proceso de Google');
+    }
+  };
+
+  const handleAppleLogin = async () => {
+    if (Platform.OS !== 'ios') {
+      Alert.alert('Información', 'El inicio de sesión con Apple solo está disponible en iOS');
+      return;
+    }
+
+    try {
+      setIsAppleLoading(true);
+      queryClient.clear();
+
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+      });
+
+      if (!credential.identityToken) {
+        Alert.alert('Error', 'No se pudo obtener el token de Apple');
+        return;
+      }
+
+      const response = await fetch('https://lospueblosmasbonitosdeespana.org/wp-json/um/v1/social-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          provider: 'apple',
+          token: credential.identityToken,
+          user: credential.user,
+          email: credential.email,
+          fullName: credential.fullName,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success && result.user_id) {
+        const loginResult = await socialLogin(result.user_id.toString());
+
+        if (loginResult.success) {
+          router.replace('/(tabs)/profile');
+        } else {
+          Alert.alert('Error', 'No se pudo completar el inicio de sesión con Apple.');
+        }
+      } else {
+        Alert.alert('Error', result.message || 'No se pudo completar el inicio de sesión con Apple.');
+      }
+    } catch (error: any) {
+      if (error.code === 'ERR_REQUEST_CANCELED') {
+        console.log('Usuario canceló el login con Apple');
+      } else {
+        console.error('Apple login error:', error);
+        Alert.alert('Error', 'No se pudo completar el inicio de sesión. Inténtalo de nuevo.');
+      }
+    } finally {
+      setIsAppleLoading(false);
+    }
+  };
 
   const handleLogin = async () => {
     const trimmedUsername = username.trim();
@@ -153,6 +281,46 @@ export default function LoginScreen() {
                   <Text style={styles.buttonText}>Iniciar Sesión</Text>
                 )}
               </TouchableOpacity>
+
+              <View style={styles.divider}>
+                <View style={styles.dividerLine} />
+                <Text style={styles.dividerText}>O continúa con</Text>
+                <View style={styles.dividerLine} />
+              </View>
+
+              <TouchableOpacity
+                style={styles.socialButton}
+                onPress={handleGoogleLogin}
+                disabled={isGoogleLoading || isLoading}
+                activeOpacity={0.8}
+              >
+                {isGoogleLoading ? (
+                  <ActivityIndicator color="#666" />
+                ) : (
+                  <>
+                    <Text style={styles.socialButtonIcon}>G</Text>
+                    <Text style={styles.socialButtonText}>Continuar con Google</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+
+              {Platform.OS === 'ios' && (
+                <TouchableOpacity
+                  style={[styles.socialButton, styles.appleButton]}
+                  onPress={handleAppleLogin}
+                  disabled={isAppleLoading || isLoading}
+                  activeOpacity={0.8}
+                >
+                  {isAppleLoading ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <>
+                      <Text style={styles.appleButtonIcon}></Text>
+                      <Text style={styles.appleButtonText}>Continuar con Apple</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              )}
 
               <View style={styles.footer}>
                 <Text style={styles.footerText}>¿No tienes cuenta? </Text>
@@ -292,5 +460,62 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600' as const,
     color: LPBE_RED,
+  },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 28,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#e0e0e0',
+  },
+  dividerText: {
+    marginHorizontal: 16,
+    fontSize: 14,
+    color: '#999',
+    fontWeight: '500' as const,
+  },
+  socialButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    paddingVertical: 16,
+    marginBottom: 12,
+    borderWidth: 1.5,
+    borderColor: '#e0e0e0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  socialButtonIcon: {
+    fontSize: 20,
+    fontWeight: '700' as const,
+    color: '#4285F4',
+    marginRight: 12,
+  },
+  socialButtonText: {
+    fontSize: 16,
+    fontWeight: '600' as const,
+    color: '#333',
+  },
+  appleButton: {
+    backgroundColor: '#000',
+    borderColor: '#000',
+  },
+  appleButtonIcon: {
+    fontSize: 20,
+    marginRight: 12,
+    color: '#fff',
+  },
+  appleButtonText: {
+    fontSize: 16,
+    fontWeight: '600' as const,
+    color: '#fff',
   },
 });

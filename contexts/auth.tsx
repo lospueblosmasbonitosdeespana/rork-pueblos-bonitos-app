@@ -305,6 +305,52 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
     }));
   };
 
+  const socialLogin = async (userId: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      console.log('🔐 Social login - obteniendo perfil del usuario...');
+      
+      console.log('🧹 Limpiando caché completo antes de social login...');
+      if (Platform.OS === 'web') {
+        localStorage.clear();
+        sessionStorage.clear();
+      } else {
+        const AsyncStorage = await import('@react-native-async-storage/async-storage').then(m => m.default);
+        await AsyncStorage.clear();
+      }
+      console.log('✅ AsyncStorage limpiado');
+      
+      const userResponse = await fetch(`${API_BASE}/user-profile?user_id=${userId}`);
+
+      if (!userResponse.ok) {
+        console.error('❌ Error obteniendo perfil de usuario');
+        return { success: false, error: 'Error al obtener datos del usuario' };
+      }
+
+      const user = await userResponse.json();
+
+      if (!user.id || !user.username || !user.email || !user.name) {
+        return { success: false, error: 'Datos de usuario incompletos' };
+      }
+
+      await setStoredUserId(user.id.toString());
+      await setStoredToken('social_auth_token');
+      
+      setState({ 
+        user: { ...user, role: 'subscriber' }, 
+        userId: user.id.toString(), 
+        token: 'social_auth_token',
+        isLoading: false, 
+        isAuthenticated: true 
+      });
+
+      console.log('✅ Social login completado exitosamente');
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Social login error:', error);
+      return { success: false, error: 'Error de conexión. Inténtalo de nuevo.' };
+    }
+  };
+
   return {
     ...state,
     login,
@@ -312,5 +358,6 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
     logout,
     checkAuth,
     updateUser,
+    socialLogin,
   };
 });
