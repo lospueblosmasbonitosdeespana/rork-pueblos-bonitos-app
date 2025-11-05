@@ -247,28 +247,16 @@ export default function PueblosVisitadosScreen() {
       }
 
       console.log('═══════════════════════════════════════');
-      console.log('💾 INICIANDO GUARDADO DE CAMBIOS');
+      console.log('💾 INICIANDO GUARDADO OPTIMIZADO');
       console.log('═══════════════════════════════════════');
-      console.log('📋 EditChanges completo:', JSON.stringify(editChanges, null, 2));
-      console.log('👤 User ID:', user.id);
-      console.log('🗺️  Original State size:', originalState.size);
 
       const modifiedEntries = Object.entries(editChanges).filter(([pueblo_id, changes]) => {
         const original = originalState.get(pueblo_id);
-        if (!original) {
-          console.log(`✨ Pueblo ${pueblo_id} es nuevo (no en estado original)`);
-          return true;
-        }
-        const hasChanges = original.checked !== changes.checked || original.estrellas !== changes.estrellas;
-        if (hasChanges) {
-          console.log(`✏️  Pueblo ${pueblo_id} modificado:`);
-          console.log(`   Original: checked=${original.checked}, estrellas=${original.estrellas}`);
-          console.log(`   Nuevo: checked=${changes.checked}, estrellas=${changes.estrellas}`);
-        }
-        return hasChanges;
+        if (!original) return true;
+        return original.checked !== changes.checked || original.estrellas !== changes.estrellas;
       });
 
-      console.log(`📊 Pueblos modificados encontrados: ${modifiedEntries.length}`);
+      console.log(`📊 Pueblos modificados: ${modifiedEntries.length}`);
       
       if (modifiedEntries.length === 0) {
         console.log('⚠️  No hay cambios para guardar');
@@ -282,7 +270,6 @@ export default function PueblosVisitadosScreen() {
         return;
       }
 
-      console.log(`💾 Guardando ${modifiedEntries.length} cambios...`);
       setIsSaving(true);
 
       const results = await Promise.all(
@@ -295,39 +282,29 @@ export default function PueblosVisitadosScreen() {
             tipo: 'manual',
           };
 
-          console.log(`📤 Enviando pueblo ${pueblo_id}:`, JSON.stringify(payload));
-
           try {
             const response = await fetch(
               'https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/visita-update',
               {
                 method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
               }
             );
 
-            console.log(`📡 Response status para ${pueblo_id}:`, response.status);
-
             if (!response.ok) {
               const errorText = await response.text();
-              console.warn(`⚠️  Error guardando pueblo ${pueblo_id}:`, response.status, errorText);
-              return { success: false, pueblo_id, status: response.status, error: errorText };
-            } else {
-              const responseData = await response.json();
-              console.log(`✅ Pueblo ${pueblo_id} guardado correctamente:`, responseData);
-              return { success: true, pueblo_id };
+              console.warn(`⚠️  Error guardando pueblo ${pueblo_id}:`, response.status);
+              return { success: false, pueblo_id, error: errorText };
             }
+            
+            return { success: true, pueblo_id };
           } catch (fetchError) {
             console.error(`❌ Error de red guardando pueblo ${pueblo_id}:`, fetchError);
             return { success: false, pueblo_id, error: String(fetchError) };
           }
         })
       );
-
-      console.log('📊 Resultados del guardado:', results);
 
       const failedResults = results.filter(r => !r.success);
       
@@ -337,189 +314,169 @@ export default function PueblosVisitadosScreen() {
       setOriginalState(new Map());
       
       if (failedResults.length > 0) {
-        console.error('❌ Algunos pueblos fallaron al guardar:', failedResults);
+        console.error('❌ Algunos pueblos fallaron:', failedResults.length);
         const failedNames = failedResults.map(r => {
           const pueblo = pueblos.find(p => p.pueblo_id === r.pueblo_id);
           return pueblo?.nombre || r.pueblo_id;
         }).join(', ');
         
         if (Platform.OS === 'web') {
-          alert(`Error al guardar algunos pueblos: ${failedNames}`);
+          alert(`⚠️ Error al guardar: ${failedNames}`);
         } else {
-          Alert.alert('Error parcial', `No se pudieron guardar: ${failedNames}`);
+          Alert.alert('Error parcial', `No se guardaron: ${failedNames}`);
         }
       } else {
-        console.log('✅ Todos los cambios guardados correctamente');
+        console.log('✅ Guardado completado');
         
         if (Platform.OS === 'web') {
-          alert('✅ Cambios guardados correctamente.');
+          alert('✅ Guardado correctamente');
         } else {
-          Alert.alert('✅ Éxito', 'Cambios guardados correctamente.');
+          Alert.alert('✅ Guardado', 'Cambios guardados correctamente');
         }
       }
 
-      console.log('═══════════════════════════════════════');
-      console.log('🔄 Iniciando refetch en segundo plano...');
-      console.log('═══════════════════════════════════════');
+      console.log('🔄 Sincronizando en segundo plano...');
       
       (async () => {
         try {
-          const keysToRemove = [
-            'pueblos-visitados-cache',
-            'puntos-cache',
-            'pueblos-data',
-            'user-points',
-          ];
-          
-          await AsyncStorage.multiRemove(keysToRemove);
-          console.log('✅ AsyncStorage limpiado:', keysToRemove.join(', '));
-        } catch (storageError) {
-          console.warn('⚠️ Error al limpiar AsyncStorage:', storageError);
-        }
-
-        try {
-          const visitadosRes = await fetch(
-            `https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/pueblos-visitados?user_id=${user.id}`,
-            { headers: { 'Content-Type': 'application/json' } }
+          const keysToRemove = await AsyncStorage.getAllKeys();
+          const lpbeKeys = keysToRemove.filter(key => 
+            key.startsWith('@lpbe_') || 
+            key.includes('pueblos') || 
+            key.includes('puntos') || 
+            key.includes('visita')
           );
           
-          if (visitadosRes.ok) {
-            const visitadosData = await visitadosRes.json();
-            console.log('📥 Datos actualizados del endpoint pueblos-visitados:', visitadosData.length, 'registros');
-            
-            const liteRes = await fetch(
-              `https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/pueblos-lite`,
-              { headers: { 'Content-Type': 'application/json' } }
-            );
-            
-            const puntosLugaresRes = await fetch(
-              `https://lospueblosmasbonitosdeespana.org/wp-json/jet-cct/lugar`,
-              { headers: { 'Content-Type': 'application/json' } }
-            );
-            
-            if (liteRes.ok && puntosLugaresRes.ok) {
-              const liteData = await liteRes.json();
-              const puntosLugaresData = await puntosLugaresRes.json();
-              
-              const puntosMap = new Map<string, number>();
-              if (Array.isArray(puntosLugaresData)) {
-                puntosLugaresData.forEach((lugar: any) => {
-                  if (lugar._ID && lugar.puntos) {
-                    puntosMap.set(String(lugar._ID), Number(lugar.puntos) || 0);
-                  }
-                });
-              }
-              
-              const pueblosMap = new Map<string, PuebloVisita>();
-              
-              visitadosData.forEach((pueblo: PuebloVisita) => {
-                const puebloId = parseInt(pueblo.pueblo_id);
-                if (puebloId <= 200) {
-                  const puntosDelPueblo = puntosMap.get(pueblo.pueblo_id) || 0;
-                  const puebloConPuntos = { ...pueblo, puntos: puntosDelPueblo };
-                  
-                  const existing = pueblosMap.get(pueblo.pueblo_id);
-                  if (!existing) {
-                    pueblosMap.set(pueblo.pueblo_id, puebloConPuntos);
-                  } else {
-                    const existingDate = existing.fecha_visita ? new Date(existing.fecha_visita).getTime() : 0;
-                    const currentDate = pueblo.fecha_visita ? new Date(pueblo.fecha_visita).getTime() : 0;
-                    
-                    if (currentDate > existingDate) {
-                      pueblosMap.set(pueblo.pueblo_id, puebloConPuntos);
-                    } else if (currentDate === existingDate && pueblo.tipo === 'manual' && existing.tipo === 'auto') {
-                      pueblosMap.set(pueblo.pueblo_id, puebloConPuntos);
-                    }
-                  }
-                }
-              });
-              
-              liteData.forEach((pueblo: any) => {
-                const puebloId = parseInt(pueblo.id);
-                if (puebloId <= 200 && !pueblosMap.has(pueblo.id?.toString())) {
-                  const puntosDelPueblo = puntosMap.get(pueblo.id?.toString()) || 0;
-                  pueblosMap.set(pueblo.id?.toString(), {
-                    _ID: pueblo.id?.toString() || '',
-                    pueblo_id: pueblo.id?.toString() || '',
-                    nombre: pueblo.nombre || '',
-                    provincia: pueblo.provincia || '',
-                    comunidad_autonoma: pueblo.comunidad_autonoma || '',
-                    imagen_principal: pueblo.imagen_principal || '',
-                    estrellas: 0,
-                    tipo: 'manual',
-                    checked: 0,
-                    puntos: puntosDelPueblo,
-                  });
-                }
-              });
-              
-              const pueblosList = Array.from(pueblosMap.values());
-              
-              const listaSinDuplicados = Object.values(
-                pueblosList.reduce((acc: { [key: string]: PuebloVisita }, item) => {
-                  const key = item.pueblo_id || item._ID;
-                  if (!acc[key]) acc[key] = item;
-                  return acc;
-                }, {})
-              );
-              
-              const sorted = listaSinDuplicados.sort((a, b) => {
-                if (a.checked !== b.checked) {
-                  return b.checked - a.checked;
-                }
-                const nameA = a.nombre || '';
-                const nameB = b.nombre || '';
-                return nameA.localeCompare(nameB);
-              });
-              
-              setPueblos(sorted);
-              console.log('✅ Estado local actualizado con', sorted.length, 'pueblos');
-            }
+          if (lpbeKeys.length > 0) {
+            await AsyncStorage.multiRemove(lpbeKeys);
+            console.log('🗑️ AsyncStorage limpiado:', lpbeKeys.length, 'claves');
           }
-        } catch (err) {
-          console.warn('⚠️  Error al recargar pueblos visitados:', err);
+        } catch (storageError) {
+          console.warn('⚠️ Error limpiando AsyncStorage:', storageError);
         }
-        
-        try {
-          console.log('📊 Refetching /lpbe/v1/puntos...');
-          const puntosRes = await fetch(
+
+        const [puntosRes, visitadosRes, liteRes, lugaresRes] = await Promise.all([
+          fetch(
             `https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/puntos?user_id=${user.id}&_t=${Date.now()}`,
             { 
               headers: { 
                 'Content-Type': 'application/json',
-                'Cache-Control': 'no-cache, no-store, must-revalidate',
-                'Pragma': 'no-cache',
+                'Cache-Control': 'no-cache',
               },
             }
+          ),
+          fetch(
+            `https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/pueblos-visitados?user_id=${user.id}&_t=${Date.now()}`,
+            { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache' } }
+          ),
+          fetch(
+            `https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/pueblos-lite`,
+            { headers: { 'Content-Type': 'application/json' } }
+          ),
+          fetch(
+            `https://lospueblosmasbonitosdeespana.org/wp-json/jet-cct/lugar`,
+            { headers: { 'Content-Type': 'application/json' } }
+          ),
+        ]);
+
+        if (puntosRes.ok) {
+          const puntosDataUpdated = await puntosRes.json();
+          setPuntosData(puntosDataUpdated);
+          console.log('✅ Puntos actualizados:', puntosDataUpdated.puntos_totales, 'pts,', puntosDataUpdated.total_pueblos, 'pueblos');
+        }
+
+        if (visitadosRes.ok && liteRes.ok && lugaresRes.ok) {
+          const [visitadosData, liteData, lugaresData] = await Promise.all([
+            visitadosRes.json(),
+            liteRes.json(),
+            lugaresRes.json(),
+          ]);
+          
+          const puntosMap = new Map<string, number>();
+          if (Array.isArray(lugaresData)) {
+            lugaresData.forEach((lugar: any) => {
+              if (lugar._ID && lugar.puntos) {
+                puntosMap.set(String(lugar._ID), Number(lugar.puntos) || 0);
+              }
+            });
+          }
+          
+          const pueblosMap = new Map<string, PuebloVisita>();
+          
+          visitadosData.forEach((pueblo: PuebloVisita) => {
+            const puebloId = parseInt(pueblo.pueblo_id);
+            if (puebloId <= 200) {
+              const puntosDelPueblo = puntosMap.get(pueblo.pueblo_id) || 0;
+              const puebloConPuntos = { ...pueblo, puntos: puntosDelPueblo };
+              
+              const existing = pueblosMap.get(pueblo.pueblo_id);
+              if (!existing) {
+                pueblosMap.set(pueblo.pueblo_id, puebloConPuntos);
+              } else {
+                const existingDate = existing.fecha_visita ? new Date(existing.fecha_visita).getTime() : 0;
+                const currentDate = pueblo.fecha_visita ? new Date(pueblo.fecha_visita).getTime() : 0;
+                
+                if (currentDate > existingDate) {
+                  pueblosMap.set(pueblo.pueblo_id, puebloConPuntos);
+                } else if (currentDate === existingDate && pueblo.tipo === 'manual' && existing.tipo === 'auto') {
+                  pueblosMap.set(pueblo.pueblo_id, puebloConPuntos);
+                }
+              }
+            }
+          });
+          
+          liteData.forEach((pueblo: any) => {
+            const puebloId = parseInt(pueblo.id);
+            if (puebloId <= 200 && !pueblosMap.has(pueblo.id?.toString())) {
+              const puntosDelPueblo = puntosMap.get(pueblo.id?.toString()) || 0;
+              pueblosMap.set(pueblo.id?.toString(), {
+                _ID: pueblo.id?.toString() || '',
+                pueblo_id: pueblo.id?.toString() || '',
+                nombre: pueblo.nombre || '',
+                provincia: pueblo.provincia || '',
+                comunidad_autonoma: pueblo.comunidad_autonoma || '',
+                imagen_principal: pueblo.imagen_principal || '',
+                estrellas: 0,
+                tipo: 'manual',
+                checked: 0,
+                puntos: puntosDelPueblo,
+              });
+            }
+          });
+          
+          const pueblosList = Array.from(pueblosMap.values());
+          
+          const listaSinDuplicados = Object.values(
+            pueblosList.reduce((acc: { [key: string]: PuebloVisita }, item) => {
+              const key = item.pueblo_id || item._ID;
+              if (!acc[key]) acc[key] = item;
+              return acc;
+            }, {})
           );
           
-          if (puntosRes.ok) {
-            const puntosDataUpdated = await puntosRes.json();
-            setPuntosData(puntosDataUpdated);
-            console.log('═══════════════════════════════════════');
-            console.log('✅ [SINCRONIZACIÓN POST-GUARDADO - REFETCH]');
-            console.log('═══════════════════════════════════════');
-            console.log('📥 Datos REFETCH /lpbe/v1/puntos:');
-            console.log(`  🎯 Puntos totales: ${puntosDataUpdated.puntos_totales}`);
-            console.log(`  🏘️  Total pueblos: ${puntosDataUpdated.total_pueblos}`);
-            console.log(`  🏆 Nivel: ${puntosDataUpdated.nivel}`);
-            console.log(`  🎖️  Siguiente: ${puntosDataUpdated.nivel_siguiente}`);
-            console.log('═══════════════════════════════════════');
-          } else {
-            console.warn('⚠️ Error al refetch /lpbe/v1/puntos:', puntosRes.status);
-          }
-        } catch (err) {
-          console.warn('⚠️  Error al refetch puntos:', err);
+          const sorted = listaSinDuplicados.sort((a, b) => {
+            if (a.checked !== b.checked) {
+              return b.checked - a.checked;
+            }
+            const nameA = a.nombre || '';
+            const nameB = b.nombre || '';
+            return nameA.localeCompare(nameB);
+          });
+          
+          setPueblos(sorted);
+          console.log('✅ Lista actualizada:', sorted.length, 'pueblos');
         }
-      })();
+      })().catch(err => {
+        console.warn('⚠️ Error en sincronización segundo plano:', err);
+      });
       
     } catch (err) {
-      console.error('❌ Error al guardar los cambios:', err);
+      console.error('❌ Error al guardar:', err);
       setIsSaving(false);
       if (Platform.OS === 'web') {
-        alert('Error al guardar los cambios. Inténtalo de nuevo.');
+        alert('Error al guardar. Intenta de nuevo.');
       } else {
-        Alert.alert('Error', 'Error al guardar los cambios. Inténtalo de nuevo.');
+        Alert.alert('Error', 'Error al guardar. Intenta de nuevo.');
       }
     }
   };
