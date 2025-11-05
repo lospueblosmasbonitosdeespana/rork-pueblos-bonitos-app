@@ -62,6 +62,7 @@ export default function PueblosVisitadosScreen() {
   const [editChanges, setEditChanges] = useState<EditChanges>({});
   const [originalState, setOriginalState] = useState<Map<string, PuebloVisita>>(new Map());
   const [puntosData, setPuntosData] = useState<PuntosData | null>(null);
+  const [isPostSaveRefetch, setIsPostSaveRefetch] = useState(false);
 
   const fetchWithRetry = async (url: string, retries = 3, delay = 1000): Promise<Response> => {
     for (let i = 0; i < retries; i++) {
@@ -204,10 +205,12 @@ export default function PueblosVisitadosScreen() {
   }, [user?.id]);
 
   useEffect(() => {
-    fetchPueblosVisitados();
+    if (!isPostSaveRefetch) {
+      fetchPueblosVisitados();
+    }
 
     const subscription = AppState.addEventListener('change', (nextAppState) => {
-      if (nextAppState === 'active') {
+      if (nextAppState === 'active' && !isPostSaveRefetch) {
         fetchPueblosVisitados(true);
       }
     });
@@ -215,7 +218,7 @@ export default function PueblosVisitadosScreen() {
     return () => {
       subscription.remove();
     };
-  }, [fetchPueblosVisitados]);
+  }, [fetchPueblosVisitados, isPostSaveRefetch]);
 
   const handleRefresh = () => {
     setIsRefreshing(true);
@@ -353,6 +356,8 @@ export default function PueblosVisitadosScreen() {
 
         console.log('🔄 Iniciando sincronización en segundo plano...');
       
+      setIsPostSaveRefetch(true);
+      
       (async () => {
         try {
           console.log('🧹 Limpiando caché...');
@@ -379,10 +384,10 @@ export default function PueblosVisitadosScreen() {
           console.warn('⚠️ Error limpiando caché:', err);
         }
         
-        console.log('⏱️ Esperando 300ms antes de refetch...');
-        await new Promise(resolve => setTimeout(resolve, 300));
+        console.log('⏱️ Esperando 500ms antes de refetch...');
+        await new Promise(resolve => setTimeout(resolve, 500));
 
-        console.log('📥 Descargando datos actualizados...');
+        console.log('📥 Descargando datos actualizados (incluye puntos)...');
         const [puntosRes, visitadosRes, liteRes, lugaresRes] = await Promise.all([
           fetch(
             `https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/puntos?user_id=${user.id}&_t=${Date.now()}`,
@@ -512,8 +517,11 @@ export default function PueblosVisitadosScreen() {
           console.log('✅ Lista actualizada en segundo plano:', sorted.length, 'pueblos');
           console.log('🎉 ¡Sincronización completada!');
         }
+        
+        setIsPostSaveRefetch(false);
         })().catch(err => {
           console.warn('⚠️ Error en sincronización segundo plano:', err);
+          setIsPostSaveRefetch(false);
         });
 
       } catch (innerErr: any) {
