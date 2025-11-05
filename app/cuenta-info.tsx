@@ -155,11 +155,29 @@ export default function CuentaInfoScreen() {
         const match = /\.([\w]+)$/.exec(filename);
         const type = match ? `image/${match[1]}` : 'image/jpeg';
         
-        formData.append('file', {
-          uri: imageUri,
-          name: filename,
-          type,
-        } as any);
+        if (Platform.OS === 'web') {
+          try {
+            const response = await fetch(imageUri);
+            const blob = await response.blob();
+            formData.append('file', blob, filename);
+          } catch (blobError) {
+            console.error('❌ Error convirtiendo imagen a blob:', blobError);
+            setIsUploading(false);
+            if (Platform.OS === 'web') {
+              alert('Error al procesar la imagen');
+            } else {
+              Alert.alert('Error', 'Error al procesar la imagen', [{ text: 'OK' }]);
+            }
+            return;
+          }
+        } else {
+          formData.append('file', {
+            uri: imageUri,
+            name: filename,
+            type,
+          } as any);
+        }
+        
         formData.append('user_id', user.id.toString());
         
         try {
