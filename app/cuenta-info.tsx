@@ -151,26 +151,23 @@ export default function CuentaInfoScreen() {
         console.log('📸 Subiendo foto de perfil al nuevo endpoint...');
         
         const formData = new FormData();
-        const filename = imageUri.split('/').pop() || 'profile.jpg';
-        const match = /\.([\w]+)$/.exec(filename);
-        const type = match ? `image/${match[1]}` : 'image/jpeg';
         
         if (Platform.OS === 'web') {
+          console.log('🌐 Web: Convirtiendo imagen a Blob...');
           try {
             const response = await fetch(imageUri);
             const blob = await response.blob();
-            formData.append('file', blob, filename);
-          } catch (blobError) {
-            console.error('❌ Error convirtiendo imagen a blob:', blobError);
-            setIsUploading(false);
-            if (Platform.OS === 'web') {
-              alert('Error al procesar la imagen');
-            } else {
-              Alert.alert('Error', 'Error al procesar la imagen', [{ text: 'OK' }]);
-            }
-            return;
+            formData.append('file', blob, 'profile.jpg');
+          } catch (err) {
+            console.error('❌ Error convirtiendo imagen a Blob:', err);
+            throw new Error('Error preparando la imagen para subir');
           }
         } else {
+          console.log('📱 Mobile: Usando URI directamente...');
+          const filename = imageUri.split('/').pop() || 'profile.jpg';
+          const match = /\.([\w]+)$/.exec(filename);
+          const type = match ? `image/${match[1]}` : 'image/jpeg';
+          
           formData.append('file', {
             uri: imageUri,
             name: filename,
@@ -179,6 +176,7 @@ export default function CuentaInfoScreen() {
         }
         
         formData.append('user_id', user.id.toString());
+        console.log('📦 FormData preparado con user_id:', user.id);
         
         try {
           if (!token) {
