@@ -433,6 +433,9 @@ export default function PueblosVisitadosScreen() {
           const puntosDataUpdated = await puntosRes.json();
           setPuntosData(puntosDataUpdated);
           console.log('✅ Puntos actualizados:', puntosDataUpdated.puntos_totales, 'pts,', puntosDataUpdated.total_pueblos, 'pueblos');
+          
+          queryClient.invalidateQueries({ queryKey: ['puntos', user.id] });
+          console.log('🔄 Invalidadas queries de puntos para actualizar pantalla');
         }
 
         if (visitadosRes.ok && liteRes.ok && lugaresRes.ok) {

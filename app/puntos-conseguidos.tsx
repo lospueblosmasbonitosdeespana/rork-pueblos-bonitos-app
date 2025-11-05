@@ -1,8 +1,7 @@
 import { Award, MapPin, Star, TrendingUp } from 'lucide-react-native';
-import React, { useCallback, useEffect, useState } from 'react';
+import React from 'react';
 import {
   ActivityIndicator,
-  AppState,
   FlatList,
   RefreshControl,
   StyleSheet,
@@ -10,6 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useQuery } from '@tanstack/react-query';
 
 import { useAuth } from '@/contexts/auth';
 
@@ -36,23 +36,21 @@ interface PuebloFavorito {
 
 export default function PuntosConseguidosScreen() {
   const { user } = useAuth();
-  const [puntosData, setPuntosData] = useState<PuntosData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  const fetchPuntos = useCallback(async (isRefresh = false) => {
-    if (!user?.id) return;
-
-    try {
-      if (!isRefresh) {
-        setIsLoading(true);
-      }
-      setError(null);
+  const { data: puntosData, isLoading, error, refetch, isRefetching } = useQuery({
+    queryKey: ['puntos', user?.id],
+    queryFn: async () => {
+      if (!user?.id) throw new Error('No user ID');
 
       const puntosRes = await fetch(
-        `https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/puntos?user_id=${user.id}`,
-        { headers: { 'Content-Type': 'application/json' } }
+        `https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/puntos?user_id=${user.id}&_t=${Date.now()}`,
+        { 
+          headers: { 
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+          } 
+        }
       );
 
       if (!puntosRes.ok) {
@@ -67,33 +65,16 @@ export default function PuntosConseguidosScreen() {
         nivel_siguiente: data.nivel_siguiente,
         favoritos_count: data.favoritos?.length || 0
       });
-      setPuntosData(data || null);
-    } catch (err) {
-      console.error('Error fetching puntos:', err);
-      setError('No se pudieron cargar los datos');
-    } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
-    }
-  }, [user?.id]);
-
-  useEffect(() => {
-    fetchPuntos();
-
-    const subscription = AppState.addEventListener('change', (nextAppState) => {
-      if (nextAppState === 'active') {
-        fetchPuntos(true);
-      }
-    });
-
-    return () => {
-      subscription.remove();
-    };
-  }, [fetchPuntos]);
+      return data as PuntosData;
+    },
+    enabled: !!user?.id,
+    staleTime: 0,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+  });
 
   const handleRefresh = () => {
-    setIsRefreshing(true);
-    fetchPuntos(true);
+    refetch();
   };
 
   const totalPuntos = puntosData?.puntos_totales || 0;
@@ -135,8 +116,8 @@ export default function PuntosConseguidosScreen() {
     return (
       <View style={styles.container}>
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={() => fetchPuntos()}>
+          <Text style={styles.errorText}>{error instanceof Error ? error.message : 'Error al cargar datos'}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={() => refetch()}>
             <Text style={styles.retryButtonText}>Reintentar</Text>
           </TouchableOpacity>
         </View>
@@ -214,7 +195,7 @@ export default function PuntosConseguidosScreen() {
         contentContainerStyle={styles.listContent}
         refreshControl={
           <RefreshControl
-            refreshing={isRefreshing}
+            refreshing={isRefetching}
             onRefresh={handleRefresh}
             colors={[LPBE_RED]}
             tintColor={LPBE_RED}
