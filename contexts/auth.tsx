@@ -154,14 +154,24 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
     try {
       console.log('🔐 Autenticando con LPBE...');
       
-      console.log('🧹 Limpiando AsyncStorage completo antes de login...');
+      console.log('🧹 Limpiando caché completo antes de login...');
       if (Platform.OS === 'web') {
         localStorage.clear();
+        sessionStorage.clear();
       } else {
         const AsyncStorage = await import('@react-native-async-storage/async-storage').then(m => m.default);
         await AsyncStorage.clear();
       }
       console.log('✅ AsyncStorage limpiado');
+      
+      try {
+        const { QueryClient } = await import('@tanstack/react-query');
+        const queryClient = new QueryClient();
+        queryClient.clear();
+        console.log('✅ React Query limpiado');
+      } catch (qErr) {
+        console.warn('⚠️ No se pudo limpiar React Query:', qErr);
+      }
       
       const loginResponse = await fetch(`${API_BASE}/login`, {
         method: 'POST',

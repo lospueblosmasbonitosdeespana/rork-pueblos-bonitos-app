@@ -63,6 +63,26 @@ export default function PueblosVisitadosScreen() {
   const [originalState, setOriginalState] = useState<Map<string, PuebloVisita>>(new Map());
   const [puntosData, setPuntosData] = useState<PuntosData | null>(null);
 
+  const fetchWithRetry = async (url: string, retries = 3, delay = 1000): Promise<Response> => {
+    for (let i = 0; i < retries; i++) {
+      try {
+        const response = await fetch(url, {
+          headers: { 
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+          },
+        });
+        return response;
+      } catch (error) {
+        console.warn(`⚠️ Intento ${i + 1}/${retries} falló para ${url}:`, error);
+        if (i === retries - 1) throw error;
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+    throw new Error('Max retries reached');
+  };
+
   const fetchPueblosVisitados = useCallback(async (isRefresh = false) => {
     if (!user?.id) return;
 
@@ -72,9 +92,9 @@ export default function PueblosVisitadosScreen() {
       }
       setError(null);
 
-      const puntosRes = await fetch(`https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/puntos?user_id=${user.id}`, {
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const puntosRes = await fetchWithRetry(
+        `https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/puntos?user_id=${user.id}&_t=${Date.now()}`
+      );
       
       if (puntosRes.ok) {
         const puntosDataFromAPI = await puntosRes.json();
@@ -83,15 +103,15 @@ export default function PueblosVisitadosScreen() {
       }
 
       const [visitadosRes, liteRes, puntosLugaresRes] = await Promise.all([
-        fetch(`https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/pueblos-visitados?user_id=${user.id}`, {
-          headers: { 'Content-Type': 'application/json' },
-        }),
-        fetch(`https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/pueblos-lite`, {
-          headers: { 'Content-Type': 'application/json' },
-        }),
-        fetch(`https://lospueblosmasbonitosdeespana.org/wp-json/jet-cct/lugar`, {
-          headers: { 'Content-Type': 'application/json' },
-        }),
+        fetchWithRetry(
+          `https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/pueblos-visitados?user_id=${user.id}&_t=${Date.now()}`
+        ),
+        fetchWithRetry(
+          `https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/pueblos-lite?_t=${Date.now()}`
+        ),
+        fetchWithRetry(
+          `https://lospueblosmasbonitosdeespana.org/wp-json/jet-cct/lugar?_t=${Date.now()}`
+        ),
       ]);
 
       if (!visitadosRes.ok || !liteRes.ok || !puntosLugaresRes.ok) {
@@ -284,27 +304,39 @@ export default function PueblosVisitadosScreen() {
             tipo: 'manual',
           };
 
-          try {
-            const response = await fetch(
-              'https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/visita-update',
-              {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
-              }
-            );
+          let lastError: any;
+          for (let attempt = 0; attempt < 3; attempt++) {
+            try {
+              const response = await fetch(
+                'https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/visita-update',
+                {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(payload),
+                }
+              );
 
-            if (!response.ok) {
-              const errorText = await response.text();
-              console.warn(`⚠️  Error guardando pueblo ${pueblo_id}:`, response.status);
-              return { success: false, pueblo_id, error: errorText };
+              if (!response.ok) {
+                const errorText = await response.text();
+                console.warn(`⚠️  Error guardando pueblo ${pueblo_id} (intento ${attempt + 1}/3):`, response.status);
+                if (attempt === 2) {
+                  return { success: false, pueblo_id, error: errorText };
+                }
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                continue;
+              }
+              
+              console.log(`✅ Pueblo ${pueblo_id} guardado (intento ${attempt + 1})`);
+              return { success: true, pueblo_id };
+            } catch (fetchError) {
+              lastError = fetchError;
+              console.warn(`⚠️  Error de red guardando pueblo ${pueblo_id} (intento ${attempt + 1}/3):`, fetchError);
+              if (attempt < 2) {
+                await new Promise(resolve => setTimeout(resolve, 1000));
+              }
             }
-            
-            return { success: true, pueblo_id };
-          } catch (fetchError) {
-            console.error(`❌ Error de red guardando pueblo ${pueblo_id}:`, fetchError);
-            return { success: false, pueblo_id, error: String(fetchError) };
           }
+          return { success: false, pueblo_id, error: String(lastError) };
         })
       );
 
@@ -337,34 +369,36 @@ export default function PueblosVisitadosScreen() {
         }
       }
 
-      console.log('🔄 Sincronizando en segundo plano...');
+      console.log('🔄 Sincronizando en segundo plano (sin bloquear UI)...');
       
       (async () => {
         try {
-          console.log('🧹 Limpiando React Query...');
-          queryClient.invalidateQueries({ queryKey: ['pueblos-visitados'] });
-          queryClient.invalidateQueries({ queryKey: ['puntos'] });
-          queryClient.invalidateQueries({ queryKey: ['pueblos-lite'] });
-          console.log('✅ React Query invalidado');
+          console.log('🧹 Limpiando caché completo...');
+          queryClient.clear();
           
-          const keysToRemove = await AsyncStorage.getAllKeys();
-          const lpbeKeys = keysToRemove.filter(key => 
-            key.startsWith('@lpbe_') || 
-            key.includes('pueblos') || 
-            key.includes('puntos') || 
-            key.includes('visita')
-          );
-          
-          if (lpbeKeys.length > 0) {
-            await AsyncStorage.multiRemove(lpbeKeys);
-            console.log('🗑️ AsyncStorage limpiado:', lpbeKeys.length, 'claves');
+          try {
+            const allKeys = await AsyncStorage.getAllKeys();
+            const keysToRemove = allKeys.filter(key => 
+              key.startsWith('@lpbe_') || 
+              key.includes('pueblos') || 
+              key.includes('puntos') || 
+              key.includes('visita') ||
+              key.includes('query')
+            );
+            
+            if (keysToRemove.length > 0) {
+              await AsyncStorage.multiRemove(keysToRemove);
+              console.log('🗑️ AsyncStorage limpiado:', keysToRemove.length, 'claves');
+            }
+          } catch (storageError) {
+            console.warn('⚠️ Error limpiando AsyncStorage:', storageError);
           }
-        } catch (storageError) {
-          console.warn('⚠️ Error limpiando AsyncStorage:', storageError);
+        } catch (err) {
+          console.warn('⚠️ Error limpiando caché:', err);
         }
         
-        console.log('⏱️ Esperando 1 segundo antes de refetch...');
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        console.log('⏱️ Esperando 500ms antes de refetch...');
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         const [puntosRes, visitadosRes, liteRes, lugaresRes] = await Promise.all([
           fetch(
@@ -508,7 +542,7 @@ export default function PueblosVisitadosScreen() {
 
     const newChecked = pueblo.checked === 1 ? 0 : 1;
     
-    console.log(`🔄 Toggle pueblo ${pueblo.nombre}: checked ${pueblo.checked} → ${newChecked}`);
+    console.log(`⚡ OPTIMISTIC: Toggle pueblo ${pueblo.nombre}: checked ${pueblo.checked} → ${newChecked}`);
     
     setEditChanges(prev => ({
       ...prev,
@@ -537,7 +571,7 @@ export default function PueblosVisitadosScreen() {
       return;
     }
 
-    console.log(`⭐ Cambiar estrellas pueblo ${pueblo.nombre}: ${pueblo.estrellas} → ${newStars}`);
+    console.log(`⚡ OPTIMISTIC: Cambiar estrellas pueblo ${pueblo.nombre}: ${pueblo.estrellas} → ${newStars}`);
 
     const currentChanges = editChanges[pueblo.pueblo_id];
     setEditChanges(prev => ({
