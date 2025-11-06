@@ -117,6 +117,10 @@ export default function NoticiaDetalleScreen() {
               showsVerticalScrollIndicator={true}
               automaticallyAdjustContentInsets={false}
               allowsInlineMediaPlayback={true}
+              bounces={true}
+              overScrollMode="always"
+              onScroll={(e) => console.log('📜 SCROLL:', e.nativeEvent.contentOffset.y)}
+
               injectedJavaScript={`
                 (function() {
                   // 1) QUITAR BREADCRUMBS (barra gris con enlaces)
