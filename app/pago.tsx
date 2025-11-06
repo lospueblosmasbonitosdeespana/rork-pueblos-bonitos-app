@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,10 +8,13 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
+  Modal,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useCart } from '@/contexts/cart';
+import { useAuth } from '@/contexts/auth';
 import { CheckCircle } from 'lucide-react-native';
+import { WebView } from 'react-native-webview';
 
 const LPBE_RED = '#d60000';
 const CONSUMER_KEY = 'ck_c98c3651ff32de8a2435dac50c34ac292eb26963';
@@ -27,9 +30,17 @@ interface OrderData {
   codigoPostal: string;
 }
 
+interface WooCommerceOrder {
+  id: number;
+  payment_url?: string;
+  order_key?: string;
+  status: string;
+}
+
 export default function PagoScreen() {
   const router = useRouter();
   const { items, totalPrice, clearCart } = useCart();
+  const { user, isAuthenticated, userId } = useAuth();
   
   const [orderData, setOrderData] = useState<OrderData>({
     nombre: '',
@@ -44,6 +55,42 @@ export default function PagoScreen() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [orderNumber, setOrderNumber] = useState<number | null>(null);
+  const [showPaymentWebView, setShowPaymentWebView] = useState(false);
+  const [paymentUrl, setPaymentUrl] = useState<string>('');
+  const [isLoadingUserData, setIsLoadingUserData] = useState(true);
+
+  useEffect(() => {
+    const loadUserData = async () => {
+      if (isAuthenticated && userId) {
+        try {
+          console.log('👤 Cargando datos del usuario:', userId);
+          const response = await fetch(
+            `https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/user-profile?user_id=${userId}`
+          );
+
+          if (response.ok) {
+            const userData = await response.json();
+            console.log('✅ Datos de usuario cargados:', userData);
+
+            setOrderData({
+              nombre: userData.first_name || '',
+              apellidos: userData.last_name || '',
+              email: userData.email || '',
+              telefono: userData.phone || '',
+              direccion: userData.address || '',
+              ciudad: userData.city || '',
+              codigoPostal: userData.postal_code || '',
+            });
+          }
+        } catch (error) {
+          console.error('❌ Error cargando datos del usuario:', error);
+        }
+      }
+      setIsLoadingUserData(false);
+    };
+
+    loadUserData();
+  }, [isAuthenticated, userId]);
 
   const handleInputChange = (field: keyof OrderData, value: string) => {
     setOrderData((prev) => ({ ...prev, [field]: value }));
@@ -80,8 +127,8 @@ export default function PagoScreen() {
       }));
 
       const orderPayload = {
-        payment_method: 'bacs',
-        payment_method_title: 'Transferencia bancaria',
+        payment_method: 'stripe',
+        payment_method_title: 'Tarjeta (Stripe)',
         set_paid: false,
         billing: {
           first_name: orderData.nombre,
@@ -122,12 +169,20 @@ export default function PagoScreen() {
         throw new Error('Error al crear el pedido');
       }
 
-      const orderResponse = await response.json();
+      const orderResponse: WooCommerceOrder = await response.json();
       console.log('✅ Pedido creado:', orderResponse);
 
       setOrderNumber(orderResponse.id);
-      setOrderSuccess(true);
-      clearCart();
+
+      if (orderResponse.payment_url) {
+        console.log('💳 Abriendo Stripe Checkout:', orderResponse.payment_url);
+        setPaymentUrl(orderResponse.payment_url);
+        setShowPaymentWebView(true);
+      } else {
+        console.log('⚠️ No se recibió payment_url, mostrando éxito directamente');
+        setOrderSuccess(true);
+        clearCart();
+      }
       
     } catch (error) {
       console.error('❌ Error procesando pedido:', error);
@@ -140,16 +195,102 @@ export default function PagoScreen() {
     }
   };
 
+  const handleWebViewNavigationStateChange = (navState: any) => {
+    const url = navState.url;
+    console.log('🌐 WebView navegó a:', url);
+
+    if (url.includes('checkout/order-received') || 
+        url.includes('order-received') ||
+        url.includes('payment-complete') ||
+        url.includes('thank-you')) {
+      console.log('✅ Pago completado detectado');
+      setShowPaymentWebView(false);
+      setOrderSuccess(true);
+      clearCart();
+    }
+  };
+
+  if (showPaymentWebView) {
+    return (
+      <Modal
+        visible={true}
+        animationType="slide"
+        onRequestClose={() => {
+          Alert.alert(
+            'Cancelar pago',
+            '¿Estás seguro de que quieres cancelar el pago?',
+            [
+              { text: 'No', style: 'cancel' },
+              {
+                text: 'Sí',
+                onPress: () => {
+                  setShowPaymentWebView(false);
+                  setIsProcessing(false);
+                },
+              },
+            ]
+          );
+        }}
+      >
+        <View style={styles.webViewContainer}>
+          <View style={styles.webViewHeader}>
+            <Text style={styles.webViewHeaderTitle}>Pago seguro con Stripe</Text>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => {
+                Alert.alert(
+                  'Cancelar pago',
+                  '¿Estás seguro de que quieres cancelar el pago?',
+                  [
+                    { text: 'No', style: 'cancel' },
+                    {
+                      text: 'Sí',
+                      onPress: () => {
+                        setShowPaymentWebView(false);
+                        setIsProcessing(false);
+                      },
+                    },
+                  ]
+                );
+              }}
+            >
+              <Text style={styles.closeButtonText}>✕</Text>
+            </TouchableOpacity>
+          </View>
+          <WebView
+            source={{ uri: paymentUrl }}
+            style={{ flex: 1 }}
+            scrollEnabled={true}
+            nestedScrollEnabled={true}
+            bounces={true}
+            overScrollMode="always"
+            originWhitelist={['*']}
+            javaScriptEnabled={true}
+            domStorageEnabled={true}
+            startInLoadingState={true}
+            onNavigationStateChange={handleWebViewNavigationStateChange}
+            renderLoading={() => (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color={LPBE_RED} />
+                <Text style={styles.loadingText}>Cargando pasarela de pago...</Text>
+              </View>
+            )}
+          />
+        </View>
+      </Modal>
+    );
+  }
+
   if (orderSuccess) {
     return (
       <View style={styles.successContainer}>
         <CheckCircle size={80} color="#22c55e" />
-        <Text style={styles.successTitle}>¡Pedido realizado!</Text>
+        <Text style={styles.successTitle}>¡Gracias por tu compra!</Text>
         <Text style={styles.successMessage}>
-          Tu pedido #{orderNumber} ha sido creado con éxito.
+          Tu pedido #{orderNumber} ha sido procesado con éxito.
         </Text>
         <Text style={styles.successInfo}>
-          Recibirás un email con los detalles del pedido y las instrucciones de pago.
+          Recibirás un email de confirmación con todos los detalles de tu pedido.
         </Text>
         <TouchableOpacity
           style={styles.backToStoreButton}
@@ -162,6 +303,15 @@ export default function PagoScreen() {
     );
   }
 
+  if (isLoadingUserData) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={LPBE_RED} />
+        <Text style={styles.loadingText}>Cargando datos...</Text>
+      </View>
+    );
+  }
+
   return (
     <ScrollView 
       style={styles.container}
@@ -170,6 +320,9 @@ export default function PagoScreen() {
     >
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Datos de facturación</Text>
+        {isAuthenticated && (
+          <Text style={styles.userInfo}>👤 {user?.name}</Text>
+        )}
         
         <TextInput
           style={styles.input}
@@ -254,10 +407,10 @@ export default function PagoScreen() {
 
       <View style={styles.section}>
         <Text style={styles.paymentNote}>
-          Método de pago: Transferencia bancaria
+          Método de pago: Tarjeta (Stripe)
         </Text>
         <Text style={styles.paymentInfo}>
-          Recibirás un email con los datos bancarios para completar el pago.
+          Serás redirigido a la pasarela de pago segura de Stripe para completar tu compra.
         </Text>
       </View>
 
@@ -400,5 +553,48 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600' as const,
+  },
+  webViewContainer: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  webViewHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: LPBE_RED,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ddd',
+  },
+  webViewHeaderTitle: {
+    fontSize: 16,
+    fontWeight: '600' as const,
+    color: '#fff',
+  },
+  closeButton: {
+    padding: 8,
+  },
+  closeButtonText: {
+    fontSize: 24,
+    color: '#fff',
+    fontWeight: '700' as const,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#666',
+  },
+  userInfo: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 12,
   },
 });
