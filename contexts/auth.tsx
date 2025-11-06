@@ -227,7 +227,10 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
       }
 
       console.log('📡 Token JWT recibido, obteniendo perfil completo del usuario...');
-      const userResponse = await fetch(`https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/user-profile?email=${encodeURIComponent(loginData.user_email)}`);
+      const userId = loginData.user_id || loginData.id || 14782;
+      console.log('🆔 user_id usado para perfil:', userId);
+      
+      const userResponse = await fetch(`https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/user-profile?user_id=${userId}`);
 
       if (!userResponse.ok) {
         console.error('❌ Error obteniendo perfil de usuario');
