@@ -94,6 +94,9 @@ export default function TiendaScreen() {
               javaScriptEnabled={true}
               domStorageEnabled={true}
               startInLoadingState={true}
+              scrollEnabled={true}
+              nestedScrollEnabled={true}
+              showsVerticalScrollIndicator={false}
               injectedJavaScript={injectedJavaScript}
               onLoadEnd={() => {
                 console.log('✅ Tienda cargada correctamente:', currentUrl);
