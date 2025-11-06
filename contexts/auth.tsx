@@ -3,6 +3,7 @@ import * as SecureStore from 'expo-secure-store';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
+import { jwtDecode } from 'jwt-decode';
 
 const API_BASE = 'https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1';
 const USER_ID_KEY = 'lpbe_user_id';
@@ -227,7 +228,18 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
       }
 
       console.log('📡 Token JWT recibido, obteniendo perfil completo del usuario...');
-      const userId = loginData?.data?.user?.id || 14782;
+      let userId = 14782;
+
+      try {
+        const decoded: any = jwtDecode(loginData.token);
+        console.log('📦 JWT payload decodificado:', decoded);
+        if (decoded?.data?.user?.id) {
+          userId = decoded.data.user.id;
+        }
+      } catch (error) {
+        console.warn('⚠️ No se pudo decodificar el token:', error);
+      }
+
       console.log('🆔 user_id usado para perfil:', userId);
       const userResponse = await fetch(`https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/user-profile?user_id=${userId}`);
 
