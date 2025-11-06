@@ -13,7 +13,6 @@ import {
 import { useRouter } from 'expo-router';
 import { useCart } from '@/contexts/cart';
 import { useAuth } from '@/contexts/auth';
-import { CheckCircle } from 'lucide-react-native';
 import { WebView } from 'react-native-webview';
 
 const LPBE_RED = '#d60000';
@@ -53,8 +52,6 @@ export default function PagoScreen() {
   });
   
   const [isProcessing, setIsProcessing] = useState(false);
-  const [orderSuccess, setOrderSuccess] = useState(false);
-  const [orderNumber, setOrderNumber] = useState<number | null>(null);
   const [showPaymentWebView, setShowPaymentWebView] = useState(false);
   const [paymentUrl, setPaymentUrl] = useState<string>('');
   const [isLoadingUserData, setIsLoadingUserData] = useState(true);
@@ -172,16 +169,14 @@ export default function PagoScreen() {
       const orderResponse: WooCommerceOrder = await response.json();
       console.log('✅ Pedido creado:', orderResponse);
 
-      setOrderNumber(orderResponse.id);
-
       if (orderResponse.payment_url) {
         console.log('💳 Abriendo Stripe Checkout:', orderResponse.payment_url);
         setPaymentUrl(orderResponse.payment_url);
         setShowPaymentWebView(true);
       } else {
-        console.log('⚠️ No se recibió payment_url, mostrando éxito directamente');
-        setOrderSuccess(true);
+        console.log('⚠️ No se recibió payment_url, navegando a confirmación directamente');
         clearCart();
+        router.replace('/pedido-confirmado');
       }
       
     } catch (error) {
@@ -205,8 +200,8 @@ export default function PagoScreen() {
         url.includes('thank-you')) {
       console.log('✅ Pago completado detectado');
       setShowPaymentWebView(false);
-      setOrderSuccess(true);
       clearCart();
+      router.replace('/pedido-confirmado');
     }
   };
 
@@ -278,28 +273,6 @@ export default function PagoScreen() {
           />
         </View>
       </Modal>
-    );
-  }
-
-  if (orderSuccess) {
-    return (
-      <View style={styles.successContainer}>
-        <CheckCircle size={80} color="#22c55e" />
-        <Text style={styles.successTitle}>¡Gracias por tu compra!</Text>
-        <Text style={styles.successMessage}>
-          Tu pedido #{orderNumber} ha sido procesado con éxito.
-        </Text>
-        <Text style={styles.successInfo}>
-          Recibirás un email de confirmación con todos los detalles de tu pedido.
-        </Text>
-        <TouchableOpacity
-          style={styles.backToStoreButton}
-          onPress={() => router.push('/tienda')}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.backToStoreButtonText}>Volver a la tienda</Text>
-        </TouchableOpacity>
-      </View>
     );
   }
 
@@ -512,44 +485,6 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   submitButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600' as const,
-  },
-  successContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-    backgroundColor: '#fff',
-  },
-  successTitle: {
-    fontSize: 24,
-    fontWeight: '700' as const,
-    color: '#000',
-    marginTop: 24,
-    marginBottom: 12,
-  },
-  successMessage: {
-    fontSize: 16,
-    color: '#333',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  successInfo: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: 32,
-  },
-  backToStoreButton: {
-    backgroundColor: LPBE_RED,
-    paddingHorizontal: 32,
-    paddingVertical: 14,
-    borderRadius: 8,
-  },
-  backToStoreButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '600' as const,
