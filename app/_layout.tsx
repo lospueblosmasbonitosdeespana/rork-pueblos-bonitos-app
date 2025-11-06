@@ -334,6 +334,16 @@ function RootLayoutNav() {
           contentStyle: { flex: 1, backgroundColor: '#fff' },
         }}
       />
+      <Stack.Screen
+        name="mis-pedidos"
+        options={{
+          headerTitle: "Mis Pedidos",
+          presentation: "card",
+          gestureEnabled: true,
+          animation: 'default',
+          contentStyle: { flex: 1, backgroundColor: '#fff' },
+        }}
+      />
       </Stack>
     </>
   );
