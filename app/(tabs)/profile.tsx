@@ -9,7 +9,6 @@ import {
   Star,
   User,
   FileText,
-  ShoppingBag,
 } from 'lucide-react-native';
 import React, { useEffect } from 'react';
 import {
@@ -140,13 +139,6 @@ export default function ProfileScreen() {
       label: 'Puntos Conseguidos',
       icon: Star,
       onPress: () => router.push('/puntos-conseguidos'),
-      active: true,
-    },
-    {
-      id: 'orders',
-      label: 'Mis Pedidos',
-      icon: ShoppingBag,
-      onPress: () => router.push('/mis-pedidos'),
       active: true,
     },
     {
