@@ -111,6 +111,9 @@ export default function NoticiaDetalleScreen() {
               thirdPartyCookiesEnabled={true}
               incognito={false}
               cacheEnabled={true}
+              scrollEnabled={true}
+              nestedScrollEnabled={true}
+              showsVerticalScrollIndicator={false}
               injectedJavaScript={`
                 (function() {
                   // 1) QUITAR BREADCRUMBS (barra gris con enlaces)
