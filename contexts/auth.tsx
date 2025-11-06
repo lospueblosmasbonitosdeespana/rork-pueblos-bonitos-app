@@ -173,7 +173,7 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
         console.warn('⚠️ No se pudo limpiar React Query:', qErr);
       }
       
-      const loginResponse = await fetch(`${API_BASE}/login`, {
+      const loginResponse = await fetch('https://lospueblosmasbonitosdeespana.org/wp-json/um-api/v1/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
