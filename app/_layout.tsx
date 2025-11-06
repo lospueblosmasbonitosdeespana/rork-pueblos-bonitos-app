@@ -196,7 +196,7 @@ function RootLayoutNav() {
         name="noticia/[id]"
         options={{
           headerTitle: "Noticia",
-          presentation: "modal",
+          presentation: "card",
           gestureEnabled: true,
         }}
       />
@@ -255,6 +255,54 @@ function RootLayoutNav() {
         options={{
           headerTitle: "Privacidad",
           presentation: "card",
+        }}
+      />
+      <Stack.Screen
+        name="tienda"
+        options={{
+          headerTitle: "Tienda",
+          presentation: "card",
+          gestureEnabled: true,
+        }}
+      />
+      <Stack.Screen
+        name="multiexperiencia/[id]"
+        options={{
+          headerTitle: "Multiexperiencia",
+          presentation: "card",
+          gestureEnabled: true,
+        }}
+      />
+      <Stack.Screen
+        name="noticias"
+        options={{
+          headerTitle: "Noticias",
+          presentation: "card",
+          gestureEnabled: true,
+        }}
+      />
+      <Stack.Screen
+        name="alertas"
+        options={{
+          headerTitle: "Alertas",
+          presentation: "card",
+          gestureEnabled: true,
+        }}
+      />
+      <Stack.Screen
+        name="qr-scanner"
+        options={{
+          headerTitle: "Escanear QR",
+          presentation: "card",
+          gestureEnabled: true,
+        }}
+      />
+      <Stack.Screen
+        name="mapa-visitados"
+        options={{
+          headerTitle: "Mapa de Visitados",
+          presentation: "card",
+          gestureEnabled: true,
         }}
       />
       </Stack>
