@@ -116,27 +116,28 @@ export default function NoticiaDetalleScreen() {
               showsVerticalScrollIndicator={false}
               injectedJavaScript={`
                 (function() {
-                  // 1) QUITAR BREADCRUMBS (barra gris con enlaces)
-                  var bread = document.querySelector('div[style*="gray"]');
-                  if (bread) bread.remove();
-
-                  // 2) QUITAR ESPACIO SUPERIOR (barra gris y título)
-                  var topBar = document.querySelector('div[style*="height: 44"]');
-                  if (topBar) topBar.style.display = 'none';
-
-                  // 3) SUBIR TODO EL CONTENIDO
-                  document.body.style.paddingTop = '0';
-                  document.body.style.marginTop  = '0';
-                  if (document.querySelector('div')) {
-                    document.querySelector('div').style.marginTop = '0';
-                  }
-
-                  // 4) FONDO BLANCO LIMPIO
-                  document.body.style.background = '#fff';
-
-                  // 5) APLICAR ESTILOS CSS ADICIONALES
                   const style = document.createElement('style');
                   style.innerHTML = \`
+                    * {
+                      -webkit-overflow-scrolling: touch !important;
+                    }
+
+                    html, body {
+                      overflow-y: auto !important;
+                      overflow-x: hidden !important;
+                      height: auto !important;
+                      min-height: 100vh !important;
+                      margin: 0 !important;
+                      padding: 0 !important;
+                      background: #fff !important;
+                      -webkit-overflow-scrolling: touch !important;
+                    }
+
+                    body {
+                      padding: 16px !important;
+                      padding-top: 0 !important;
+                    }
+
                     header,
                     .site-header,
                     .main-navigation,
@@ -197,14 +198,6 @@ export default function NoticiaDetalleScreen() {
                       max-width: 100% !important;
                     }
 
-                    body {
-                      padding: 16px !important;
-                      padding-top: 0 !important;
-                      margin: 0 !important;
-                      overflow-x: hidden !important;
-                      background: #fff !important;
-                    }
-
                     .site-content,
                     .entry-content,
                     article,
@@ -212,6 +205,7 @@ export default function NoticiaDetalleScreen() {
                       max-width: 100% !important;
                       width: 100% !important;
                       overflow-x: hidden !important;
+                      overflow-y: visible !important;
                       margin: 0 !important;
                       padding: 0 !important;
                       padding-top: 0 !important;
@@ -231,7 +225,6 @@ export default function NoticiaDetalleScreen() {
                   \`;
                   document.head.appendChild(style);
 
-                  // 6) FUNCIÓN PARA OCULTAR BREADCRUMBS (ejecutada múltiples veces)
                   const hideBreadcrumbs = function() {
                     const selectors = [
                       '.breadcrumbs',
@@ -271,14 +264,12 @@ export default function NoticiaDetalleScreen() {
                     });
                   };
 
-                  // 7) EJECUTAR MÚLTIPLES VECES
                   hideBreadcrumbs();
                   setTimeout(hideBreadcrumbs, 100);
                   setTimeout(hideBreadcrumbs, 500);
                   setTimeout(hideBreadcrumbs, 1500);
                   setTimeout(hideBreadcrumbs, 3000);
 
-                  // 8) OBSERVADOR PARA CAMBIOS EN EL DOM
                   const observer = new MutationObserver(function() {
                     hideBreadcrumbs();
                   });
@@ -290,7 +281,6 @@ export default function NoticiaDetalleScreen() {
                     });
                   }
 
-                  // 9) SCROLL AL INICIO
                   setTimeout(function() {
                     window.scrollTo(0, 0);
                   }, 300);
