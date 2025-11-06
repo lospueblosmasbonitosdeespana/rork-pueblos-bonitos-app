@@ -259,24 +259,7 @@ function RootLayoutNav() {
           presentation: "card",
         }}
       />
-      <Stack.Screen
-        name="tienda"
-        options={{
-          headerTitle: "Tienda",
-          presentation: "card",
-          gestureEnabled: false,
-          animation: 'default',
-          contentStyle: { flex: 1, backgroundColor: '#fff' },
-        }}
-      />
-      <Stack.Screen
-        name="tienda-nativa"
-        options={{
-          headerTitle: "Tienda LPBE",
-          presentation: "card",
-          gestureEnabled: true,
-        }}
-      />
+
       <Stack.Screen
         name="multiexperiencia/[id]"
         options={{

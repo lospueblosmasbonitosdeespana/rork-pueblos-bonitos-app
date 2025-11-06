@@ -1,5 +1,5 @@
 import { router, Tabs } from "expo-router";
-import { Bell, Home, MapPin, Compass, Map, User } from "lucide-react-native";
+import { Bell, Home, MapPin, Compass, Map, User, ShoppingBag } from "lucide-react-native";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
@@ -82,6 +82,14 @@ export default function TabLayout() {
           title: t.tabs.mapas,
           headerTitle: t.mapas.title,
           tabBarIcon: ({ color }) => <Map size={24} color={color} strokeWidth={1.5} />,
+        }}
+      />
+      <Tabs.Screen
+        name="tienda"
+        options={{
+          title: "Tienda",
+          headerTitle: "Tienda LPBE",
+          tabBarIcon: ({ color }) => <ShoppingBag size={24} color={color} strokeWidth={1.5} />,
         }}
       />
       <Tabs.Screen
