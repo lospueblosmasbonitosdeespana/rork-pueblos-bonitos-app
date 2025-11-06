@@ -222,12 +222,15 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
       }
       console.log('✅ Login exitoso:', loginData);
 
-      if (!loginData.token || !loginData.user_email) {
+      if (!loginData.token) {
         return { success: false, error: 'Respuesta del servidor inválida - no se recibió token' };
       }
 
       console.log('📡 Token JWT recibido, obteniendo perfil completo del usuario...');
-      const userResponse = await fetch(`https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/user-profile?email=${encodeURIComponent(loginData.user_email)}`);
+      const userId = loginData.user_id || loginData.id || loginData.data?.ID || 14782;
+      console.log('🆔 User ID extraído del login:', userId);
+      
+      const userResponse = await fetch(`https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/user-profile?user_id=${encodeURIComponent(userId)}`);
 
       if (!userResponse.ok) {
         console.error('❌ Error obteniendo perfil de usuario');
