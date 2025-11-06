@@ -270,6 +270,14 @@ function RootLayoutNav() {
         }}
       />
       <Stack.Screen
+        name="tienda-nativa"
+        options={{
+          headerTitle: "Tienda LPBE",
+          presentation: "card",
+          gestureEnabled: true,
+        }}
+      />
+      <Stack.Screen
         name="multiexperiencia/[id]"
         options={{
           headerTitle: "Multiexperiencia",
