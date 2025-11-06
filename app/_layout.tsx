@@ -198,6 +198,8 @@ function RootLayoutNav() {
           headerTitle: "Noticia",
           presentation: "card",
           gestureEnabled: false,
+          animation: 'default',
+          contentStyle: { flex: 1, backgroundColor: '#fff' },
         }}
       />
       <Stack.Screen
@@ -263,6 +265,8 @@ function RootLayoutNav() {
           headerTitle: "Tienda",
           presentation: "card",
           gestureEnabled: false,
+          animation: 'default',
+          contentStyle: { flex: 1, backgroundColor: '#fff' },
         }}
       />
       <Stack.Screen
@@ -271,6 +275,8 @@ function RootLayoutNav() {
           headerTitle: "Multiexperiencia",
           presentation: "card",
           gestureEnabled: false,
+          animation: 'default',
+          contentStyle: { flex: 1, backgroundColor: '#fff' },
         }}
       />
       <Stack.Screen
