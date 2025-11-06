@@ -1,11 +1,12 @@
 import { router, Tabs } from "expo-router";
-import { Bell, Home, MapPin, Compass, Map, User, ShoppingBag } from "lucide-react-native";
+import { Bell, Home, MapPin, Compass, Map, User, ShoppingBag, ShoppingCart } from "lucide-react-native";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { COLORS } from "@/constants/theme";
 import { useLanguage } from "@/contexts/language";
 import { useNotifications } from "@/contexts/notifications";
+import { useCart } from "@/contexts/cart";
 
 function NotificationBellButton() {
   const { unreadCount } = useNotifications();
@@ -27,6 +28,35 @@ function NotificationBellButton() {
   );
 }
 
+function CartButton() {
+  const { totalItems } = useCart();
+
+  return (
+    <TouchableOpacity
+      onPress={() => router.push('/carrito')}
+      style={bellStyles.container}
+    >
+      <ShoppingCart size={22} color={COLORS.primary} strokeWidth={2} />
+      {totalItems > 0 && (
+        <View style={bellStyles.badge}>
+          <Text style={bellStyles.badgeText}>
+            {totalItems > 9 ? '9+' : totalItems}
+          </Text>
+        </View>
+      )}
+    </TouchableOpacity>
+  );
+}
+
+function HeaderButtons() {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+      <CartButton />
+      <NotificationBellButton />
+    </View>
+  );
+}
+
 export default function TabLayout() {
   const { t } = useLanguage();
 
@@ -36,7 +66,7 @@ export default function TabLayout() {
         tabBarActiveTintColor: COLORS.primary,
         tabBarInactiveTintColor: COLORS.textSecondary,
         headerShown: true,
-        headerRight: () => <NotificationBellButton />,
+        headerRight: () => <HeaderButtons />,
         headerStyle: {
           backgroundColor: COLORS.card,
         },

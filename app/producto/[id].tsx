@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -7,9 +7,12 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   Image,
+  Alert,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
+import { useCart } from '@/contexts/cart';
+import { ShoppingCart, Check } from 'lucide-react-native';
 
 const LPBE_RED = '#d60000';
 const CONSUMER_KEY = 'ck_c98c3651ff32de8a2435dac50c34ac292eb26963';
@@ -72,6 +75,8 @@ async function fetchWooCommerceProduct(productId: string): Promise<WooCommercePr
 export default function ProductoDetalleScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { addItem } = useCart();
+  const [addedToCart, setAddedToCart] = useState(false);
 
   const { data: product, isLoading, error, refetch } = useQuery({
     queryKey: ['woocommerce-product', id],
@@ -80,10 +85,37 @@ export default function ProductoDetalleScreen() {
     staleTime: 1000 * 60 * 5,
   });
 
-  const handleBuyNow = () => {
-    if (product?.permalink) {
-      const encodedUrl = encodeURIComponent(product.permalink);
-      router.push(`/producto-compra?url=${encodedUrl}` as any);
+  const handleAddToCart = () => {
+    if (product) {
+      const imageUrl = product.images && product.images.length > 0 ? product.images[0].src : '';
+      const displayPrice = product.price || product.regular_price || '0';
+      
+      addItem({
+        id: product.id,
+        name: product.name,
+        price: displayPrice,
+        image: imageUrl,
+      });
+      
+      setAddedToCart(true);
+      
+      setTimeout(() => {
+        Alert.alert(
+          'Producto añadido',
+          '¿Qué deseas hacer?',
+          [
+            {
+              text: 'Seguir comprando',
+              style: 'cancel',
+              onPress: () => setAddedToCart(false),
+            },
+            {
+              text: 'Ir al carrito',
+              onPress: () => router.push('/carrito'),
+            },
+          ]
+        );
+      }, 100);
     }
   };
 
@@ -145,11 +177,21 @@ export default function ProductoDetalleScreen() {
         <Text style={styles.descriptionText}>{cleanDescription}</Text>
         
         <TouchableOpacity
-          style={styles.buyButton}
-          onPress={handleBuyNow}
+          style={[styles.buyButton, addedToCart && styles.buyButtonSuccess]}
+          onPress={handleAddToCart}
           activeOpacity={0.8}
         >
-          <Text style={styles.buyButtonText}>Comprar ahora</Text>
+          {addedToCart ? (
+            <View style={styles.buttonContent}>
+              <Check size={20} color="#fff" />
+              <Text style={styles.buyButtonText}>Añadido al carrito</Text>
+            </View>
+          ) : (
+            <View style={styles.buttonContent}>
+              <ShoppingCart size={20} color="#fff" />
+              <Text style={styles.buyButtonText}>Añadir al carrito</Text>
+            </View>
+          )}
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -238,6 +280,14 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
     marginTop: 8,
+  },
+  buyButtonSuccess: {
+    backgroundColor: '#22c55e',
+  },
+  buttonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   buyButtonText: {
     color: '#fff',

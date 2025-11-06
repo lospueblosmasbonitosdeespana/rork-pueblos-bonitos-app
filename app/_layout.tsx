@@ -9,6 +9,7 @@ import { StatusBar, View, Text, StyleSheet, ScrollView } from "react-native";
 import { AuthProvider } from "@/contexts/auth";
 import { LanguageProvider } from "@/contexts/language";
 import { NotificationsProvider } from "@/contexts/notifications";
+import { CartProvider } from "@/contexts/cart";
 import { trpc, trpcClient } from "@/lib/trpc";
 
 SplashScreen.preventAutoHideAsync();
@@ -312,10 +313,21 @@ function RootLayoutNav() {
           contentStyle: { flex: 1, backgroundColor: '#fff' },
         }}
       />
+
       <Stack.Screen
-        name="producto-compra"
+        name="carrito"
         options={{
-          headerTitle: "Comprar",
+          headerTitle: "Carrito",
+          presentation: "card",
+          gestureEnabled: true,
+          animation: 'default',
+          contentStyle: { flex: 1, backgroundColor: '#fff' },
+        }}
+      />
+      <Stack.Screen
+        name="pago"
+        options={{
+          headerTitle: "Pago",
           presentation: "card",
           gestureEnabled: false,
           animation: 'default',
@@ -339,7 +351,9 @@ export default function RootLayout() {
               <AuthProvider>
                 <LanguageProvider>
                   <NotificationsProvider>
-                    <RootLayoutNav />
+                    <CartProvider>
+                      <RootLayoutNav />
+                    </CartProvider>
                   </NotificationsProvider>
                 </LanguageProvider>
               </AuthProvider>
