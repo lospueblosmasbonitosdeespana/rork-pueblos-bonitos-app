@@ -227,7 +227,7 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
       }
 
       console.log('📡 Token JWT recibido, obteniendo perfil completo del usuario...');
-      const userResponse = await fetch(`${API_BASE}/user-profile?email=${encodeURIComponent(loginData.user_email)}`);
+      const userResponse = await fetch(`https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/user-profile?email=${encodeURIComponent(loginData.user_email)}`);
 
       if (!userResponse.ok) {
         console.error('❌ Error obteniendo perfil de usuario');
