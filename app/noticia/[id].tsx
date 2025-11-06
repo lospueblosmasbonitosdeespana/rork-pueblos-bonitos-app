@@ -197,12 +197,24 @@ export default function NoticiaDetalleScreen() {
                       max-width: 100% !important;
                     }
 
+                    html {
+                      overflow-y: auto !important;
+                      overflow-x: hidden !important;
+                      height: auto !important;
+                      min-height: 100% !important;
+                    }
+
                     body {
                       padding: 16px !important;
                       padding-top: 0 !important;
                       margin: 0 !important;
                       overflow-x: hidden !important;
+                      overflow-y: auto !important;
                       background: #fff !important;
+                      height: auto !important;
+                      min-height: 100vh !important;
+                      position: relative !important;
+                      -webkit-overflow-scrolling: touch !important;
                     }
 
                     .site-content,
@@ -212,9 +224,11 @@ export default function NoticiaDetalleScreen() {
                       max-width: 100% !important;
                       width: 100% !important;
                       overflow-x: hidden !important;
+                      overflow-y: visible !important;
                       margin: 0 !important;
                       padding: 0 !important;
                       padding-top: 0 !important;
+                      height: auto !important;
                     }
 
                     .entry-content img {
@@ -227,6 +241,10 @@ export default function NoticiaDetalleScreen() {
                     h1 {
                       margin-top: 0 !important;
                       padding-top: 16px !important;
+                    }
+
+                    * {
+                      box-sizing: border-box !important;
                     }
                   \`;
                   document.head.appendChild(style);
@@ -290,10 +308,25 @@ export default function NoticiaDetalleScreen() {
                     });
                   }
 
-                  // 9) SCROLL AL INICIO
+                  // 9) FORZAR SCROLL DISPONIBLE
                   setTimeout(function() {
+                    document.documentElement.style.overflow = 'auto';
+                    document.documentElement.style.height = 'auto';
+                    document.body.style.overflow = 'auto';
+                    document.body.style.height = 'auto';
                     window.scrollTo(0, 0);
                   }, 300);
+
+                  // 10) FORZAR ALTURA MÍNIMA PARA ASEGURAR SCROLL
+                  setTimeout(function() {
+                    const content = document.querySelector('.entry-content, article, main, .site-content');
+                    if (content) {
+                      const contentHeight = content.scrollHeight;
+                      if (contentHeight > 0) {
+                        document.body.style.minHeight = (contentHeight + 100) + 'px';
+                      }
+                    }
+                  }, 500);
                 })();
                 true;
               `}
