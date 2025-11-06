@@ -337,22 +337,9 @@ export default function PuebloDetailScreen() {
             ) : experiencias.length > 0 ? (
               <>
                 {experiencias.map((exp, index) => (
-                  <TouchableOpacity 
+                  <View 
                     key={exp._ID ? `exp-${exp._ID}` : `exp-index-${index}`}
                     style={styles.experienciaCard}
-                    onPress={() => {
-                      const expData = exp as any;
-                      const expId = String(expData.id || exp._ID);
-                      console.log('🔓 open exp:', {
-                        _ID: exp._ID,
-                        id: expData.id,
-                        usandoId: expId,
-                        nombre: exp.nombre,
-                        expCompleto: expData
-                      });
-                      router.push(`/multiexperiencia/${expId}` as any);
-                    }}
-                    activeOpacity={0.7}
                   >
                     {exp.foto && exp.foto.trim() !== '' && (
                       <Image 
@@ -370,7 +357,7 @@ export default function PuebloDetailScreen() {
                     {exp.pueblo_nombre && (
                       <Text style={styles.experienciaPueblo}>{exp.pueblo_nombre}</Text>
                     )}
-                  </TouchableOpacity>
+                  </View>
                 ))}
               </>
             ) : (
@@ -420,6 +407,9 @@ export default function PuebloDetailScreen() {
             incognito={false}
             cacheEnabled={true}
             startInLoadingState={true}
+            scrollEnabled={true}
+            nestedScrollEnabled={true}
+            showsVerticalScrollIndicator={false}
             onLoadEnd={() => setMapLoading(false)}
             onError={(syntheticEvent) => {
               const { nativeEvent } = syntheticEvent;
@@ -474,6 +464,9 @@ export default function PuebloDetailScreen() {
             incognito={false}
             cacheEnabled={true}
             startInLoadingState={true}
+            scrollEnabled={true}
+            nestedScrollEnabled={true}
+            showsVerticalScrollIndicator={false}
             onLoadEnd={() => setExperienciasLoading(false)}
             onError={(syntheticEvent) => {
               const { nativeEvent } = syntheticEvent;

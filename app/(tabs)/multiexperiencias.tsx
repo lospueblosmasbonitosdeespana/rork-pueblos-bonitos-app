@@ -23,6 +23,9 @@ export default function RutasScreen() {
         setSupportMultipleWindows={false}
         mixedContentMode="always"
         startInLoadingState={true}
+        scrollEnabled={true}
+        nestedScrollEnabled={true}
+        showsVerticalScrollIndicator={false}
       />
       <TouchableOpacity
         style={[styles.backButton, { top: insets.top + 10 }]}
