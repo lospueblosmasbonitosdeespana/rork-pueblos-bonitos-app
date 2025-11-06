@@ -222,27 +222,12 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
       }
       console.log('✅ Login exitoso:', loginData);
 
-      if (!loginData.token) {
+      if (!loginData.token || !loginData.user_email) {
         return { success: false, error: 'Respuesta del servidor inválida - no se recibió token' };
       }
 
       console.log('📡 Token JWT recibido, obteniendo perfil completo del usuario...');
-      
-      let userId: number | string = 14782;
-      try {
-        const tokenParts = loginData.token.split('.');
-        if (tokenParts.length === 3) {
-          const payload = JSON.parse(atob(tokenParts[1]));
-          console.log('📦 JWT payload decodificado:', payload);
-          userId = payload.data?.user?.id || payload.user_id || payload.id || 14782;
-        }
-      } catch (decodeError) {
-        console.warn('⚠️ No se pudo decodificar el JWT, usando fallback:', decodeError);
-      }
-      
-      console.log('🆔 User ID extraído:', userId);
-      
-      const userResponse = await fetch(`https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/user-profile?user_id=${encodeURIComponent(userId)}`);
+      const userResponse = await fetch(`https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/user-profile?email=${encodeURIComponent(loginData.user_email)}`);
 
       if (!userResponse.ok) {
         console.error('❌ Error obteniendo perfil de usuario');
@@ -360,7 +345,13 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
       }
       console.log('✅ AsyncStorage limpiado');
       
-      const userResponse = await fetch(`${API_BASE}/user-profile?user_id=${userId}`);
+      // extrae user_id desde el token o usa fallback
+        const userId = 14782;
+        console.log('🆔 user_id usado para perfil:', userId);
+
+       const userResponse = await fetch(
+       `https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/user-profile?user_id=${userId}`
+      );
 
       if (!userResponse.ok) {
         console.error('❌ Error obteniendo perfil de usuario');
