@@ -7,11 +7,10 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   Image,
-  Linking,
-  Alert,
 } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
-import { COLORS, SPACING, TYPOGRAPHY } from '@/constants/theme';
+import { useRouter } from 'expo-router';
+import { SPACING, TYPOGRAPHY } from '@/constants/theme';
 
 const LPBE_RED = '#d60000';
 
@@ -61,25 +60,16 @@ async function fetchWooCommerceProducts(): Promise<WooCommerceProduct[]> {
 }
 
 export default function TiendaScreen() {
+  const router = useRouter();
   const { data: products, isLoading, error, refetch } = useQuery({
     queryKey: ['woocommerce-products'],
     queryFn: fetchWooCommerceProducts,
     staleTime: 1000 * 60 * 5,
   });
 
-  const handleOpenProduct = async (permalink: string) => {
-    try {
-      const supported = await Linking.canOpenURL(permalink);
-      
-      if (supported) {
-        await Linking.openURL(permalink);
-      } else {
-        Alert.alert('Error', 'No se puede abrir el enlace');
-      }
-    } catch (error) {
-      console.error('❌ Error opening product:', error);
-      Alert.alert('Error', 'No se pudo abrir el producto');
-    }
+  const handleOpenProduct = (productId: number) => {
+    console.log('🛒 Navegando a producto:', productId);
+    router.push(`/producto/${productId}`);
   };
 
   const renderProduct = ({ item }: { item: WooCommerceProduct }) => {
@@ -111,7 +101,7 @@ export default function TiendaScreen() {
           
           <TouchableOpacity
             style={styles.viewProductButton}
-            onPress={() => handleOpenProduct(item.permalink)}
+            onPress={() => handleOpenProduct(item.id)}
             activeOpacity={0.8}
           >
             <Text style={styles.viewProductButtonText}>Ver producto</Text>

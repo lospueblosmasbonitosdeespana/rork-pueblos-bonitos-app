@@ -302,6 +302,26 @@ function RootLayoutNav() {
           gestureEnabled: true,
         }}
       />
+      <Stack.Screen
+        name="producto/[id]"
+        options={{
+          headerTitle: "Producto",
+          presentation: "card",
+          gestureEnabled: true,
+          animation: 'default',
+          contentStyle: { flex: 1, backgroundColor: '#fff' },
+        }}
+      />
+      <Stack.Screen
+        name="producto-compra"
+        options={{
+          headerTitle: "Comprar",
+          presentation: "card",
+          gestureEnabled: false,
+          animation: 'default',
+          contentStyle: { flex: 1, backgroundColor: '#fff' },
+        }}
+      />
       </Stack>
     </>
   );
