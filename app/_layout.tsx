@@ -161,6 +161,7 @@ function RootLayoutNav() {
         gestureEnabled: true,
         animation: 'default',
         gestureDirection: 'horizontal',
+        contentStyle: { flex: 1, backgroundColor: '#fff' },
       }}
     >
       <Stack.Screen name="index" options={{ headerShown: false }} />
@@ -267,17 +268,19 @@ export default function RootLayout() {
   return (
     <ErrorBoundary>
       <GestureHandlerRootView style={{ flex: 1 }}>
-        <trpc.Provider client={trpcClient} queryClient={queryClient}>
-          <QueryClientProvider client={queryClient}>
-            <AuthProvider>
-              <LanguageProvider>
-                <NotificationsProvider>
-                  <RootLayoutNav />
-                </NotificationsProvider>
-              </LanguageProvider>
-            </AuthProvider>
-          </QueryClientProvider>
-        </trpc.Provider>
+        <View style={{ flex: 1 }}>
+          <trpc.Provider client={trpcClient} queryClient={queryClient}>
+            <QueryClientProvider client={queryClient}>
+              <AuthProvider>
+                <LanguageProvider>
+                  <NotificationsProvider>
+                    <RootLayoutNav />
+                  </NotificationsProvider>
+                </LanguageProvider>
+              </AuthProvider>
+            </QueryClientProvider>
+          </trpc.Provider>
+        </View>
       </GestureHandlerRootView>
     </ErrorBoundary>
   );
