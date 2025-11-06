@@ -184,8 +184,24 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
         }),
       });
 
+      console.log('📊 Login response status:', loginResponse.status);
+      console.log('📊 Login response headers:', loginResponse.headers);
+
+      const responseText = await loginResponse.text();
+      console.log('📄 Login response text:', responseText);
+
       if (!loginResponse.ok) {
-        const errorData = await loginResponse.json().catch(() => ({}));
+        let errorData: any = {};
+        try {
+          errorData = JSON.parse(responseText);
+        } catch (parseError) {
+          console.error('❌ Error parsing error response:', parseError);
+          console.error('❌ Raw response:', responseText);
+          return { 
+            success: false, 
+            error: 'Error del servidor. Por favor, inténtalo de nuevo.' 
+          };
+        }
         console.error('❌ Error login:', errorData);
         return { 
           success: false, 
@@ -193,7 +209,17 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
         };
       }
 
-      const loginData = await loginResponse.json();
+      let loginData: any;
+      try {
+        loginData = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('❌ Error parsing success response:', parseError);
+        console.error('❌ Raw response:', responseText);
+        return { 
+          success: false, 
+          error: 'Respuesta del servidor inválida' 
+        };
+      }
       console.log('✅ Login exitoso:', loginData);
 
       if (!loginData.success || !loginData.user_id) {
