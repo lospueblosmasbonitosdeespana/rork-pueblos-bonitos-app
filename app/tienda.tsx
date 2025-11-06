@@ -94,9 +94,12 @@ export default function TiendaScreen() {
               javaScriptEnabled={true}
               domStorageEnabled={true}
               startInLoadingState={true}
+              originWhitelist={['*']}
               scrollEnabled={true}
               nestedScrollEnabled={true}
-              showsVerticalScrollIndicator={false}
+              showsVerticalScrollIndicator={true}
+              automaticallyAdjustContentInsets={false}
+              allowsInlineMediaPlayback={true}
               injectedJavaScript={injectedJavaScript}
               onLoadEnd={() => {
                 console.log('✅ Tienda cargada correctamente:', currentUrl);
@@ -129,7 +132,6 @@ export default function TiendaScreen() {
               )}
               sharedCookiesEnabled={true}
               thirdPartyCookiesEnabled={true}
-              allowsInlineMediaPlayback={true}
               allowsBackForwardNavigationGestures={true}
             />
             {loading && (
