@@ -173,7 +173,7 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
         console.warn('⚠️ No se pudo limpiar React Query:', qErr);
       }
       
-      const loginResponse = await fetch('https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/login', {
+      const loginResponse = await fetch('https://lospueblosmasbonitosdeespana.org/wp-json/jwt-auth/v1/token', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -222,12 +222,12 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
       }
       console.log('✅ Login exitoso:', loginData);
 
-      if (!loginData.success || !loginData.user_id) {
-        return { success: false, error: 'Respuesta del servidor inválida' };
+      if (!loginData.token || !loginData.user_email) {
+        return { success: false, error: 'Respuesta del servidor inválida - no se recibió token' };
       }
 
-      console.log('📡 Obteniendo perfil completo del usuario...');
-      const userResponse = await fetch(`${API_BASE}/user-profile?user_id=${loginData.user_id}`);
+      console.log('📡 Token JWT recibido, obteniendo perfil completo del usuario...');
+      const userResponse = await fetch(`${API_BASE}/user-profile?email=${encodeURIComponent(loginData.user_email)}`);
 
       if (!userResponse.ok) {
         console.error('❌ Error obteniendo perfil de usuario');
@@ -241,12 +241,12 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
       }
 
       await setStoredUserId(user.id.toString());
-      await setStoredToken(loginData.token || 'lpbe_authenticated');
+      await setStoredToken(loginData.token);
       
       setState({ 
         user: { ...user, role: 'subscriber' }, 
         userId: user.id.toString(), 
-        token: loginData.token || 'lpbe_authenticated',
+        token: loginData.token,
         isLoading: false, 
         isAuthenticated: true 
       });
