@@ -119,7 +119,10 @@ export default function NoticiaDetalleScreen() {
               allowsInlineMediaPlayback={true}
               bounces={true}
               overScrollMode="always"
-              onScroll={(e) => console.log('📜 SCROLL:', e.nativeEvent.contentOffset.y)}
+              contentInsetAdjustmentBehavior="never"
+              allowsLinkPreview={false}
+              setSupportMultipleWindows={false}
+              onScroll={(e) => console.log('📜 SCROLL:', e.nativeEvent.contentOffset?.y)}
 
               injectedJavaScript={`
                 (function() {

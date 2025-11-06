@@ -100,6 +100,12 @@ export default function TiendaScreen() {
               showsVerticalScrollIndicator={true}
               automaticallyAdjustContentInsets={false}
               allowsInlineMediaPlayback={true}
+              bounces={true}
+              overScrollMode="always"
+              contentInsetAdjustmentBehavior="never"
+              allowsLinkPreview={false}
+              setSupportMultipleWindows={false}
+              onScroll={(e) => console.log('📜 SCROLL:', e.nativeEvent.contentOffset?.y)}
               injectedJavaScript={injectedJavaScript}
               onLoadEnd={() => {
                 console.log('✅ Tienda cargada correctamente:', currentUrl);

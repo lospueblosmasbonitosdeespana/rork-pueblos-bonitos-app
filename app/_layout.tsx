@@ -197,7 +197,7 @@ function RootLayoutNav() {
         options={{
           headerTitle: "Noticia",
           presentation: "card",
-          gestureEnabled: true,
+          gestureEnabled: false,
         }}
       />
       <Stack.Screen
@@ -262,7 +262,7 @@ function RootLayoutNav() {
         options={{
           headerTitle: "Tienda",
           presentation: "card",
-          gestureEnabled: true,
+          gestureEnabled: false,
         }}
       />
       <Stack.Screen
@@ -270,7 +270,7 @@ function RootLayoutNav() {
         options={{
           headerTitle: "Multiexperiencia",
           presentation: "card",
-          gestureEnabled: true,
+          gestureEnabled: false,
         }}
       />
       <Stack.Screen
