@@ -1,63 +1,122 @@
-import { Stack, useLocalSearchParams, router } from 'expo-router';
-import { X } from 'lucide-react-native';
-import { useState } from 'react';
+import React from 'react';
 import {
-  ActivityIndicator,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
   View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  ActivityIndicator,
+  TouchableOpacity,
+  Image,
 } from 'react-native';
-import { WebView } from 'react-native-webview';
-import { gestureHandlerRootHOC } from 'react-native-gesture-handler';
+import { Stack, useLocalSearchParams } from 'expo-router';
+import { useQuery } from '@tanstack/react-query';
 
-import { COLORS, SPACING, TYPOGRAPHY } from '@/constants/theme';
+const LPBE_RED = '#d60000';
 
-function NoticiaDetalleScreen() {
-  const params = useLocalSearchParams<{ id: string; link?: string }>();
-  const decodedLink = params.link ? decodeURIComponent(params.link) : null;
-  const link = decodedLink ? `${decodedLink}${decodedLink.includes('?') ? '&' : '?'}app=1` : null;
-  const [isLoading, setIsLoading] = useState(true);
-  const [hasError, setHasError] = useState(false);
+interface NoticiaDetalle {
+  id: number;
+  titulo: string;
+  fecha: string;
+  imagen: string;
+  contenido: string;
+}
 
-  const handleError = () => {
-    console.error('❌ Error loading news content:', link);
-    setHasError(true);
-    setIsLoading(false);
-  };
+function stripHtmlTags(html: string): string {
+  return html
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#039;/g, "'")
+    .replace(/\n\n+/g, '\n\n')
+    .trim();
+}
 
-  const handleLoad = () => {
-    console.log('✅ News content loaded:', link);
-    setIsLoading(false);
-  };
+async function fetchNoticiaDetalle(noticiaId: string): Promise<NoticiaDetalle> {
+  const url = `https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/noticia-detalle?id=${noticiaId}`;
+  
+  console.log('📰 Fetching noticia:', noticiaId);
+  
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
 
-  if (!link) {
+  if (!response.ok) {
+    console.error('❌ Error fetching noticia:', response.status, response.statusText);
+    throw new Error('Error al cargar la noticia');
+  }
+
+  const data = await response.json();
+  console.log('✅ Noticia fetched:', data.titulo);
+  
+  return data;
+}
+
+export default function NoticiaDetalleScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+
+  const { data: noticia, isLoading, error, refetch } = useQuery({
+    queryKey: ['noticia-detalle', id],
+    queryFn: () => fetchNoticiaDetalle(id || ''),
+    enabled: !!id,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  if (isLoading) {
     return (
       <>
         <Stack.Screen
           options={{
-            headerTitle: 'Noticia no disponible',
+            headerTitle: 'Noticia',
             headerStyle: {
-              backgroundColor: COLORS.card,
+              backgroundColor: '#fff',
             },
-            headerTintColor: COLORS.primary,
+            headerTintColor: LPBE_RED,
           }}
         />
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorTitle}>Noticia no disponible</Text>
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" color={LPBE_RED} />
+          <Text style={styles.loadingText}>Cargando noticia...</Text>
+        </View>
+      </>
+    );
+  }
+
+  if (error || !noticia) {
+    return (
+      <>
+        <Stack.Screen
+          options={{
+            headerTitle: 'Error',
+            headerStyle: {
+              backgroundColor: '#fff',
+            },
+            headerTintColor: LPBE_RED,
+          }}
+        />
+        <View style={styles.centerContainer}>
           <Text style={styles.errorText}>
-            No se pudo cargar la información de esta noticia.
+            Error al cargar la noticia.{'\n'}
+            Verifica tu conexión a internet.
           </Text>
           <TouchableOpacity
             style={styles.retryButton}
-            onPress={() => router.back()}
+            onPress={() => refetch()}
+            activeOpacity={0.8}
           >
-            <Text style={styles.retryButtonText}>Volver</Text>
+            <Text style={styles.retryButtonText}>Reintentar</Text>
           </TouchableOpacity>
         </View>
       </>
     );
   }
+
+  const cleanContent = stripHtmlTags(noticia.contenido);
 
   return (
     <>
@@ -65,68 +124,38 @@ function NoticiaDetalleScreen() {
         options={{
           headerTitle: 'Noticia',
           headerStyle: {
-            backgroundColor: COLORS.card,
+            backgroundColor: '#fff',
           },
-          headerTintColor: COLORS.primary,
-          headerRight: () => (
-            <TouchableOpacity onPress={() => router.back()}>
-              <X size={24} color={COLORS.primary} />
-            </TouchableOpacity>
-          ),
+          headerTintColor: LPBE_RED,
         }}
       />
-      <View style={styles.container}>
-        {hasError ? (
-          <View style={styles.errorContainer}>
-            <Text style={styles.errorTitle}>Error</Text>
-            <Text style={styles.errorText}>
-              No se pudo cargar la noticia. Verifica tu conexión a internet.
-            </Text>
-            <TouchableOpacity
-              style={styles.retryButton}
-              onPress={() => {
-                setHasError(false);
-                setIsLoading(true);
-              }}
-            >
-              <Text style={styles.retryButtonText}>Reintentar</Text>
-            </TouchableOpacity>
-          </View>
+      <ScrollView 
+        style={styles.container}
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={true}
+      >
+        {noticia.imagen ? (
+          <Image
+            source={{ uri: noticia.imagen }}
+            style={styles.noticiaImage}
+            resizeMode="cover"
+          />
         ) : (
-          <>
-            {isLoading && (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={COLORS.primary} />
-                <Text style={styles.loadingText}>Cargando noticia...</Text>
-              </View>
-            )}
-            <View style={{ flex: 1 }}>
-              <WebView
-                source={{ uri: link }}
-                style={{ flex: 1 }}
-                originWhitelist={['*']}
-                scrollEnabled={true}
-                nestedScrollEnabled={true}
-                automaticallyAdjustContentInsets={false}
-                contentInset={{ top: 0, left: 0, bottom: 0, right: 0 }}
-                javaScriptEnabled={true}
-                domStorageEnabled={true}
-                startInLoadingState={true}
-                bounces={true}
-                decelerationRate="normal"
-                onLoad={handleLoad}
-                onError={handleError}
-                injectedJavaScript={`
-                  document.body.style.overflow = 'auto';
-                  document.documentElement.style.overflow = 'auto';
-                  document.body.style.webkitOverflowScrolling = 'touch';
-                  true;
-                `}
-              />
-            </View>
-          </>
+          <View style={[styles.noticiaImage, styles.noImage]}>
+            <Text style={styles.noImageText}>Sin imagen</Text>
+          </View>
         )}
-      </View>
+
+        <View style={styles.infoContainer}>
+          <Text style={styles.noticiaTitulo}>{noticia.titulo}</Text>
+          
+          {noticia.fecha && (
+            <Text style={styles.noticiaFecha}>{noticia.fecha}</Text>
+          )}
+          
+          <Text style={styles.noticiaContenido}>{cleanContent}</Text>
+        </View>
+      </ScrollView>
     </>
   );
 }
@@ -134,65 +163,71 @@ function NoticiaDetalleScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: '#fff',
   },
-  webview: {
+  contentContainer: {
+    paddingBottom: 24,
+  },
+  centerContainer: {
     flex: 1,
-  },
-  loadingContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: COLORS.background,
-    zIndex: 1,
+    padding: 24,
+    backgroundColor: '#fff',
   },
   loadingText: {
-    ...TYPOGRAPHY.body,
-    color: COLORS.textSecondary,
-    marginTop: SPACING.md,
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: SPACING.xl,
-    backgroundColor: COLORS.background,
-  },
-  errorTitle: {
-    ...TYPOGRAPHY.h2,
-    color: COLORS.error,
-    marginBottom: SPACING.sm,
+    fontSize: 16,
+    color: '#666',
+    marginTop: 12,
   },
   errorText: {
-    ...TYPOGRAPHY.body,
-    color: COLORS.textSecondary,
+    fontSize: 16,
+    color: '#666',
     textAlign: 'center',
-    marginBottom: SPACING.lg,
+    marginBottom: 20,
   },
   retryButton: {
-    backgroundColor: COLORS.primary,
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.md,
-    borderRadius: 12,
+    backgroundColor: LPBE_RED,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
   },
   retryButtonText: {
-    ...TYPOGRAPHY.body,
-    color: COLORS.card,
+    color: '#fff',
+    fontSize: 16,
     fontWeight: '600' as const,
   },
-  closeButton: {
-    backgroundColor: COLORS.primary,
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+  noticiaImage: {
+    width: '100%',
+    height: 240,
+    backgroundColor: '#f5f5f5',
+  },
+  noImage: {
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: SPACING.lg,
+  },
+  noImageText: {
+    color: '#999',
+    fontSize: 14,
+  },
+  infoContainer: {
+    padding: 16,
+  },
+  noticiaTitulo: {
+    fontSize: 22,
+    fontWeight: '700' as const,
+    color: '#000',
+    marginBottom: 8,
+    lineHeight: 28,
+  },
+  noticiaFecha: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 16,
+  },
+  noticiaContenido: {
+    fontSize: 15,
+    color: '#333',
+    lineHeight: 24,
   },
 });
-
-export default gestureHandlerRootHOC(NoticiaDetalleScreen);

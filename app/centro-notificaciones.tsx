@@ -55,8 +55,7 @@ export default function CentroNotificaciones() {
     if (item.enlace && item.enlace.trim() !== '') {
       try {
         if (item.tipo === 'noticia') {
-          const encodedLink = encodeURIComponent(item.enlace);
-          router.push(`/noticia/${item.id}?link=${encodedLink}` as any);
+          router.push(`/noticia/${item.id}` as any);
         } else {
           let enlaceConParametro = item.enlace;
           if (!enlaceConParametro.includes('?app=1')) {
