@@ -5,11 +5,11 @@ import {
   StyleSheet,
   ActivityIndicator,
   TouchableOpacity,
-  ScrollView,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
+import { WebView } from 'react-native-webview';
 
 const LPBE_RED = '#d60000';
 
@@ -18,7 +18,7 @@ interface NoticiaDetalle {
   titulo: string;
   fecha: string;
   imagen_destacada: string;
-  contenido_texto: string;
+  contenido_html: string;
 }
 
 
@@ -46,7 +46,7 @@ async function fetchNoticiaDetalle(noticiaId: string): Promise<NoticiaDetalle> {
   }
 
   const contenidoHTML = noticia.content?.rendered || '';
-  const contenidoTexto = contenidoHTML.replace(/(<([^>]+)>)/gi, '').trim();
+  const contenidoSinEnlaces = contenidoHTML.replace(/<a\s+[^>]*href=[^>]*>(.*?)<\/a>/gi, '$1');
 
   console.log('✅ Noticia cargada:', noticia.title?.rendered);
   
@@ -55,7 +55,7 @@ async function fetchNoticiaDetalle(noticiaId: string): Promise<NoticiaDetalle> {
     titulo: noticia.title?.rendered || 'Sin título',
     fecha: noticia.date || '',
     imagen_destacada: imagenDestacada,
-    contenido_texto: contenidoTexto,
+    contenido_html: contenidoSinEnlaces,
   };
 }
 
@@ -129,7 +129,7 @@ export default function NoticiaDetalleScreen() {
           headerTintColor: LPBE_RED,
         }}
       />
-      <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+      <View style={styles.container}>
         {noticia.imagen_destacada ? (
           <Image
             source={{ uri: noticia.imagen_destacada }}
@@ -142,7 +142,7 @@ export default function NoticiaDetalleScreen() {
           </View>
         )}
 
-        <View style={styles.contentContainer}>
+        <View style={styles.headerContainer}>
           <Text style={styles.noticiaTitulo}>{noticia.titulo}</Text>
           
           {noticia.fecha && (
@@ -154,10 +154,93 @@ export default function NoticiaDetalleScreen() {
               })}
             </Text>
           )}
-
-          <Text style={styles.contenidoTexto}>{noticia.contenido_texto}</Text>
         </View>
-      </ScrollView>
+
+        <WebView
+          style={styles.webview}
+          originWhitelist={['*']}
+          source={{ 
+            html: `
+              <!DOCTYPE html>
+              <html>
+              <head>
+                <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+                <style>
+                  * {
+                    margin: 0;
+                    padding: 0;
+                    box-sizing: border-box;
+                  }
+                  body {
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                    padding: 20px;
+                    color: #1F2937;
+                    font-size: 16px;
+                    line-height: 1.5;
+                    background: #fff;
+                  }
+                  p {
+                    margin-bottom: 10px;
+                    font-size: 16px;
+                    line-height: 24px;
+                    color: #1F2937;
+                  }
+                  h2 {
+                    font-size: 20px;
+                    font-weight: 700;
+                    color: #1F2937;
+                    margin-top: 20px;
+                    margin-bottom: 10px;
+                  }
+                  h3 {
+                    font-size: 18px;
+                    font-weight: 700;
+                    color: #1F2937;
+                    margin-top: 20px;
+                    margin-bottom: 10px;
+                  }
+                  strong, b {
+                    font-weight: 700;
+                  }
+                  em, i {
+                    font-style: italic;
+                  }
+                  ul, ol {
+                    margin-bottom: 10px;
+                    padding-left: 20px;
+                  }
+                  li {
+                    margin-bottom: 5px;
+                    font-size: 16px;
+                    line-height: 24px;
+                  }
+                  a {
+                    color: #1F2937;
+                    text-decoration: none;
+                    pointer-events: none;
+                    cursor: default;
+                  }
+                  img {
+                    display: none !important;
+                  }
+                  figure {
+                    display: none !important;
+                  }
+                </style>
+              </head>
+              <body>
+                ${noticia.contenido_html}
+              </body>
+              </html>
+            ` 
+          }}
+          scrollEnabled={true}
+          bounces={true}
+          showsVerticalScrollIndicator={true}
+          nestedScrollEnabled={true}
+          javaScriptEnabled={false}
+        />
+      </View>
     </>
   );
 }
@@ -196,8 +279,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600' as const,
   },
-  scrollContent: {
-    flexGrow: 1,
+  webview: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  headerContainer: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 10,
+    backgroundColor: '#fff',
   },
   noticiaImage: {
     width: '100%',
