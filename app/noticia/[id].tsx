@@ -19,13 +19,135 @@ interface NoticiaDetalle {
   fecha: string;
   imagen_destacada: string;
   contenido_html: string;
-  categoria?: string;
 }
 
+function transformarHTML(html: string): string {
+  let transformado = html;
 
+  console.log('🔧 Iniciando transformación de HTML...');
+
+  transformado = transformado.replace(
+    /<img([^>]*?)src="([^"]*?)"([^>]*?)>/gi,
+    (match, before, src, after) => {
+      let nuevaSrc = src;
+
+      const dataFullUrl = match.match(/data-full-url="([^"]*)"/i);
+      const dataOrigFile = match.match(/data-orig-file="([^"]*)"/i);
+      const dataLargeFile = match.match(/data-large-file="([^"]*)"/i);
+
+      if (dataFullUrl) {
+        nuevaSrc = dataFullUrl[1];
+      } else if (dataOrigFile) {
+        nuevaSrc = dataOrigFile[1];
+      } else if (dataLargeFile) {
+        nuevaSrc = dataLargeFile[1];
+      } else {
+        nuevaSrc = src.replace(/-\d+x\d+\.(jpg|jpeg|png|webp)/i, '.$1');
+      }
+
+      const sinSrcset = before + after;
+      const limpio = sinSrcset
+        .replace(/srcset="[^"]*"/gi, '')
+        .replace(/sizes="[^"]*"/gi, '')
+        .replace(/loading="[^"]*"/gi, '');
+
+      return `<img${limpio} src="${nuevaSrc}">`;
+    }
+  );
+
+  const primeraImagen = transformado.match(/<img[^>]*src="([^"]*)"/i);
+  if (primeraImagen) {
+    console.log('🖼️ Primera imagen tras transformación:', primeraImagen[1]);
+    if (primeraImagen[1].match(/-150x150|-300x200|-768x|-1024x/i)) {
+      console.warn('⚠️ ADVERTENCIA: La imagen todavía contiene sufijos de miniatura');
+    } else {
+      console.log('✅ Imagen sin sufijos de miniatura');
+    }
+  }
+
+  const htmlFinal = `<!doctype html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      color: #374151;
+      padding: 20px;
+      background: #fff;
+      overflow-x: hidden;
+    }
+    img {
+      max-width: 100% !important;
+      height: auto !important;
+      display: block;
+      margin: 0 auto 16px;
+      border-radius: 10px;
+      object-fit: cover;
+    }
+    figure {
+      width: 100%;
+      margin: 0 0 16px 0;
+    }
+    figcaption {
+      font-size: 12px;
+      color: #6B7280;
+      text-align: center;
+      margin-top: -8px;
+      margin-bottom: 16px;
+    }
+    p {
+      margin-bottom: 16px;
+      font-size: 16px;
+      line-height: 1.5;
+    }
+    h2, h3, h4 {
+      margin-top: 24px;
+      margin-bottom: 12px;
+      font-weight: 700;
+      color: #000;
+    }
+    h2 { font-size: 20px; }
+    h3 { font-size: 18px; }
+    h4 { font-size: 16px; }
+    a {
+      color: #d60000;
+      text-decoration: none;
+    }
+    ul, ol {
+      margin-left: 20px;
+      margin-bottom: 16px;
+    }
+    li {
+      margin-bottom: 8px;
+    }
+    blockquote {
+      border-left: 4px solid #d60000;
+      padding-left: 16px;
+      margin: 16px 0;
+      font-style: italic;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+${transformado}
+</body>
+</html>`;
+
+  console.log('✅ Transformación de HTML completada');
+  return htmlFinal;
+}
 
 async function fetchNoticiaDetalle(noticiaId: string): Promise<NoticiaDetalle> {
-  const url = `https://lospueblosmasbonitosdeespana.org/wp-json/wp/v2/posts/${noticiaId}`;
+  const url = `https://lospueblosmasbonitosdeespana.org/wp-json/wp/v2/posts/${noticiaId}?_embed=1`;
   
   console.log('📰 Cargando noticia desde:', url);
   
@@ -38,22 +160,12 @@ async function fetchNoticiaDetalle(noticiaId: string): Promise<NoticiaDetalle> {
 
   const noticia = await response.json();
   
-  console.log('📋 Datos recibidos:', noticia);
+  console.log('📋 Datos recibidos para noticia:', noticia.id);
 
   let imagenDestacada = '';
-  if (noticia.featured_media) {
-    try {
-      const mediaResponse = await fetch(
-        `https://lospueblosmasbonitosdeespana.org/wp-json/wp/v2/media/${noticia.featured_media}`
-      );
-      if (mediaResponse.ok) {
-        const mediaData = await mediaResponse.json();
-        imagenDestacada = mediaData.source_url || '';
-        console.log('🖼️ Imagen destacada cargada:', imagenDestacada);
-      }
-    } catch (e) {
-      console.warn('No se pudo cargar la imagen destacada:', e);
-    }
+  if (noticia._embedded?.['wp:featuredmedia']?.[0]?.source_url) {
+    imagenDestacada = noticia._embedded['wp:featuredmedia'][0].source_url;
+    console.log('🖼️ Imagen destacada desde _embed:', imagenDestacada);
   }
 
   console.log('✅ Noticia cargada:', noticia.title?.rendered);
@@ -126,133 +238,7 @@ export default function NoticiaDetalleScreen() {
     );
   }
 
-
-
-  const htmlContent = `
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-        <style>
-          * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-          }
-          body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            font-size: 16px;
-            line-height: 1.6;
-            color: #374151;
-            padding: 20px;
-            background: #fff;
-            overflow-x: hidden;
-          }
-          img {
-            max-width: 100% !important;
-            width: 100% !important;
-            height: auto !important;
-            border-radius: 10px;
-            margin: 16px 0;
-            display: block;
-            object-fit: cover;
-            background-color: #F5F5F5;
-          }
-          figure {
-            width: 100%;
-            margin: 16px 0;
-          }
-          figure img {
-            width: 100%;
-            height: auto;
-          }
-          figcaption {
-            font-size: 12px;
-            color: #6B7280;
-            text-align: center;
-            margin-top: 8px;
-          }
-          p {
-            margin-bottom: 16px;
-            font-size: 16px;
-            line-height: 1.5;
-          }
-          h2, h3, h4 {
-            margin-top: 24px;
-            margin-bottom: 12px;
-            font-weight: 700;
-            color: #000;
-          }
-          h2 { font-size: 20px; }
-          h3 { font-size: 18px; }
-          h4 { font-size: 16px; }
-          a {
-            color: #d60000;
-            text-decoration: none;
-          }
-          ul, ol {
-            margin-left: 20px;
-            margin-bottom: 16px;
-          }
-          li {
-            margin-bottom: 8px;
-          }
-          blockquote {
-            border-left: 4px solid #d60000;
-            padding-left: 16px;
-            margin: 16px 0;
-            font-style: italic;
-            color: #666;
-          }
-        </style>
-        <script>
-          window.onload = function() {
-            // Inyectar estilos CSS
-            var style = document.createElement('style');
-            style.innerHTML = 'img { max-width: 100% !important; height: auto !important; display: block !important; object-fit: cover !important; border-radius: 10px !important; margin: 0 auto 16px auto !important; } figure { width: 100% !important; margin: 0 0 16px 0 !important; } figcaption { font-size: 12px !important; color: #6B7280 !important; text-align: center !important; margin-top: -8px !important; margin-bottom: 16px !important; } img[src*="-150x150"], img[src*="-300x200"], img[src*="-768x"], img[src*="-1024x"] { content-visibility: auto !important; width: 100% !important; height: auto !important; }';
-            document.head.appendChild(style);
-
-            // Sustituir imágenes pequeñas por tamaño completo
-            (function() {
-              try {
-                const images = document.querySelectorAll('img');
-                images.forEach(img => {
-                  if (img.src.match(/-\\d+x\\d+\\.(jpg|jpeg|png|webp)/i)) {
-                    img.src = img.src.replace(/-\\d+x\\d+\\.(jpg|jpeg|png|webp)/i, '.$1');
-                  }
-                  img.style.maxWidth = '100%';
-                  img.style.height = 'auto';
-                  img.style.objectFit = 'cover';
-                  img.style.borderRadius = '10px';
-                  img.style.display = 'block';
-                  img.style.margin = '0 auto 16px auto';
-                });
-                const figures = document.querySelectorAll('figure');
-                figures.forEach(fig => {
-                  fig.style.width = '100%';
-                  fig.style.margin = '0 0 16px 0';
-                });
-                const captions = document.querySelectorAll('figcaption');
-                captions.forEach(cap => {
-                  cap.style.fontSize = '12px';
-                  cap.style.color = '#6B7280';
-                  cap.style.textAlign = 'center';
-                  cap.style.marginTop = '-8px';
-                  cap.style.marginBottom = '16px';
-                });
-                console.log('✅ Imágenes optimizadas para tamaño completo');
-              } catch (e) {
-                console.error('❌ Error ajustando imágenes:', e);
-              }
-            })();
-          };
-        </script>
-      </head>
-      <body>
-        ${noticia.contenido_html}
-      </body>
-    </html>
-  `;
+  const htmlFinal = transformarHTML(noticia.contenido_html);
 
   return (
     <>
@@ -291,21 +277,20 @@ export default function NoticiaDetalleScreen() {
           )}
         </View>
 
-        <WebView
-          source={{ html: htmlContent }}
-          style={styles.webview}
-          originWhitelist={['*']}
-          scrollEnabled={true}
-          nestedScrollEnabled={true}
-          automaticallyAdjustContentInsets={false}
-          contentInset={{ top: 0, left: 0, bottom: 0, right: 0 }}
-          javaScriptEnabled={true}
-          domStorageEnabled={true}
-          startInLoadingState={true}
-          bounces={true}
-          decelerationRate="normal"
-          showsVerticalScrollIndicator={true}
-        />
+        <View style={{ flex: 1 }}>
+          <WebView
+            source={{ 
+              html: htmlFinal, 
+              baseUrl: 'https://lospueblosmasbonitosdeespana.org' 
+            }}
+            style={{ flex: 1 }}
+            originWhitelist={['*']}
+            scrollEnabled={true}
+            nestedScrollEnabled={true}
+            javaScriptEnabled={true}
+            domStorageEnabled={true}
+          />
+        </View>
       </View>
     </>
   );
@@ -350,10 +335,6 @@ const styles = StyleSheet.create({
     height: 240,
     backgroundColor: '#f5f5f5',
   },
-  webview: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
   headerInfo: {
     padding: 16,
     backgroundColor: '#fff',
@@ -366,7 +347,6 @@ const styles = StyleSheet.create({
     color: '#999',
     fontSize: 14,
   },
-
   noticiaTitulo: {
     fontSize: 22,
     fontWeight: '700' as const,
@@ -379,5 +359,4 @@ const styles = StyleSheet.create({
     color: '#666',
     marginBottom: 16,
   },
-
 });
