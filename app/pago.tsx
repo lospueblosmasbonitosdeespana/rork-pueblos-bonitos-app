@@ -360,12 +360,12 @@ export default function PagoScreen() {
         />
         
         <View style={styles.pickerContainer}>
-          <Text style={styles.pickerLabel}>País *</Text>
           <Picker
             selectedValue={orderData.pais}
             onValueChange={(value) => handleInputChange('pais', value as string)}
             enabled={!isProcessing}
             style={styles.picker}
+            itemStyle={styles.pickerItem}
           >
             <Picker.Item label="España" value="ES" />
             <Picker.Item label="Francia" value="FR" />
@@ -589,17 +589,13 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: 12,
     backgroundColor: '#fff',
-    overflow: 'hidden',
-  },
-  pickerLabel: {
-    fontSize: 12,
-    color: '#6B6B6B',
-    paddingHorizontal: 12,
-    paddingTop: 8,
-    fontWeight: '500' as const,
   },
   picker: {
-    height: 50,
     width: '100%',
+    color: '#000',
+  },
+  pickerItem: {
+    fontSize: 16,
+    color: '#000',
   },
 });
