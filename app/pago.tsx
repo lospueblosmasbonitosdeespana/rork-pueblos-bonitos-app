@@ -354,6 +354,38 @@ export default function PagoScreen() {
             domStorageEnabled={true}
             startInLoadingState={true}
             onNavigationStateChange={handleWebViewNavigationStateChange}
+            injectedJavaScript={`
+              (function() {
+                const addLPBEFooter = () => {
+                  if (document.getElementById('lpbe-footer')) return;
+                  
+                  const footer = document.createElement('div');
+                  footer.id = 'lpbe-footer';
+                  footer.style.cssText = 'width: 100%; background-color: #9b0021; padding: 30px 20px; text-align: center; margin-top: 40px;';
+                  
+                  footer.innerHTML = \`
+                    <img src="https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2023/05/logo-lpbe-blanco.png" 
+                         alt="Los Pueblos Más Bonitos de España" 
+                         style="max-width: 200px; width: 100%; height: auto; margin-bottom: 15px;" />
+                    <p style="color: #ffffff; font-size: 14px; margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.5;">
+                      Los Pueblos Más Bonitos de España<br/>Asociación Oficial
+                    </p>
+                  \`;
+                  
+                  document.body.appendChild(footer);
+                };
+                
+                if (document.readyState === 'loading') {
+                  document.addEventListener('DOMContentLoaded', addLPBEFooter);
+                } else {
+                  addLPBEFooter();
+                }
+                
+                setTimeout(addLPBEFooter, 1000);
+                setTimeout(addLPBEFooter, 2000);
+              })();
+              true;
+            `}
             renderLoading={() => (
               <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color={LPBE_RED} />
