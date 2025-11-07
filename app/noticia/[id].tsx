@@ -2,12 +2,12 @@ import React from 'react';
 import {
   View,
   Text,
-  ScrollView,
   StyleSheet,
   ActivityIndicator,
   TouchableOpacity,
   Image,
 } from 'react-native';
+import { WebView } from 'react-native-webview';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 
@@ -17,23 +17,12 @@ interface NoticiaDetalle {
   id: number;
   titulo: string;
   fecha: string;
-  imagen: string;
-  contenido: string;
+  imagen_destacada: string;
+  contenido_html: string;
   categoria?: string;
 }
 
-function stripHtmlTags(html: string): string {
-  return html
-    .replace(/<[^>]*>/g, '')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#039;/g, "'")
-    .replace(/\n\n+/g, '\n\n')
-    .trim();
-}
+
 
 async function fetchNoticiaDetalle(noticiaId: string): Promise<NoticiaDetalle> {
   const url = `https://lospueblosmasbonitosdeespana.org/wp-json/wp/v2/posts/${noticiaId}`;
@@ -51,9 +40,21 @@ async function fetchNoticiaDetalle(noticiaId: string): Promise<NoticiaDetalle> {
   
   console.log('📋 Datos recibidos:', noticia);
 
-  const contenidoLimpio = noticia.content?.rendered
-    ? noticia.content.rendered.replace(/(<([^>]+)>)/gi, '')
-    : '';
+  let imagenDestacada = '';
+  if (noticia.featured_media) {
+    try {
+      const mediaResponse = await fetch(
+        `https://lospueblosmasbonitosdeespana.org/wp-json/wp/v2/media/${noticia.featured_media}`
+      );
+      if (mediaResponse.ok) {
+        const mediaData = await mediaResponse.json();
+        imagenDestacada = mediaData.source_url || '';
+        console.log('🖼️ Imagen destacada cargada:', imagenDestacada);
+      }
+    } catch (e) {
+      console.warn('No se pudo cargar la imagen destacada:', e);
+    }
+  }
 
   console.log('✅ Noticia cargada:', noticia.title?.rendered);
   
@@ -61,8 +62,8 @@ async function fetchNoticiaDetalle(noticiaId: string): Promise<NoticiaDetalle> {
     id: noticia.id,
     titulo: noticia.title?.rendered || 'Sin título',
     fecha: noticia.date || '',
-    imagen: noticia.yoast_head_json?.og_image?.[0]?.url || '',
-    contenido: contenidoLimpio,
+    imagen_destacada: imagenDestacada,
+    contenido_html: noticia.content?.rendered || '',
   };
 }
 
@@ -125,7 +126,83 @@ export default function NoticiaDetalleScreen() {
     );
   }
 
-  const cleanContent = stripHtmlTags(noticia.contenido);
+
+
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+        <style>
+          * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+          }
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 16px;
+            line-height: 1.6;
+            color: #374151;
+            padding: 20px;
+            background: #fff;
+            overflow-x: hidden;
+          }
+          img {
+            max-width: 100% !important;
+            height: auto !important;
+            border-radius: 8px;
+            margin: 16px 0;
+            display: block;
+          }
+          p {
+            margin-bottom: 16px;
+            font-size: 16px;
+            line-height: 1.5;
+          }
+          h2, h3, h4 {
+            margin-top: 24px;
+            margin-bottom: 12px;
+            font-weight: 700;
+            color: #000;
+          }
+          h2 { font-size: 20px; }
+          h3 { font-size: 18px; }
+          h4 { font-size: 16px; }
+          a {
+            color: #d60000;
+            text-decoration: none;
+          }
+          ul, ol {
+            margin-left: 20px;
+            margin-bottom: 16px;
+          }
+          li {
+            margin-bottom: 8px;
+          }
+          blockquote {
+            border-left: 4px solid #d60000;
+            padding-left: 16px;
+            margin: 16px 0;
+            font-style: italic;
+            color: #666;
+          }
+          figure {
+            margin: 16px 0;
+          }
+          figcaption {
+            font-size: 14px;
+            color: #666;
+            margin-top: 8px;
+            text-align: center;
+          }
+        </style>
+      </head>
+      <body>
+        ${noticia.contenido_html}
+      </body>
+    </html>
+  `;
 
   return (
     <>
@@ -138,14 +215,10 @@ export default function NoticiaDetalleScreen() {
           headerTintColor: LPBE_RED,
         }}
       />
-      <ScrollView 
-        style={styles.container}
-        contentContainerStyle={styles.contentContainer}
-        showsVerticalScrollIndicator={true}
-      >
-        {noticia.imagen ? (
+      <View style={styles.container}>
+        {noticia.imagen_destacada ? (
           <Image
-            source={{ uri: noticia.imagen }}
+            source={{ uri: noticia.imagen_destacada }}
             style={styles.noticiaImage}
             resizeMode="cover"
           />
@@ -155,16 +228,35 @@ export default function NoticiaDetalleScreen() {
           </View>
         )}
 
-        <View style={styles.infoContainer}>
+        <View style={styles.headerInfo}>
           <Text style={styles.noticiaTitulo}>{noticia.titulo}</Text>
-          
           {noticia.fecha && (
-            <Text style={styles.noticiaFecha}>{noticia.fecha}</Text>
+            <Text style={styles.noticiaFecha}>
+              {new Date(noticia.fecha).toLocaleDateString('es-ES', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+              })}
+            </Text>
           )}
-          
-          <Text style={styles.noticiaContenido}>{cleanContent}</Text>
         </View>
-      </ScrollView>
+
+        <WebView
+          source={{ html: htmlContent }}
+          style={styles.webview}
+          originWhitelist={['*']}
+          scrollEnabled={true}
+          nestedScrollEnabled={true}
+          automaticallyAdjustContentInsets={false}
+          contentInset={{ top: 0, left: 0, bottom: 0, right: 0 }}
+          javaScriptEnabled={true}
+          domStorageEnabled={true}
+          startInLoadingState={true}
+          bounces={true}
+          decelerationRate="normal"
+          showsVerticalScrollIndicator={true}
+        />
+      </View>
     </>
   );
 }
@@ -173,9 +265,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-  },
-  contentContainer: {
-    paddingBottom: 24,
   },
   centerContainer: {
     flex: 1,
@@ -211,6 +300,14 @@ const styles = StyleSheet.create({
     height: 240,
     backgroundColor: '#f5f5f5',
   },
+  webview: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  headerInfo: {
+    padding: 16,
+    backgroundColor: '#fff',
+  },
   noImage: {
     justifyContent: 'center',
     alignItems: 'center',
@@ -219,9 +316,7 @@ const styles = StyleSheet.create({
     color: '#999',
     fontSize: 14,
   },
-  infoContainer: {
-    padding: 16,
-  },
+
   noticiaTitulo: {
     fontSize: 22,
     fontWeight: '700' as const,
@@ -234,9 +329,5 @@ const styles = StyleSheet.create({
     color: '#666',
     marginBottom: 16,
   },
-  noticiaContenido: {
-    fontSize: 15,
-    color: '#333',
-    lineHeight: 24,
-  },
+
 });
