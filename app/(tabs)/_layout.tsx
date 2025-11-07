@@ -86,7 +86,7 @@ export default function TabLayout() {
         name="home"
         options={{
           title: t.tabs.home,
-          headerTitle: t.home.title1 + ' ' + t.home.title2,
+          headerTitle: '',
           tabBarIcon: ({ color }) => <Home size={24} color={color} strokeWidth={1.5} />,
         }}
       />
