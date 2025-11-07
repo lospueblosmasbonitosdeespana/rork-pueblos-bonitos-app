@@ -304,6 +304,7 @@ export default function PagoScreen() {
         <TextInput
           style={styles.input}
           placeholder="Nombre *"
+          placeholderTextColor="#6B6B6B"
           value={orderData.nombre}
           onChangeText={(value) => handleInputChange('nombre', value)}
           editable={!isProcessing}
@@ -312,6 +313,7 @@ export default function PagoScreen() {
         <TextInput
           style={styles.input}
           placeholder="Apellidos *"
+          placeholderTextColor="#6B6B6B"
           value={orderData.apellidos}
           onChangeText={(value) => handleInputChange('apellidos', value)}
           editable={!isProcessing}
@@ -320,6 +322,7 @@ export default function PagoScreen() {
         <TextInput
           style={styles.input}
           placeholder="Email *"
+          placeholderTextColor="#6B6B6B"
           value={orderData.email}
           onChangeText={(value) => handleInputChange('email', value)}
           keyboardType="email-address"
@@ -330,6 +333,7 @@ export default function PagoScreen() {
         <TextInput
           style={styles.input}
           placeholder="Teléfono *"
+          placeholderTextColor="#6B6B6B"
           value={orderData.telefono}
           onChangeText={(value) => handleInputChange('telefono', value)}
           keyboardType="phone-pad"
@@ -339,6 +343,7 @@ export default function PagoScreen() {
         <TextInput
           style={styles.input}
           placeholder="Dirección *"
+          placeholderTextColor="#6B6B6B"
           value={orderData.direccion}
           onChangeText={(value) => handleInputChange('direccion', value)}
           editable={!isProcessing}
@@ -347,6 +352,7 @@ export default function PagoScreen() {
         <TextInput
           style={styles.input}
           placeholder="Código Postal *"
+          placeholderTextColor="#6B6B6B"
           value={orderData.codigoPostal}
           onChangeText={(value) => handleInputChange('codigoPostal', value)}
           keyboardType="numeric"
@@ -395,6 +401,7 @@ export default function PagoScreen() {
         <TextInput
           style={styles.input}
           placeholder="Ciudad *"
+          placeholderTextColor="#6B6B6B"
           value={orderData.ciudad}
           onChangeText={(value) => handleInputChange('ciudad', value)}
           editable={!isProcessing}
@@ -472,6 +479,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginBottom: 12,
     backgroundColor: '#fff',
+    color: '#000',
   },
   summaryItem: {
     flexDirection: 'row',
@@ -585,7 +593,7 @@ const styles = StyleSheet.create({
   },
   pickerLabel: {
     fontSize: 12,
-    color: '#666',
+    color: '#6B6B6B',
     paddingHorizontal: 12,
     paddingTop: 8,
     fontWeight: '500' as const,
