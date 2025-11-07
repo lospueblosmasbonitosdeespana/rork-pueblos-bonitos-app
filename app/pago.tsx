@@ -38,6 +38,14 @@ interface WooCommerceOrder {
   status: string;
 }
 
+interface ShippingMethod {
+  instance_id: string;
+  title: string;
+  cost: string;
+  method_id: string;
+  method_title: string;
+}
+
 export default function PagoScreen() {
   const router = useRouter();
   const { items, totalPrice, clearCart } = useCart();
@@ -58,6 +66,8 @@ export default function PagoScreen() {
   const [showPaymentWebView, setShowPaymentWebView] = useState(false);
   const [paymentUrl, setPaymentUrl] = useState<string>('');
   const [isLoadingUserData, setIsLoadingUserData] = useState(true);
+  const [shippingCost, setShippingCost] = useState<number>(0);
+  const [shippingMethod, setShippingMethod] = useState<ShippingMethod | null>(null);
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -93,6 +103,64 @@ export default function PagoScreen() {
     loadUserData();
   }, [isAuthenticated, userId]);
 
+  useEffect(() => {
+    const loadShippingMethods = async () => {
+      if (!orderData.pais || !orderData.codigoPostal) return;
+      
+      try {
+        console.log('📦 Cargando métodos de envío para país:', orderData.pais);
+        
+        const url = `https://lospueblosmasbonitosdeespana.org/wp-json/wc/store/v1/shipping-methods`;
+        
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (response.ok) {
+          const methods = await response.json();
+          console.log('✅ Métodos de envío disponibles:', methods);
+          
+          if (Array.isArray(methods) && methods.length > 0) {
+            const defaultMethod = methods[0];
+            setShippingMethod({
+              instance_id: defaultMethod.instance_id || '1',
+              title: defaultMethod.title || 'Paq Premium Domicilio',
+              cost: defaultMethod.cost || '4.66',
+              method_id: defaultMethod.method_id || 'flat_rate',
+              method_title: defaultMethod.method_title || 'Paq Premium Domicilio',
+            });
+            setShippingCost(parseFloat(defaultMethod.cost || '4.66'));
+          }
+        } else {
+          console.log('⚠️ No se pudieron cargar métodos de envío, usando valor por defecto');
+          setShippingMethod({
+            instance_id: '1',
+            title: 'Paq Premium Domicilio',
+            cost: '4.66',
+            method_id: 'flat_rate',
+            method_title: 'Paq Premium Domicilio',
+          });
+          setShippingCost(4.66);
+        }
+      } catch (error) {
+        console.error('❌ Error cargando métodos de envío:', error);
+        setShippingMethod({
+          instance_id: '1',
+          title: 'Paq Premium Domicilio',
+          cost: '4.66',
+          method_id: 'flat_rate',
+          method_title: 'Paq Premium Domicilio',
+        });
+        setShippingCost(4.66);
+      }
+    };
+
+    loadShippingMethods();
+  }, [orderData.pais, orderData.codigoPostal]);
+
   const handleInputChange = (field: keyof OrderData, value: string) => {
     setOrderData((prev) => ({ ...prev, [field]: value }));
   };
@@ -127,7 +195,7 @@ export default function PagoScreen() {
         quantity: item.quantity,
       }));
 
-      const orderPayload = {
+      const orderPayload: any = {
         payment_method: 'stripe',
         payment_method_title: 'Tarjeta (Stripe)',
         set_paid: false,
@@ -152,6 +220,17 @@ export default function PagoScreen() {
         line_items: lineItems,
       };
 
+      if (shippingMethod) {
+        orderPayload.shipping_lines = [
+          {
+            method_id: shippingMethod.method_id,
+            method_title: shippingMethod.method_title,
+            total: shippingMethod.cost,
+          },
+        ];
+        console.log('📦 Añadiendo gastos de envío:', orderPayload.shipping_lines);
+      }
+
       console.log('📦 Payload del pedido:', JSON.stringify(orderPayload, null, 2));
 
       const url = `https://lospueblosmasbonitosdeespana.org/wp-json/wc/v3/orders?consumer_key=${CONSUMER_KEY}&consumer_secret=${CONSUMER_SECRET}`;
@@ -174,8 +253,11 @@ export default function PagoScreen() {
       console.log('✅ Pedido creado:', orderResponse);
 
       if (orderResponse.payment_url) {
-        console.log('💳 Abriendo Stripe Checkout:', orderResponse.payment_url);
-        setPaymentUrl(orderResponse.payment_url);
+        const paymentUrlWithApp = orderResponse.payment_url.includes('?') 
+          ? `${orderResponse.payment_url}&app=1`
+          : `${orderResponse.payment_url}?app=1`;
+        console.log('💳 Abriendo Stripe Checkout:', paymentUrlWithApp);
+        setPaymentUrl(paymentUrlWithApp);
         setShowPaymentWebView(true);
       } else {
         console.log('⚠️ No se recibió payment_url, navegando a confirmación directamente');
@@ -422,9 +504,21 @@ export default function PagoScreen() {
           </View>
         ))}
         
+        <View style={styles.summaryItem}>
+          <Text style={styles.summaryName}>Subtotal:</Text>
+          <Text style={styles.summaryPrice}>{totalPrice.toFixed(2)} €</Text>
+        </View>
+        
+        {shippingCost > 0 && (
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryName}>Envío:</Text>
+            <Text style={styles.summaryPrice}>{shippingCost.toFixed(2)} €</Text>
+          </View>
+        )}
+        
         <View style={styles.totalRow}>
           <Text style={styles.totalLabel}>Total:</Text>
-          <Text style={styles.totalPrice}>{totalPrice.toFixed(2)} €</Text>
+          <Text style={styles.totalPrice}>{(totalPrice + shippingCost).toFixed(2)} €</Text>
         </View>
       </View>
 
