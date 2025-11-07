@@ -10,6 +10,7 @@ import {
   Alert,
   Modal,
 } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 import { useRouter } from 'expo-router';
 import { useCart } from '@/contexts/cart';
 import { useAuth } from '@/contexts/auth';
@@ -25,8 +26,9 @@ interface OrderData {
   email: string;
   telefono: string;
   direccion: string;
-  ciudad: string;
   codigoPostal: string;
+  pais: string;
+  ciudad: string;
 }
 
 interface WooCommerceOrder {
@@ -47,8 +49,9 @@ export default function PagoScreen() {
     email: '',
     telefono: '',
     direccion: '',
-    ciudad: '',
     codigoPostal: '',
+    pais: 'ES',
+    ciudad: '',
   });
   
   const [isProcessing, setIsProcessing] = useState(false);
@@ -75,8 +78,9 @@ export default function PagoScreen() {
               email: userData.email || '',
               telefono: userData.phone || '',
               direccion: userData.address || '',
-              ciudad: userData.city || '',
               codigoPostal: userData.postal_code || '',
+              pais: userData.country || 'ES',
+              ciudad: userData.city || '',
             });
           }
         } catch (error) {
@@ -94,10 +98,10 @@ export default function PagoScreen() {
   };
 
   const validateForm = (): boolean => {
-    const { nombre, apellidos, email, telefono, direccion, ciudad, codigoPostal } = orderData;
+    const { nombre, apellidos, email, telefono, direccion, codigoPostal, pais, ciudad } = orderData;
     
     if (!nombre.trim() || !apellidos.trim() || !email.trim() || !telefono.trim() || 
-        !direccion.trim() || !ciudad.trim() || !codigoPostal.trim()) {
+        !direccion.trim() || !codigoPostal.trim() || !pais.trim() || !ciudad.trim()) {
       Alert.alert('Error', 'Por favor, completa todos los campos');
       return false;
     }
@@ -133,17 +137,17 @@ export default function PagoScreen() {
           email: orderData.email,
           phone: orderData.telefono,
           address_1: orderData.direccion,
-          city: orderData.ciudad,
           postcode: orderData.codigoPostal,
-          country: 'ES',
+          country: orderData.pais,
+          city: orderData.ciudad,
         },
         shipping: {
           first_name: orderData.nombre,
           last_name: orderData.apellidos,
           address_1: orderData.direccion,
-          city: orderData.ciudad,
           postcode: orderData.codigoPostal,
-          country: 'ES',
+          country: orderData.pais,
+          city: orderData.ciudad,
         },
         line_items: lineItems,
       };
@@ -342,18 +346,57 @@ export default function PagoScreen() {
         
         <TextInput
           style={styles.input}
-          placeholder="Ciudad *"
-          value={orderData.ciudad}
-          onChangeText={(value) => handleInputChange('ciudad', value)}
-          editable={!isProcessing}
-        />
-        
-        <TextInput
-          style={styles.input}
           placeholder="Código Postal *"
           value={orderData.codigoPostal}
           onChangeText={(value) => handleInputChange('codigoPostal', value)}
           keyboardType="numeric"
+          editable={!isProcessing}
+        />
+        
+        <View style={styles.pickerContainer}>
+          <Text style={styles.pickerLabel}>País *</Text>
+          <Picker
+            selectedValue={orderData.pais}
+            onValueChange={(value) => handleInputChange('pais', value as string)}
+            enabled={!isProcessing}
+            style={styles.picker}
+          >
+            <Picker.Item label="España" value="ES" />
+            <Picker.Item label="Francia" value="FR" />
+            <Picker.Item label="Portugal" value="PT" />
+            <Picker.Item label="Alemania" value="DE" />
+            <Picker.Item label="Italia" value="IT" />
+            <Picker.Item label="Reino Unido" value="GB" />
+            <Picker.Item label="Países Bajos" value="NL" />
+            <Picker.Item label="Bélgica" value="BE" />
+            <Picker.Item label="Suiza" value="CH" />
+            <Picker.Item label="Austria" value="AT" />
+            <Picker.Item label="Dinamarca" value="DK" />
+            <Picker.Item label="Suecia" value="SE" />
+            <Picker.Item label="Noruega" value="NO" />
+            <Picker.Item label="Finlandia" value="FI" />
+            <Picker.Item label="Polonia" value="PL" />
+            <Picker.Item label="República Checa" value="CZ" />
+            <Picker.Item label="Grecia" value="GR" />
+            <Picker.Item label="Irlanda" value="IE" />
+            <Picker.Item label="Estados Unidos" value="US" />
+            <Picker.Item label="Canadá" value="CA" />
+            <Picker.Item label="México" value="MX" />
+            <Picker.Item label="Argentina" value="AR" />
+            <Picker.Item label="Brasil" value="BR" />
+            <Picker.Item label="Chile" value="CL" />
+            <Picker.Item label="Colombia" value="CO" />
+            <Picker.Item label="Perú" value="PE" />
+            <Picker.Item label="Andorra" value="AD" />
+            <Picker.Item label="Otro" value="OT" />
+          </Picker>
+        </View>
+        
+        <TextInput
+          style={styles.input}
+          placeholder="Ciudad *"
+          value={orderData.ciudad}
+          onChangeText={(value) => handleInputChange('ciudad', value)}
           editable={!isProcessing}
         />
       </View>
@@ -531,5 +574,24 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
     marginBottom: 12,
+  },
+  pickerContainer: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    marginBottom: 12,
+    backgroundColor: '#fff',
+    overflow: 'hidden',
+  },
+  pickerLabel: {
+    fontSize: 12,
+    color: '#666',
+    paddingHorizontal: 12,
+    paddingTop: 8,
+    fontWeight: '500' as const,
+  },
+  picker: {
+    height: 50,
+    width: '100%',
   },
 });
