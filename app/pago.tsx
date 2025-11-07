@@ -9,12 +9,14 @@ import {
   ActivityIndicator,
   Alert,
   Modal,
+  SafeAreaView,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { useRouter } from 'expo-router';
 import { useCart } from '@/contexts/cart';
 import { useAuth } from '@/contexts/auth';
 import { WebView } from 'react-native-webview';
+import { ChevronLeft } from 'lucide-react-native';
 
 const LPBE_RED = '#d60000';
 const CONSUMER_KEY = 'ck_c98c3651ff32de8a2435dac50c34ac292eb26963';
@@ -313,11 +315,10 @@ export default function PagoScreen() {
           );
         }}
       >
-        <View style={styles.webViewContainer}>
+        <SafeAreaView style={styles.webViewContainer}>
           <View style={styles.webViewHeader}>
-            <Text style={styles.webViewHeaderTitle}>Pago seguro con Stripe</Text>
             <TouchableOpacity
-              style={styles.closeButton}
+              style={styles.backButton}
               onPress={() => {
                 Alert.alert(
                   'Cancelar pago',
@@ -334,9 +335,12 @@ export default function PagoScreen() {
                   ]
                 );
               }}
+              activeOpacity={0.7}
             >
-              <Text style={styles.closeButtonText}>✕</Text>
+              <ChevronLeft size={28} color="#000" strokeWidth={2} />
             </TouchableOpacity>
+            <Text style={styles.webViewHeaderTitle}>Pago con Stripe</Text>
+            <View style={styles.backButton} />
           </View>
           <WebView
             source={{ uri: paymentUrl }}
@@ -357,7 +361,7 @@ export default function PagoScreen() {
               </View>
             )}
           />
-        </View>
+        </SafeAreaView>
       </Modal>
     );
   }
@@ -643,23 +647,23 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: LPBE_RED,
+    paddingVertical: 16,
+    backgroundColor: '#fff',
     borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
+    borderBottomColor: '#e0e0e0',
   },
   webViewHeaderTitle: {
-    fontSize: 16,
-    fontWeight: '600' as const,
-    color: '#fff',
-  },
-  closeButton: {
-    padding: 8,
-  },
-  closeButtonText: {
-    fontSize: 24,
-    color: '#fff',
+    fontSize: 18,
     fontWeight: '700' as const,
+    color: '#000',
+    textAlign: 'center',
+    flex: 1,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   loadingContainer: {
     flex: 1,
