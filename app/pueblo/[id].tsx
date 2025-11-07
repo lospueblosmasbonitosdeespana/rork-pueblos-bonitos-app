@@ -406,6 +406,7 @@ export default function PuebloDetailScreen() {
             thirdPartyCookiesEnabled={true}
             incognito={false}
             cacheEnabled={true}
+            originWhitelist={['*']}
             startInLoadingState={true}
             scrollEnabled={true}
             nestedScrollEnabled={true}
@@ -426,7 +427,12 @@ export default function PuebloDetailScreen() {
                 if (header) header.style.display = 'none';
                 const wpAdminBar = document.querySelector('#wpadminbar');
                 if (wpAdminBar) wpAdminBar.style.display = 'none';
+                
+                const style = document.createElement('style');
+                style.innerHTML = 'html, body { overflow-y: auto !important; -webkit-overflow-scrolling: touch !important; touch-action: pan-y !important; }';
+                document.head.appendChild(style);
               })();
+              true;
             `}
           />
           {mapLoading && (
@@ -465,6 +471,7 @@ export default function PuebloDetailScreen() {
             thirdPartyCookiesEnabled={true}
             incognito={false}
             cacheEnabled={true}
+            originWhitelist={['*']}
             startInLoadingState={true}
             scrollEnabled={true}
             nestedScrollEnabled={true}
@@ -490,6 +497,10 @@ export default function PuebloDetailScreen() {
                   
                   document.body.style.marginTop = '0';
                   document.body.style.paddingTop = '0';
+                  
+                  const style = document.createElement('style');
+                  style.innerHTML = 'html, body { overflow-y: auto !important; -webkit-overflow-scrolling: touch !important; touch-action: pan-y !important; }';
+                  document.head.appendChild(style);
                 } catch(e) {
                   console.log('Error:', e);
                 }

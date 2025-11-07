@@ -144,9 +144,15 @@ export default function NoticiaDetalleScreen() {
                   // 4) FONDO BLANCO LIMPIO
                   document.body.style.background = '#fff';
 
-                  // 5) APLICAR ESTILOS CSS ADICIONALES
+                  // 5) APLICAR ESTILOS CSS ADICIONALES (incluido touch-action: pan-y)
                   const style = document.createElement('style');
                   style.innerHTML = \`
+                    html, body {
+                      overflow-y: auto !important;
+                      -webkit-overflow-scrolling: touch !important;
+                      touch-action: pan-y !important;
+                    }
+
                     header,
                     .site-header,
                     .main-navigation,

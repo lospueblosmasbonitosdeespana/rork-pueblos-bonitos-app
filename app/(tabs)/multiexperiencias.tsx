@@ -25,7 +25,15 @@ export default function RutasScreen() {
         startInLoadingState={true}
         scrollEnabled={true}
         nestedScrollEnabled={true}
+        overScrollMode="always"
+        bounces={false}
         showsVerticalScrollIndicator={false}
+        injectedJavaScript={`
+          const style = document.createElement('style');
+          style.innerHTML = 'html, body { overflow-y: auto !important; -webkit-overflow-scrolling: touch !important; touch-action: pan-y !important; }';
+          document.head.appendChild(style);
+          true;
+        `}
       />
       <TouchableOpacity
         style={[styles.backButton, { top: insets.top + 10 }]}
