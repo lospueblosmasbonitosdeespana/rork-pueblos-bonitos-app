@@ -329,9 +329,11 @@ export default function PuebloDetailScreen() {
             ) : experiencias.length > 0 ? (
               <>
                 {experiencias.map((exp, index) => (
-                  <View 
+                  <TouchableOpacity
                     key={exp._ID ? `exp-${exp._ID}` : `exp-index-${index}`}
                     style={styles.experienciaCard}
+                    onPress={() => router.push(`/experiencia/${id}` as any)}
+                    activeOpacity={0.7}
                   >
                     {exp.foto && exp.foto.trim() !== '' && (
                       <Image 
@@ -349,7 +351,7 @@ export default function PuebloDetailScreen() {
                     {exp.pueblo_nombre && (
                       <Text style={styles.experienciaPueblo}>{exp.pueblo_nombre}</Text>
                     )}
-                  </View>
+                  </TouchableOpacity>
                 ))}
               </>
             ) : (
