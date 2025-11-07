@@ -82,7 +82,7 @@ export default function TiendaScreen() {
           <Image
             source={{ uri: imageUrl }}
             style={styles.productImage}
-            resizeMode="cover"
+            resizeMode="contain"
           />
         ) : (
           <View style={[styles.productImage, styles.noImage]}>
@@ -193,11 +193,20 @@ const styles = StyleSheet.create({
   productItem: {
     marginBottom: SPACING.lg,
     backgroundColor: '#fff',
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    overflow: 'hidden',
   },
   productImage: {
     width: '100%',
-    height: 200,
-    borderRadius: 8,
+    height: 280,
     backgroundColor: '#f5f5f5',
   },
   noImage: {
@@ -209,7 +218,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   productInfo: {
-    paddingTop: SPACING.md,
+    padding: SPACING.md,
   },
   productName: {
     fontSize: 18,

@@ -8,11 +8,14 @@ import {
   TouchableOpacity,
   Image,
   Alert,
+  Modal,
+  Dimensions,
+  Pressable,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { useCart } from '@/contexts/cart';
-import { ShoppingCart, Check } from 'lucide-react-native';
+import { ShoppingCart, Check, ChevronLeft, ChevronRight, X } from 'lucide-react-native';
 
 const LPBE_RED = '#d60000';
 const CONSUMER_KEY = 'ck_c98c3651ff32de8a2435dac50c34ac292eb26963';
@@ -77,6 +80,8 @@ export default function ProductoDetalleScreen() {
   const router = useRouter();
   const { addItem } = useCart();
   const [addedToCart, setAddedToCart] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [fullScreenImage, setFullScreenImage] = useState<string | null>(null);
 
   const { data: product, isLoading, error, refetch } = useQuery({
     queryKey: ['woocommerce-product', id],
@@ -87,7 +92,7 @@ export default function ProductoDetalleScreen() {
 
   const handleAddToCart = () => {
     if (product) {
-      const imageUrl = product.images && product.images.length > 0 ? product.images[0].src : '';
+      const imageUrl = product.images && product.images.length > 0 ? product.images[currentImageIndex].src : '';
       const displayPrice = product.price || product.regular_price || '0';
       
       addItem({
@@ -146,9 +151,25 @@ export default function ProductoDetalleScreen() {
     );
   }
 
-  const imageUrl = product.images && product.images.length > 0 ? product.images[0].src : '';
+  const images = product.images || [];
   const displayPrice = product.price || product.regular_price || '0';
   const cleanDescription = stripHtmlTags(product.short_description || product.description || 'Sin descripción disponible');
+
+  const handlePreviousImage = () => {
+    setCurrentImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+  };
+
+  const handleNextImage = () => {
+    setCurrentImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+  };
+
+  const handleOpenFullScreen = (imageUrl: string) => {
+    setFullScreenImage(imageUrl);
+  };
+
+  const handleCloseFullScreen = () => {
+    setFullScreenImage(null);
+  };
 
   return (
     <ScrollView 
@@ -156,17 +177,78 @@ export default function ProductoDetalleScreen() {
       contentContainerStyle={styles.contentContainer}
       showsVerticalScrollIndicator={true}
     >
-      {imageUrl ? (
-        <Image
-          source={{ uri: imageUrl }}
-          style={styles.productImage}
-          resizeMode="cover"
-        />
+      {images.length > 0 ? (
+        <View>
+          <TouchableOpacity 
+            activeOpacity={0.9}
+            onPress={() => handleOpenFullScreen(images[currentImageIndex].src)}
+          >
+            <Image
+              source={{ uri: images[currentImageIndex].src }}
+              style={styles.productImage}
+              resizeMode="contain"
+            />
+          </TouchableOpacity>
+          
+          {images.length > 1 && (
+            <View style={styles.imageControls}>
+              <TouchableOpacity
+                style={styles.imageButton}
+                onPress={handlePreviousImage}
+                activeOpacity={0.7}
+              >
+                <ChevronLeft size={24} color="#fff" />
+              </TouchableOpacity>
+              
+              <View style={styles.imagePagination}>
+                <Text style={styles.imagePaginationText}>
+                  {currentImageIndex + 1} / {images.length}
+                </Text>
+              </View>
+              
+              <TouchableOpacity
+                style={styles.imageButton}
+                onPress={handleNextImage}
+                activeOpacity={0.7}
+              >
+                <ChevronRight size={24} color="#fff" />
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
       ) : (
         <View style={[styles.productImage, styles.noImage]}>
           <Text style={styles.noImageText}>Sin imagen</Text>
         </View>
       )}
+
+      <Modal
+        visible={fullScreenImage !== null}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={handleCloseFullScreen}
+      >
+        <Pressable 
+          style={styles.fullScreenContainer}
+          onPress={handleCloseFullScreen}
+        >
+          <TouchableOpacity
+            style={styles.closeButton}
+            onPress={handleCloseFullScreen}
+            activeOpacity={0.7}
+          >
+            <X size={30} color="#fff" />
+          </TouchableOpacity>
+          
+          {fullScreenImage && (
+            <Image
+              source={{ uri: fullScreenImage }}
+              style={styles.fullScreenImage}
+              resizeMode="contain"
+            />
+          )}
+        </Pressable>
+      </Modal>
 
       <View style={styles.infoContainer}>
         <Text style={styles.productName}>{product.name}</Text>
@@ -237,8 +319,61 @@ const styles = StyleSheet.create({
   },
   productImage: {
     width: '100%',
-    height: 260,
+    height: 350,
     backgroundColor: '#f5f5f5',
+  },
+  imageControls: {
+    position: 'absolute',
+    bottom: 16,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+  },
+  imageButton: {
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    borderRadius: 20,
+    padding: 8,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  imagePagination: {
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  imagePaginationText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600' as const,
+  },
+  fullScreenContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.95)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fullScreenImage: {
+    width: Dimensions.get('window').width,
+    height: Dimensions.get('window').height,
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    zIndex: 10,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    borderRadius: 20,
+    padding: 8,
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   noImage: {
     justifyContent: 'center',
