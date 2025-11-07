@@ -634,7 +634,7 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
   experienciaCard: {
-    backgroundColor: COLORS.card,
+    backgroundColor: '#f5f2e9',
     borderRadius: 12,
     padding: SPACING.md,
     marginBottom: SPACING.sm,
