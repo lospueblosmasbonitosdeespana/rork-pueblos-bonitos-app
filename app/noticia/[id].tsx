@@ -36,41 +36,33 @@ function stripHtmlTags(html: string): string {
 }
 
 async function fetchNoticiaDetalle(noticiaId: string): Promise<NoticiaDetalle> {
-  const url = `https://lospueblosmasbonitosdeespana.org/wp-json/jet-cct/entradas?id=${noticiaId}`;
+  const url = `https://lospueblosmasbonitosdeespana.org/wp-json/wp/v2/posts/${noticiaId}`;
   
   console.log('📰 Cargando noticia desde:', url);
   
-  const response = await fetch(url, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
+  const response = await fetch(url);
 
   if (!response.ok) {
     console.error('❌ Error al cargar noticia:', response.status, response.statusText);
     throw new Error(`Error ${response.status}: no se pudo cargar la noticia`);
   }
 
-  const data = await response.json();
-  const noticia = Array.isArray(data) ? data[0] : data;
+  const noticia = await response.json();
   
   console.log('📋 Datos recibidos:', noticia);
 
-  if (noticia.categoria !== 'Noticias') {
-    console.error('❌ Esta entrada no pertenece a la categoría Noticias:', noticia.categoria);
-    throw new Error('Esta entrada no pertenece a la categoría Noticias');
-  }
+  const contenidoLimpio = noticia.content?.rendered
+    ? noticia.content.rendered.replace(/(<([^>]+)>)/gi, '')
+    : '';
 
-  console.log('✅ Noticia cargada:', noticia.titulo || noticia.nombre);
+  console.log('✅ Noticia cargada:', noticia.title?.rendered);
   
   return {
-    id: noticia._ID,
-    titulo: noticia.titulo || noticia.nombre || 'Sin título',
-    fecha: noticia.fecha || noticia.created_at || '',
-    imagen: noticia.imagen_destacada || noticia.foto || '',
-    contenido: noticia.contenido || noticia.descripcion || '',
-    categoria: noticia.categoria || '',
+    id: noticia.id,
+    titulo: noticia.title?.rendered || 'Sin título',
+    fecha: noticia.date || '',
+    imagen: noticia.yoast_head_json?.og_image?.[0]?.url || '',
+    contenido: contenidoLimpio,
   };
 }
 
