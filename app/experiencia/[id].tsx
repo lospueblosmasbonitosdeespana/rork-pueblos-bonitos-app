@@ -1,27 +1,15 @@
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ArrowLeft, ChevronDown } from 'lucide-react-native';
+import { ArrowLeft } from 'lucide-react-native';
 import { WebView } from 'react-native-webview';
-import { useRef } from 'react';
+import React from 'react';
 
 export default function ExperienciaScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const webViewRef = useRef<WebView>(null);
-
   const experienciaUrl = `https://lospueblosmasbonitosdeespana.org/experiencias-public/?id_lugar=${id}&app=1`;
-
-  const handleScroll = () => {
-    webViewRef.current?.injectJavaScript(`
-      window.scrollBy({
-        top: 350,
-        behavior: 'smooth'
-      });
-      true;
-    `);
-  };
 
 
 
@@ -30,7 +18,6 @@ export default function ExperienciaScreen() {
       <Stack.Screen options={{ headerShown: false }} />
       <View style={styles.container}>
         <WebView
-          ref={webViewRef}
           source={{ uri: experienciaUrl }}
           style={styles.webview}
           originWhitelist={['*']}
@@ -50,14 +37,6 @@ export default function ExperienciaScreen() {
         >
           <ArrowLeft size={20} color="#7A1C1C" strokeWidth={2.5} />
           <Text style={styles.backButtonText}>Volver</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.scrollButton, { top: insets.top + 16 }]}
-          onPress={handleScroll}
-          activeOpacity={0.7}
-        >
-          <ChevronDown size={24} color="#7A1C1C" strokeWidth={2.5} />
         </TouchableOpacity>
       </View>
     </>
@@ -91,22 +70,5 @@ const styles = StyleSheet.create({
     color: '#7A1C1C',
     fontSize: 16,
     fontWeight: '600' as const,
-  },
-  scrollButton: {
-    position: 'absolute' as const,
-    right: 16,
-    width: 48,
-    height: 48,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    borderWidth: 2,
-    borderColor: '#7A1C1C',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 4,
   },
 });
