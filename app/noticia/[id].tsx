@@ -150,10 +150,27 @@ export default function NoticiaDetalleScreen() {
           }
           img {
             max-width: 100% !important;
+            width: 100% !important;
             height: auto !important;
-            border-radius: 8px;
+            border-radius: 10px;
             margin: 16px 0;
             display: block;
+            object-fit: cover;
+            background-color: #F5F5F5;
+          }
+          figure {
+            width: 100%;
+            margin: 16px 0;
+          }
+          figure img {
+            width: 100%;
+            height: auto;
+          }
+          figcaption {
+            font-size: 12px;
+            color: #6B7280;
+            text-align: center;
+            margin-top: 8px;
           }
           p {
             margin-bottom: 16px;
@@ -187,16 +204,17 @@ export default function NoticiaDetalleScreen() {
             font-style: italic;
             color: #666;
           }
-          figure {
-            margin: 16px 0;
-          }
-          figcaption {
-            font-size: 14px;
-            color: #666;
-            margin-top: 8px;
-            text-align: center;
-          }
         </style>
+        <script>
+          window.onload = function() {
+            var images = document.getElementsByTagName('img');
+            for (var i = 0; i < images.length; i++) {
+              var img = images[i];
+              var src = img.src;
+              img.src = src.replace(/-\\d+x\\d+/, '');
+            }
+          };
+        </script>
       </head>
       <body>
         ${noticia.contenido_html}
