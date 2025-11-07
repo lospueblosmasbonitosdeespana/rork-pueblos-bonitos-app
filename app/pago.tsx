@@ -257,8 +257,8 @@ export default function PagoScreen() {
             style={{ flex: 1 }}
             scrollEnabled={true}
             nestedScrollEnabled={true}
-            bounces={true}
             overScrollMode="always"
+            bounces={false}
             originWhitelist={['*']}
             javaScriptEnabled={true}
             domStorageEnabled={true}

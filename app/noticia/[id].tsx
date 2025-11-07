@@ -114,11 +114,11 @@ export default function NoticiaDetalleScreen() {
               originWhitelist={['*']}
               scrollEnabled={true}
               nestedScrollEnabled={true}
+              overScrollMode="always"
+              bounces={false}
               showsVerticalScrollIndicator={true}
               automaticallyAdjustContentInsets={false}
               allowsInlineMediaPlayback={true}
-              bounces={true}
-              overScrollMode="always"
               contentInsetAdjustmentBehavior="never"
               allowsLinkPreview={false}
               setSupportMultipleWindows={false}

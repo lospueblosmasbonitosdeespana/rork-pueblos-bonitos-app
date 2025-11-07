@@ -409,6 +409,8 @@ export default function PuebloDetailScreen() {
             startInLoadingState={true}
             scrollEnabled={true}
             nestedScrollEnabled={true}
+            overScrollMode="always"
+            bounces={false}
             showsVerticalScrollIndicator={false}
             onLoadEnd={() => setMapLoading(false)}
             onError={(syntheticEvent) => {
@@ -466,6 +468,8 @@ export default function PuebloDetailScreen() {
             startInLoadingState={true}
             scrollEnabled={true}
             nestedScrollEnabled={true}
+            overScrollMode="always"
+            bounces={false}
             showsVerticalScrollIndicator={false}
             onLoadEnd={() => setExperienciasLoading(false)}
             onError={(syntheticEvent) => {
