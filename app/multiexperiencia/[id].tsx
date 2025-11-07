@@ -11,25 +11,6 @@ function MultiexperienciaDetailScreen() {
   
   console.log('🌍 Cargando multiexperiencia con id:', experienciaId);
 
-  const injectedJS = `
-    (function() {
-      function scrollToContent() {
-        window.scrollTo({
-          top: 300,
-          behavior: 'smooth'
-        });
-        console.log('✅ Scroll inicial a contenido');
-      }
-      
-      if (document.readyState === 'complete') {
-        scrollToContent();
-      } else {
-        window.addEventListener('load', scrollToContent);
-        document.addEventListener('DOMContentLoaded', scrollToContent);
-      }
-    })();
-  `;
-
   return (
     <View style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
@@ -40,13 +21,10 @@ function MultiexperienciaDetailScreen() {
         originWhitelist={['*']}
         scrollEnabled={true}
         nestedScrollEnabled={true}
-        bounces={false}
         javaScriptEnabled={true}
         domStorageEnabled={true}
-        geolocationEnabled={true}
-        setSupportMultipleWindows={false}
+        bounces={false}
         useWebKit={true}
-        injectedJavaScript={injectedJS}
       />
     </View>
   );
