@@ -16,7 +16,7 @@ export default function Index() {
         hasNavigatedRef.current = true;
         router.replace('/(tabs)/home');
       }
-    }, 2000);
+    }, 4000);
 
     return () => {
       console.log('🔄 Limpiando splash screen');
@@ -34,7 +34,7 @@ export default function Index() {
         hasNavigatedRef.current = true;
         router.replace('/(tabs)/home');
       }
-    }, 1000);
+    }, 4000);
 
     return () => clearTimeout(timer);
   }, [imageLoaded]);
