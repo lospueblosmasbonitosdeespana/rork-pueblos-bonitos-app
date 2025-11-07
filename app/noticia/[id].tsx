@@ -207,16 +207,44 @@ export default function NoticiaDetalleScreen() {
         </style>
         <script>
           window.onload = function() {
-            var images = document.getElementsByTagName('img');
-            for (var i = 0; i < images.length; i++) {
-              var img = images[i];
-              var src = img.src;
-              img.src = src.replace(/-\\d+x\\d+/, '');
-            }
-            
+            // Inyectar estilos CSS
             var style = document.createElement('style');
             style.innerHTML = 'img { max-width: 100% !important; height: auto !important; display: block !important; object-fit: cover !important; border-radius: 10px !important; margin: 0 auto 16px auto !important; } figure { width: 100% !important; margin: 0 0 16px 0 !important; } figcaption { font-size: 12px !important; color: #6B7280 !important; text-align: center !important; margin-top: -8px !important; margin-bottom: 16px !important; } img[src*="-150x150"], img[src*="-300x200"], img[src*="-768x"], img[src*="-1024x"] { content-visibility: auto !important; width: 100% !important; height: auto !important; }';
             document.head.appendChild(style);
+
+            // Sustituir imágenes pequeñas por tamaño completo
+            (function() {
+              try {
+                const images = document.querySelectorAll('img');
+                images.forEach(img => {
+                  if (img.src.match(/-\\d+x\\d+\\.(jpg|jpeg|png|webp)/i)) {
+                    img.src = img.src.replace(/-\\d+x\\d+\\.(jpg|jpeg|png|webp)/i, '.$1');
+                  }
+                  img.style.maxWidth = '100%';
+                  img.style.height = 'auto';
+                  img.style.objectFit = 'cover';
+                  img.style.borderRadius = '10px';
+                  img.style.display = 'block';
+                  img.style.margin = '0 auto 16px auto';
+                });
+                const figures = document.querySelectorAll('figure');
+                figures.forEach(fig => {
+                  fig.style.width = '100%';
+                  fig.style.margin = '0 0 16px 0';
+                });
+                const captions = document.querySelectorAll('figcaption');
+                captions.forEach(cap => {
+                  cap.style.fontSize = '12px';
+                  cap.style.color = '#6B7280';
+                  cap.style.textAlign = 'center';
+                  cap.style.marginTop = '-8px';
+                  cap.style.marginBottom = '16px';
+                });
+                console.log('✅ Imágenes optimizadas para tamaño completo');
+              } catch (e) {
+                console.error('❌ Error ajustando imágenes:', e);
+              }
+            })();
           };
         </script>
       </head>
