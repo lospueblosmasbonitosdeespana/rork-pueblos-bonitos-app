@@ -12,6 +12,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { gestureHandlerRootHOC } from 'react-native-gesture-handler';
 
 const { width } = Dimensions.get('window');
 
@@ -49,7 +50,7 @@ async function fetchMultiexperienciaDetalle(id: string): Promise<Multiexperienci
   return data;
 }
 
-export default function MultiexperienciaDetailScreen() {
+function MultiexperienciaDetailScreen() {
   const { id } = useLocalSearchParams();
   const experienciaId = Array.isArray(id) ? id[0] : id;
   
@@ -253,3 +254,5 @@ const styles = StyleSheet.create({
     color: '#6B7280',
   },
 });
+
+export default gestureHandlerRootHOC(MultiexperienciaDetailScreen);

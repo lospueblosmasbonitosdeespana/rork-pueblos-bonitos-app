@@ -9,10 +9,11 @@ import {
   View,
 } from 'react-native';
 import { WebView } from 'react-native-webview';
+import { gestureHandlerRootHOC } from 'react-native-gesture-handler';
 
 import { COLORS, SPACING, TYPOGRAPHY } from '@/constants/theme';
 
-export default function NoticiaDetalleScreen() {
+function NoticiaDetalleScreen() {
   const params = useLocalSearchParams<{ id: string; link?: string }>();
   const decodedLink = params.link ? decodeURIComponent(params.link) : null;
   const link = decodedLink ? `${decodedLink}${decodedLink.includes('?') ? '&' : '?'}app=1` : null;
@@ -193,3 +194,5 @@ const styles = StyleSheet.create({
     marginTop: SPACING.lg,
   },
 });
+
+export default gestureHandlerRootHOC(NoticiaDetalleScreen);
