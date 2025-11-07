@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Stack, useLocalSearchParams, router } from 'expo-router';
 import { Image } from 'expo-image';
-import { MapPin, Map, X, Route, Wind } from 'lucide-react-native';
+import { MapPin, Map, X, Wind } from 'lucide-react-native';
 import { useState, useRef, useEffect } from 'react';
 import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Modal, ActivityIndicator, SafeAreaView, FlatList, Dimensions, Platform, Linking } from 'react-native';
 import { WebView } from 'react-native-webview';
@@ -272,14 +272,6 @@ export default function PuebloDetailScreen() {
               activeOpacity={0.7}
             >
               <Map size={24} color={COLORS.card} />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={() => setShowExperienciasModal(true)}
-              activeOpacity={0.7}
-            >
-              <Route size={24} color={COLORS.card} />
             </TouchableOpacity>
 
             <TouchableOpacity
