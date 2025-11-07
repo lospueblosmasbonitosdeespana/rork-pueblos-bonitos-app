@@ -213,6 +213,10 @@ export default function NoticiaDetalleScreen() {
               var src = img.src;
               img.src = src.replace(/-\\d+x\\d+/, '');
             }
+            
+            var style = document.createElement('style');
+            style.innerHTML = 'img { max-width: 100% !important; height: auto !important; display: block !important; object-fit: cover !important; border-radius: 10px !important; margin: 0 auto 16px auto !important; } figure { width: 100% !important; margin: 0 0 16px 0 !important; } figcaption { font-size: 12px !important; color: #6B7280 !important; text-align: center !important; margin-top: -8px !important; margin-bottom: 16px !important; } img[src*="-150x150"], img[src*="-300x200"], img[src*="-768x"], img[src*="-1024x"] { content-visibility: auto !important; width: 100% !important; height: auto !important; }';
+            document.head.appendChild(style);
           };
         </script>
       </head>
