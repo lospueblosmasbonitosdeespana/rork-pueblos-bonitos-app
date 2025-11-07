@@ -5,58 +5,9 @@ import { WebView } from 'react-native-webview';
 export default function ExperienciaScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
 
-  const experienciaUrl = `https://lospueblosmasbonitosdeespana.org/experiencias-public/?id_lugar=${id}`;
+  const experienciaUrl = `https://lospueblosmasbonitosdeespana.org/experiencias-public/?id_lugar=${id}&app=1`;
 
-  const injectedScript = `
-    (function() {
-      try {
-        const headerSelectors = [
-          'header',
-          '.elementor-location-header',
-          '.site-header',
-          '#header',
-          '.elementor-header',
-          '.elementor-nav-menu',
-          '.elementor-location-header nav',
-          '.menu-principal'
-        ];
-        
-        const footerSelectors = [
-          'footer',
-          '.elementor-location-footer',
-          '.site-footer',
-          '#footer',
-          '.elementor-footer'
-        ];
-        
-        headerSelectors.forEach(selector => {
-          const elements = document.querySelectorAll(selector);
-          elements.forEach(el => {
-            if (el) el.style.display = 'none';
-          });
-        });
-        
-        footerSelectors.forEach(selector => {
-          const elements = document.querySelectorAll(selector);
-          elements.forEach(el => {
-            if (el) el.style.display = 'none';
-          });
-        });
-        
-        document.body.style.marginTop = '0';
-        document.body.style.paddingTop = '0';
-        document.body.style.marginBottom = '0';
-        document.body.style.paddingBottom = '0';
-        document.body.style.overflowY = 'auto';
-        document.documentElement.style.overflowY = 'auto';
-        
-        console.log('✅ Header y footer de Elementor ocultos correctamente');
-      } catch (e) {
-        console.error('❌ Error al ocultar header/footer:', e);
-      }
-    })();
-    true;
-  `;
+
 
   return (
     <>
@@ -74,7 +25,7 @@ export default function ExperienciaScreen() {
           geolocationEnabled={true}
           setSupportMultipleWindows={false}
           useWebKit={true}
-          injectedJavaScript={injectedScript}
+
         />
       </View>
     </>
