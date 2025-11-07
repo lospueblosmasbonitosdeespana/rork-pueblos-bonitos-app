@@ -19,6 +19,7 @@ interface NoticiaDetalle {
   fecha: string;
   imagen: string;
   contenido: string;
+  categoria?: string;
 }
 
 function stripHtmlTags(html: string): string {
@@ -35,9 +36,9 @@ function stripHtmlTags(html: string): string {
 }
 
 async function fetchNoticiaDetalle(noticiaId: string): Promise<NoticiaDetalle> {
-  const url = `https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/noticia-detalle?id=${noticiaId}`;
+  const url = `https://lospueblosmasbonitosdeespana.org/wp-json/jet-cct/entradas?id=${noticiaId}`;
   
-  console.log('📰 Fetching noticia:', noticiaId);
+  console.log('📰 Cargando noticia desde:', url);
   
   const response = await fetch(url, {
     method: 'GET',
@@ -47,14 +48,30 @@ async function fetchNoticiaDetalle(noticiaId: string): Promise<NoticiaDetalle> {
   });
 
   if (!response.ok) {
-    console.error('❌ Error fetching noticia:', response.status, response.statusText);
-    throw new Error('Error al cargar la noticia');
+    console.error('❌ Error al cargar noticia:', response.status, response.statusText);
+    throw new Error(`Error ${response.status}: no se pudo cargar la noticia`);
   }
 
   const data = await response.json();
-  console.log('✅ Noticia fetched:', data.titulo);
+  const noticia = Array.isArray(data) ? data[0] : data;
   
-  return data;
+  console.log('📋 Datos recibidos:', noticia);
+
+  if (noticia.categoria !== 'Noticias') {
+    console.error('❌ Esta entrada no pertenece a la categoría Noticias:', noticia.categoria);
+    throw new Error('Esta entrada no pertenece a la categoría Noticias');
+  }
+
+  console.log('✅ Noticia cargada:', noticia.titulo || noticia.nombre);
+  
+  return {
+    id: noticia._ID,
+    titulo: noticia.titulo || noticia.nombre || 'Sin título',
+    fecha: noticia.fecha || noticia.created_at || '',
+    imagen: noticia.imagen_destacada || noticia.foto || '',
+    contenido: noticia.contenido || noticia.descripcion || '',
+    categoria: noticia.categoria || '',
+  };
 }
 
 export default function NoticiaDetalleScreen() {
