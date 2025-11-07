@@ -10,15 +10,47 @@ export default function ExperienciaScreen() {
   const injectedScript = `
     (function() {
       try {
-        const header = document.querySelector('header');
-        const footer = document.querySelector('footer');
-        if (header) header.style.display = 'none';
-        if (footer) footer.style.display = 'none';
+        const headerSelectors = [
+          'header',
+          '.elementor-location-header',
+          '.site-header',
+          '#header',
+          '.elementor-header',
+          '.elementor-nav-menu',
+          '.elementor-location-header nav',
+          '.menu-principal'
+        ];
+        
+        const footerSelectors = [
+          'footer',
+          '.elementor-location-footer',
+          '.site-footer',
+          '#footer',
+          '.elementor-footer'
+        ];
+        
+        headerSelectors.forEach(selector => {
+          const elements = document.querySelectorAll(selector);
+          elements.forEach(el => {
+            if (el) el.style.display = 'none';
+          });
+        });
+        
+        footerSelectors.forEach(selector => {
+          const elements = document.querySelectorAll(selector);
+          elements.forEach(el => {
+            if (el) el.style.display = 'none';
+          });
+        });
+        
         document.body.style.marginTop = '0';
         document.body.style.paddingTop = '0';
+        document.body.style.marginBottom = '0';
+        document.body.style.paddingBottom = '0';
         document.body.style.overflowY = 'auto';
         document.documentElement.style.overflowY = 'auto';
-        console.log('✅ Header y footer ocultos correctamente');
+        
+        console.log('✅ Header y footer de Elementor ocultos correctamente');
       } catch (e) {
         console.error('❌ Error al ocultar header/footer:', e);
       }
