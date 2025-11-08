@@ -120,8 +120,33 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
         controller.abort();
       }, 3000);
 
+      console.log('📡 Validando sesión con /wp-json/wp/v2/users/me usando token');
+      const meResponse = await fetch('https://lospueblosmasbonitosdeespana.org/wp-json/wp/v2/users/me', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        signal: controller.signal,
+      });
+
+      console.log('📊 Me endpoint status (checkAuth):', meResponse.status);
+
+      if (!meResponse.ok) {
+        console.log('❌ Sesión no válida, limpiando userId y token');
+        await deleteStoredUserId();
+        await deleteStoredToken();
+        setState({ user: null, userId: null, token: null, isLoading: false, isAuthenticated: false });
+        return;
+      }
+
+      console.log('✅ Sesión validada con /users/me, obteniendo perfil completo');
       console.log('📡 Haciendo fetch a:', `${API_BASE}/user-profile?user_id=${userId}`);
       const response = await fetch(`${API_BASE}/user-profile?user_id=${userId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
         signal: controller.signal,
       });
 
@@ -178,7 +203,9 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
           username: credentials.username.trim(),
           password: credentials.password.trim(),
@@ -241,7 +268,35 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
       }
 
       console.log('🆔 user_id usado para perfil:', userId);
-      const userResponse = await fetch(`https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/user-profile?user_id=${userId}`);
+      console.log('🔑 Validando sesión con /wp-json/wp/v2/users/me');
+      
+      const meResponse = await fetch('https://lospueblosmasbonitosdeespana.org/wp-json/wp/v2/users/me', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${loginData.token}`,
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      });
+
+      console.log('📊 Me endpoint status:', meResponse.status);
+
+      if (!meResponse.ok) {
+        console.error('❌ Error validando sesión con /users/me');
+        const errorText = await meResponse.text();
+        console.error('❌ Error response:', errorText);
+        return { success: false, error: 'Error al validar la sesión' };
+      }
+
+      const meData = await meResponse.json();
+      console.log('✅ Datos de /users/me:', meData);
+
+      console.log('📡 Obteniendo perfil completo de LPBE...');
+      const userResponse = await fetch(`https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/user-profile?user_id=${userId}`, {
+        headers: {
+          'Authorization': `Bearer ${loginData.token}`,
+        },
+      });
 
       if (!userResponse.ok) {
         console.error('❌ Error obteniendo perfil de usuario');
