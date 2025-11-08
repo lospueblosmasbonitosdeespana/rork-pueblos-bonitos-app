@@ -2,9 +2,6 @@ import { router } from 'expo-router';
 import { ArrowLeft, LogIn } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import * as AppleAuthentication from 'expo-apple-authentication';
-import * as Google from 'expo-auth-session/providers/google';
-import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import {
   ActivityIndicator,
@@ -27,8 +24,10 @@ const LPBE_RED = '#c1121f';
 
 WebBrowser.maybeCompleteAuthSession();
 
+const WP_BASE_URL = 'https://lospueblosmasbonitosdeespana.org';
+
 export default function LoginScreen() {
-  const { login, socialLogin } = useAuth();
+  const { socialLogin } = useAuth();
   const queryClient = useQueryClient();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -38,12 +37,6 @@ export default function LoginScreen() {
   const fadeAnim = useState(new Animated.Value(0))[0];
   const passwordInputRef = React.useRef<TextInput>(null);
 
-  const [, googleResponse, googlePromptAsync] = Google.useAuthRequest({
-    iosClientId: '668620158239-8bb43ohkh0f2cp8d8tc97a5aoglp2ua9.apps.googleusercontent.com',
-    androidClientId: '668620158239-pnessev4surmlsjael5htsem06fcllvn.apps.googleusercontent.com',
-    webClientId: '668620158239-to6rkbe6grl7nrk7uj903actvr4g5hv.apps.googleusercontent.com',
-  });
-
   React.useEffect(() => {
     Animated.timing(fadeAnim, {
       toValue: 1,
@@ -52,139 +45,76 @@ export default function LoginScreen() {
     }).start();
   }, [fadeAnim]);
 
-  const handleGoogleSuccess = React.useCallback(async (authentication: any) => {
-    if (!authentication?.idToken) {
-      Alert.alert('Error', 'No se pudo obtener el token de Google');
-      return;
-    }
-
-    setIsGoogleLoading(true);
-    queryClient.clear();
-
+  const handleSocialLogin = async (provider: 'google' | 'apple') => {
     try {
-      const response = await fetch('https://lospueblosmasbonitosdeespana.org/wp-admin/admin-ajax.php', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams({
-          action: 'nextend_social_login',
-          provider: 'google',
-          identity_token: authentication.idToken,
-        }).toString(),
-      });
-
-      const text = await response.text();
-      console.log('🔍 Respuesta cruda del servidor (Google):', text);
-
-      if (!text) throw new Error('Respuesta vacía del servidor');
-
-      const data = JSON.parse(text);
-
-      if (data.success && data.user_id) {
-        console.log('✅ Login Google correcto:', data);
-        
-        const loginResult = await socialLogin(data.user_id.toString());
-
-        if (loginResult.success) {
-          router.replace('/(tabs)/profile');
-        } else {
-          Alert.alert('Error', 'No se pudo completar el inicio de sesión con Google.');
-        }
+      if (provider === 'google') {
+        setIsGoogleLoading(true);
       } else {
-        throw new Error(data.data?.message || data.message || 'Error en login');
+        setIsAppleLoading(true);
+      }
+      
+      queryClient.clear();
+
+      const loginUrl = `${WP_BASE_URL}/wp-login.php?loginSocial=${provider}&app=1`;
+      console.log(`🔗 Abriendo login ${provider}:`, loginUrl);
+
+      const result = await WebBrowser.openAuthSessionAsync(
+        loginUrl,
+        `${WP_BASE_URL}/wp-login.php`
+      );
+
+      console.log('📱 Resultado WebBrowser:', result);
+
+      if (result.type === 'success' && result.url) {
+        const url = new URL(result.url);
+        const userId = url.searchParams.get('user_id');
+        
+        console.log('✅ Login social exitoso. User ID:', userId);
+
+        if (userId) {
+          const loginResult = await socialLogin(userId);
+
+          if (loginResult.success) {
+            router.replace('/(tabs)/profile');
+          } else {
+            Alert.alert('Error', 'No se pudo completar el inicio de sesión.');
+          }
+        } else {
+          const checkSession = await fetch(`${WP_BASE_URL}/wp-json/wp/v2/users/me`, {
+            credentials: 'include',
+          });
+
+          if (checkSession.ok) {
+            const userData = await checkSession.json();
+            console.log('✅ Sesión detectada:', userData);
+            
+            const loginResult = await socialLogin(userData.id.toString());
+            
+            if (loginResult.success) {
+              router.replace('/(tabs)/profile');
+            } else {
+              Alert.alert('Error', 'No se pudo completar el inicio de sesión.');
+            }
+          } else {
+            throw new Error('No se pudo verificar la sesión');
+          }
+        }
+      } else if (result.type === 'cancel') {
+        console.log('Usuario canceló el login');
+      } else {
+        throw new Error('No se completó el inicio de sesión');
       }
     } catch (error: any) {
-      console.error('❌ Google login error:', error);
+      console.error(`❌ Error login ${provider}:`, error);
       Alert.alert('Error', error.message || 'No se pudo completar el inicio de sesión. Inténtalo de nuevo.');
     } finally {
       setIsGoogleLoading(false);
-    }
-  }, [socialLogin, queryClient]);
-
-  React.useEffect(() => {
-    if (googleResponse?.type === 'success') {
-      handleGoogleSuccess(googleResponse.authentication);
-    }
-  }, [googleResponse, handleGoogleSuccess]);
-
-
-  const handleGoogleLogin = async () => {
-    try {
-      const redirectUri = AuthSession.makeRedirectUri();
-      console.log('🔍 Redirect URI usada por la app:', redirectUri);
-      console.log('📱 Platform:', Platform.OS);
-      await googlePromptAsync();
-    } catch (error) {
-      console.error('Google prompt error:', error);
-      Alert.alert('Error', 'No se pudo iniciar el proceso de Google');
-    }
-  };
-
-  const handleAppleLogin = async () => {
-    if (Platform.OS !== 'ios') {
-      Alert.alert('Información', 'El inicio de sesión con Apple solo está disponible en iOS');
-      return;
-    }
-
-    try {
-      setIsAppleLoading(true);
-      queryClient.clear();
-
-      const credential = await AppleAuthentication.signInAsync({
-        requestedScopes: [
-          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
-          AppleAuthentication.AppleAuthenticationScope.EMAIL,
-        ],
-      });
-
-      if (!credential.identityToken) {
-        throw new Error('No se recibió identityToken');
-      }
-
-      const response = await fetch('https://lospueblosmasbonitosdeespana.org/wp-admin/admin-ajax.php', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams({
-          action: 'nextend_social_login',
-          provider: 'apple',
-          identity_token: credential.identityToken,
-        }).toString(),
-      });
-
-      const text = await response.text();
-      console.log('🔍 Respuesta cruda del servidor:', text);
-
-      if (!text) throw new Error('Respuesta vacía del servidor');
-
-      const data = JSON.parse(text);
-      
-      if (data.success && data.user_id) {
-        console.log('✅ Login Apple correcto:', data);
-        
-        const loginResult = await socialLogin(data.user_id.toString());
-
-        if (loginResult.success) {
-          router.replace('/(tabs)/profile');
-        } else {
-          Alert.alert('Error', 'No se pudo completar el inicio de sesión con Apple.');
-        }
-      } else {
-        throw new Error(data.data?.message || data.message || 'Error en login');
-      }
-    } catch (error: any) {
-      if (error.code === 'ERR_REQUEST_CANCELED') {
-        console.log('Usuario canceló el login con Apple');
-      } else {
-        console.error('❌ Apple login error:', error);
-        Alert.alert('Error', error.message || 'No se pudo completar el inicio de sesión. Inténtalo de nuevo.');
-      }
-    } finally {
       setIsAppleLoading(false);
     }
   };
+
+  const handleGoogleLogin = () => handleSocialLogin('google');
+  const handleAppleLogin = () => handleSocialLogin('apple');
 
   const handleLogin = async () => {
     const trimmedUsername = username.trim();
@@ -201,21 +131,44 @@ export default function LoginScreen() {
     queryClient.clear();
     console.log('✅ React Query limpiado');
     
-    const result = await login({ username: trimmedUsername, password: trimmedPassword });
-    setIsLoading(false);
-
-    if (result.success) {
-      Animated.sequence([
-        Animated.timing(fadeAnim, {
-          toValue: 0,
-          duration: 300,
-          useNativeDriver: true,
+    try {
+      const response = await fetch(`${WP_BASE_URL}/wp-json/jwt-auth/v1/token`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: trimmedUsername,
+          password: trimmedPassword,
         }),
-      ]).start(() => {
-        router.replace('/(tabs)/profile');
       });
-    } else {
-      Alert.alert('Error', result.error || 'Credenciales incorrectas o usuario no encontrado');
+
+      const data = await response.json();
+
+      if (response.ok && data.user_id) {
+        const loginResult = await socialLogin(data.user_id.toString());
+
+        if (loginResult.success) {
+          Animated.sequence([
+            Animated.timing(fadeAnim, {
+              toValue: 0,
+              duration: 300,
+              useNativeDriver: true,
+            }),
+          ]).start(() => {
+            router.replace('/(tabs)/profile');
+          });
+        } else {
+          Alert.alert('Error', 'No se pudo completar el inicio de sesión.');
+        }
+      } else {
+        Alert.alert('Error', data.message || 'Credenciales incorrectas o usuario no encontrado');
+      }
+    } catch (error: any) {
+      console.error('❌ Login error:', error);
+      Alert.alert('Error', 'No se pudo completar el inicio de sesión. Inténtalo de nuevo.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
