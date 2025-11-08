@@ -52,7 +52,7 @@ export default function ExperienciaScreen() {
         
         <TouchableOpacity
           style={[styles.backButton, { top: insets.top + 16 }]}
-          onPress={() => router.push('/(tabs)/multiexperiencias')}
+          onPress={() => router.back()}
           activeOpacity={0.7}
         >
           <ArrowLeft size={20} color="#7A1C1C" strokeWidth={2.5} />
