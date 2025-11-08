@@ -28,11 +28,19 @@ export default function ExperienciaScreen() {
           domStorageEnabled={true}
           geolocationEnabled={true}
           setSupportMultipleWindows={false}
+          injectedJavaScript={`
+            (function() {
+              const style = document.createElement('style');
+              style.innerHTML = '.btn, .button, a[href*="saber"], button { pointer-events: none !important; cursor: default !important; }';
+              document.head.appendChild(style);
+            })();
+            true;
+          `}
         />
         
         <TouchableOpacity
           style={[styles.backButton, { top: insets.top + 16 }]}
-          onPress={() => router.back()}
+          onPress={() => router.push('/(tabs)/multiexperiencias')}
           activeOpacity={0.7}
         >
           <ArrowLeft size={20} color="#7A1C1C" strokeWidth={2.5} />
