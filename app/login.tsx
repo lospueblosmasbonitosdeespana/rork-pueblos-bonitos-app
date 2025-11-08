@@ -62,19 +62,29 @@ export default function LoginScreen() {
     queryClient.clear();
 
     try {
-      const response = await fetch('https://lospueblosmasbonitosdeespana.org/wp-json/um/v1/social-login', {
+      const response = await fetch('https://lospueblosmasbonitosdeespana.org/wp-admin/admin-ajax.php', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          action: 'nextend_social_login',
           provider: 'google',
-          token: authentication.idToken,
-        }),
+          identity_token: authentication.idToken,
+        }).toString(),
       });
 
-      const result = await response.json();
+      const text = await response.text();
+      console.log('🔍 Respuesta cruda del servidor (Google):', text);
 
-      if (response.ok && result.success && result.user_id) {
-        const loginResult = await socialLogin(result.user_id.toString());
+      if (!text) throw new Error('Respuesta vacía del servidor');
+
+      const data = JSON.parse(text);
+
+      if (data.success && data.user_id) {
+        console.log('✅ Login Google correcto:', data);
+        
+        const loginResult = await socialLogin(data.user_id.toString());
 
         if (loginResult.success) {
           router.replace('/(tabs)/profile');
@@ -82,11 +92,11 @@ export default function LoginScreen() {
           Alert.alert('Error', 'No se pudo completar el inicio de sesión con Google.');
         }
       } else {
-        Alert.alert('Error', result.message || 'No se pudo completar el inicio de sesión con Google.');
+        throw new Error(data.data?.message || data.message || 'Error en login');
       }
-    } catch (error) {
-      console.error('Google login error:', error);
-      Alert.alert('Error', 'No se pudo completar el inicio de sesión. Inténtalo de nuevo.');
+    } catch (error: any) {
+      console.error('❌ Google login error:', error);
+      Alert.alert('Error', error.message || 'No se pudo completar el inicio de sesión. Inténtalo de nuevo.');
     } finally {
       setIsGoogleLoading(false);
     }
