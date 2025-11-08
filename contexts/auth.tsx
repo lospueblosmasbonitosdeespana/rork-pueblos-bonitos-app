@@ -3,11 +3,9 @@ import * as SecureStore from 'expo-secure-store';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
-import { jwtDecode } from 'jwt-decode';
 
 const API_BASE = 'https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1';
 const USER_ID_KEY = 'lpbe_user_id';
-const JWT_TOKEN_KEY = 'lpbe_jwt_token';
 
 interface LPBEUser {
   id: number;
@@ -26,7 +24,6 @@ interface LPBEUser {
 interface AuthState {
   user: LPBEUser | null;
   userId: string | null;
-  token: string | null;
   isLoading: boolean;
   isAuthenticated: boolean;
 }
@@ -67,34 +64,12 @@ async function deleteStoredUserId(): Promise<void> {
   }
 }
 
-async function getStoredToken(): Promise<string | null> {
-  if (Platform.OS === 'web') {
-    return localStorage.getItem(JWT_TOKEN_KEY);
-  }
-  return await SecureStore.getItemAsync(JWT_TOKEN_KEY);
-}
 
-async function setStoredToken(token: string): Promise<void> {
-  if (Platform.OS === 'web') {
-    localStorage.setItem(JWT_TOKEN_KEY, token);
-  } else {
-    await SecureStore.setItemAsync(JWT_TOKEN_KEY, token);
-  }
-}
-
-async function deleteStoredToken(): Promise<void> {
-  if (Platform.OS === 'web') {
-    localStorage.removeItem(JWT_TOKEN_KEY);
-  } else {
-    await SecureStore.deleteItemAsync(JWT_TOKEN_KEY);
-  }
-}
 
 export const [AuthProvider, useAuth] = createContextHook(() => {
   const [state, setState] = useState<AuthState>({
     user: null,
     userId: null,
-    token: null,
     isLoading: true,
     isAuthenticated: false,
   });
@@ -105,12 +80,9 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
       const userId = await getStoredUserId();
       console.log('🆔 UserId almacenado:', userId);
 
-      const token = await getStoredToken();
-      console.log('🔑 JWT Token almacenado:', token ? 'Existe' : 'No existe');
-
-      if (!userId || !token) {
-        console.log('❌ No hay userId o token, marcando como no autenticado');
-        setState({ user: null, userId: null, token: null, isLoading: false, isAuthenticated: false });
+      if (!userId) {
+        console.log('❌ No hay userId, marcando como no autenticado');
+        setState({ user: null, userId: null, isLoading: false, isAuthenticated: false });
         return;
       }
 
@@ -120,33 +92,9 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
         controller.abort();
       }, 3000);
 
-      console.log('📡 Validando sesión con /wp-json/wp/v2/users/me usando token');
-      const meResponse = await fetch('https://lospueblosmasbonitosdeespana.org/wp-json/wp/v2/users/me', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        signal: controller.signal,
-      });
-
-      console.log('📊 Me endpoint status (checkAuth):', meResponse.status);
-
-      if (!meResponse.ok) {
-        console.log('❌ Sesión no válida, limpiando userId y token');
-        await deleteStoredUserId();
-        await deleteStoredToken();
-        setState({ user: null, userId: null, token: null, isLoading: false, isAuthenticated: false });
-        return;
-      }
-
-      console.log('✅ Sesión validada con /users/me, obteniendo perfil completo');
       console.log('📡 Haciendo fetch a:', `${API_BASE}/user-profile?user_id=${userId}`);
       const response = await fetch(`${API_BASE}/user-profile?user_id=${userId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
+        credentials: 'include',
         signal: controller.signal,
       });
 
@@ -154,23 +102,22 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
       console.log('📊 Response status:', response.status);
 
       if (!response.ok) {
-        console.log('❌ Response no OK, limpiando userId y token');
+        console.log('❌ Response no OK, limpiando userId');
         await deleteStoredUserId();
-        await deleteStoredToken();
-        setState({ user: null, userId: null, token: null, isLoading: false, isAuthenticated: false });
+        setState({ user: null, userId: null, isLoading: false, isAuthenticated: false });
         return;
       }
 
       const user = await response.json();
       console.log('✅ Usuario autenticado:', user.name);
       
-      setState({ user, userId, token, isLoading: false, isAuthenticated: true });
+      setState({ user, userId, isLoading: false, isAuthenticated: true });
     } catch (error) {
       console.error('❌ Error checking auth:', error);
       if ((error as Error).name === 'AbortError') {
         console.log('⏱️ Auth check timed out - continuando sin autenticación');
       }
-      setState({ user: null, userId: null, token: null, isLoading: false, isAuthenticated: false });
+      setState({ user: null, userId: null, isLoading: false, isAuthenticated: false });
     } finally {
       console.log('✅ checkAuth completado');
     }
@@ -180,30 +127,10 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
     try {
       console.log('🔐 Autenticando con LPBE...');
       
-      console.log('🧹 Limpiando caché completo antes de login...');
-      if (Platform.OS === 'web') {
-        localStorage.clear();
-        sessionStorage.clear();
-      } else {
-        const AsyncStorage = await import('@react-native-async-storage/async-storage').then(m => m.default);
-        await AsyncStorage.clear();
-      }
-      console.log('✅ AsyncStorage limpiado');
-      
-      try {
-        const { QueryClient } = await import('@tanstack/react-query');
-        const queryClient = new QueryClient();
-        queryClient.clear();
-        console.log('✅ React Query limpiado');
-      } catch (qErr) {
-        console.warn('⚠️ No se pudo limpiar React Query:', qErr);
-      }
-      
-      const loginResponse = await fetch('https://lospueblosmasbonitosdeespana.org/wp-json/jwt-auth/v1/token', {
+      const response = await fetch(`${API_BASE}/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json',
         },
         credentials: 'include',
         body: JSON.stringify({
@@ -212,110 +139,26 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
         }),
       });
 
-      console.log('📊 Login response status:', loginResponse.status);
-      console.log('📊 Login response headers:', loginResponse.headers);
+      console.log('📊 Response status:', response.status);
 
-      const responseText = await loginResponse.text();
-      console.log('📄 Login response text:', responseText);
+      const result = await response.json();
 
-      if (!loginResponse.ok) {
-        let errorData: any = {};
-        try {
-          errorData = JSON.parse(responseText);
-        } catch (parseError) {
-          console.error('❌ Error parsing error response:', parseError);
-          console.error('❌ Raw response:', responseText);
-          return { 
-            success: false, 
-            error: 'Error del servidor. Por favor, inténtalo de nuevo.' 
-          };
-        }
-        console.error('❌ Error login:', errorData);
-        return { 
-          success: false, 
-          error: errorData.message || 'Credenciales incorrectas' 
-        };
+      if (!response.ok) {
+        console.error('❌ Error login:', result);
+        return { success: false, error: result.message || 'Credenciales incorrectas' };
       }
 
-      let loginData: any;
-      try {
-        loginData = JSON.parse(responseText);
-      } catch (parseError) {
-        console.error('❌ Error parsing success response:', parseError);
-        console.error('❌ Raw response:', responseText);
-        return { 
-          success: false, 
-          error: 'Respuesta del servidor inválida' 
-        };
-      }
-      console.log('✅ Login exitoso:', loginData);
+      console.log('✅ Login exitoso:', result);
 
-      if (!loginData.token || !loginData.user_email) {
-        return { success: false, error: 'Respuesta del servidor inválida - no se recibió token' };
-      }
-
-      console.log('📡 Token JWT recibido, obteniendo perfil completo del usuario...');
-      let userId = 14782;
-
-      try {
-        const decoded: any = jwtDecode(loginData.token);
-        console.log('📦 JWT payload decodificado:', decoded);
-        if (decoded?.data?.user?.id) {
-          userId = decoded.data.user.id;
-        }
-      } catch (error) {
-        console.warn('⚠️ No se pudo decodificar el token:', error);
-      }
-
-      console.log('🆔 user_id usado para perfil:', userId);
-      console.log('🔑 Validando sesión con /wp-json/wp/v2/users/me');
-      
-      const meResponse = await fetch('https://lospueblosmasbonitosdeespana.org/wp-json/wp/v2/users/me', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${loginData.token}`,
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-      });
-
-      console.log('📊 Me endpoint status:', meResponse.status);
-
-      if (!meResponse.ok) {
-        console.error('❌ Error validando sesión con /users/me');
-        const errorText = await meResponse.text();
-        console.error('❌ Error response:', errorText);
-        return { success: false, error: 'Error al validar la sesión' };
-      }
-
-      const meData = await meResponse.json();
-      console.log('✅ Datos de /users/me:', meData);
-
-      console.log('📡 Obteniendo perfil completo de LPBE...');
-      const userResponse = await fetch(`https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/user-profile?user_id=${userId}`, {
-        headers: {
-          'Authorization': `Bearer ${loginData.token}`,
-        },
-      });
-
-      if (!userResponse.ok) {
-        console.error('❌ Error obteniendo perfil de usuario');
-        return { success: false, error: 'Error al obtener datos del usuario' };
-      }
-
-      const user = await userResponse.json();
-
-      if (!user.id || !user.username || !user.email || !user.name) {
+      if (!result.user || !result.user.id) {
         return { success: false, error: 'Datos de usuario incompletos' };
       }
 
-      await setStoredUserId(user.id.toString());
-      await setStoredToken(loginData.token);
+      await setStoredUserId(result.user.id.toString());
       
       setState({ 
-        user: { ...user, role: 'subscriber' }, 
-        userId: user.id.toString(), 
-        token: loginData.token,
+        user: result.user, 
+        userId: result.user.id.toString(), 
         isLoading: false, 
         isAuthenticated: true 
       });
@@ -354,7 +197,6 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
   const logout = async () => {
     try {
       await deleteStoredUserId();
-      await deleteStoredToken();
       
       const keysToDelete = ['um_token', 'lpbe_token', 'user_data', 'auth_token'];
       for (const key of keysToDelete) {
@@ -369,12 +211,12 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
         }
       }
       
-      setState({ user: null, userId: null, token: null, isLoading: false, isAuthenticated: false });
+      setState({ user: null, userId: null, isLoading: false, isAuthenticated: false });
       
       router.replace('/login');
     } catch (error) {
       console.error('Logout error:', error);
-      setState({ user: null, userId: null, token: null, isLoading: false, isAuthenticated: false });
+      setState({ user: null, userId: null, isLoading: false, isAuthenticated: false });
       router.replace('/login');
     }
   };
@@ -387,7 +229,7 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
         console.log('✅ Autenticación inicializada');
       } catch (error) {
         console.error('❌ Error en inicialización de auth:', error);
-        setState({ user: null, userId: null, token: null, isLoading: false, isAuthenticated: false });
+        setState({ user: null, userId: null, isLoading: false, isAuthenticated: false });
       }
     };
     initAuth();
