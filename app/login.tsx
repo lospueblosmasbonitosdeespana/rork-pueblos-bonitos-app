@@ -1,15 +1,12 @@
 import { router } from 'expo-router';
-import { ArrowLeft, LogIn, X } from 'lucide-react-native';
-import React, { useState, useRef } from 'react';
+import { ArrowLeft, LogIn } from 'lucide-react-native';
+import React, { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import * as WebBrowser from 'expo-web-browser';
-import { WebView } from 'react-native-webview';
 import {
   ActivityIndicator,
   Alert,
   Animated,
   KeyboardAvoidingView,
-  Modal,
   Platform,
   ScrollView,
   StyleSheet,
@@ -24,23 +21,14 @@ import { useAuth } from '@/contexts/auth';
 
 const LPBE_RED = '#c1121f';
 
-WebBrowser.maybeCompleteAuthSession();
-
-const WP_BASE_URL = 'https://lospueblosmasbonitosdeespana.org';
-
 export default function LoginScreen() {
-  const { socialLogin } = useAuth();
+  const { login } = useAuth();
   const queryClient = useQueryClient();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-  const [isAppleLoading, setIsAppleLoading] = useState(false);
-  const [showWebView, setShowWebView] = useState(false);
-  const [socialProvider, setSocialProvider] = useState<'google' | 'apple' | null>(null);
   const fadeAnim = useState(new Animated.Value(0))[0];
   const passwordInputRef = React.useRef<TextInput>(null);
-  const webViewRef = useRef<WebView>(null);
 
   React.useEffect(() => {
     Animated.timing(fadeAnim, {
@@ -49,118 +37,6 @@ export default function LoginScreen() {
       useNativeDriver: true,
     }).start();
   }, [fadeAnim]);
-
-  const handleSocialLogin = async (provider: 'google' | 'apple') => {
-    try {
-      if (provider === 'google') {
-        setIsGoogleLoading(true);
-      } else {
-        setIsAppleLoading(true);
-      }
-      
-      queryClient.clear();
-
-      console.log(`🔗 Abriendo login social ${provider} en WebView...`);
-      setSocialProvider(provider);
-      setShowWebView(true);
-      
-    } catch (error: any) {
-      console.error(`❌ Error login ${provider}:`, error);
-      Alert.alert(
-        'Error de autenticación',
-        error.message || 'No se pudo completar el inicio de sesión. Por favor, inténtalo de nuevo.'
-      );
-      setIsGoogleLoading(false);
-      setIsAppleLoading(false);
-    }
-  };
-
-  const handleWebViewNavigationStateChange = async (navState: any) => {
-    const { url } = navState;
-    console.log('🌐 WebView URL:', url);
-
-    if (url.includes('/account-2/') || url.includes('/mi-cuenta/') || url.includes('/my-account/')) {
-      console.log('✅ Redirigido a la página de cuenta, validando sesión...');
-      
-      webViewRef.current?.injectJavaScript(`
-        (async function() {
-          try {
-            const response = await fetch('${WP_BASE_URL}/wp-json/wp/v2/users/me', {
-              credentials: 'include',
-              headers: { 'Accept': 'application/json' }
-            });
-            
-            if (response.ok) {
-              const userData = await response.json();
-              window.ReactNativeWebView.postMessage(JSON.stringify({
-                type: 'USER_DATA',
-                data: userData
-              }));
-            } else {
-              window.ReactNativeWebView.postMessage(JSON.stringify({
-                type: 'ERROR',
-                message: 'No se pudo validar la sesión'
-              }));
-            }
-          } catch (error) {
-            window.ReactNativeWebView.postMessage(JSON.stringify({
-              type: 'ERROR',
-              message: error.message
-            }));
-          }
-        })();
-        true;
-      `);
-    }
-  };
-
-  const handleWebViewMessage = async (event: any) => {
-    try {
-      const message = JSON.parse(event.nativeEvent.data);
-      console.log('📨 Mensaje de WebView:', message);
-
-      if (message.type === 'USER_DATA') {
-        const userData = message.data;
-        console.log('✅ Usuario autenticado:', userData.name, '(ID:', userData.id, ')');
-        
-        setShowWebView(false);
-        setSocialProvider(null);
-        
-        const loginResult = await socialLogin(userData.id.toString());
-        
-        if (loginResult.success) {
-          console.log('✅ Login social completado');
-          setIsGoogleLoading(false);
-          setIsAppleLoading(false);
-          router.replace('/(tabs)/profile');
-        } else {
-          throw new Error('No se pudo completar el inicio de sesión');
-        }
-      } else if (message.type === 'ERROR') {
-        throw new Error(message.message);
-      }
-    } catch (error: any) {
-      console.error('❌ Error procesando mensaje WebView:', error);
-      setShowWebView(false);
-      setSocialProvider(null);
-      setIsGoogleLoading(false);
-      setIsAppleLoading(false);
-      Alert.alert(
-        'Error',
-        'No se pudo completar el inicio de sesión. Por favor, inténtalo de nuevo.'
-      );
-    }
-  };
-
-  const handleCloseWebView = () => {
-    setShowWebView(false);
-    setSocialProvider(null);
-    setIsGoogleLoading(false);
-    setIsAppleLoading(false);
-  };
-
-  const handleGoogleLogin = () => handleSocialLogin('google');
-  const handleAppleLogin = () => handleSocialLogin('apple');
 
   const handleLogin = async () => {
     const trimmedUsername = username.trim();
@@ -177,49 +53,26 @@ export default function LoginScreen() {
     queryClient.clear();
     console.log('✅ React Query limpiado');
     
-    try {
-      const response = await fetch(`${WP_BASE_URL}/wp-json/jwt-auth/v1/token`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          username: trimmedUsername,
-          password: trimmedPassword,
+    const result = await login({ username: trimmedUsername, password: trimmedPassword });
+
+    if (result.success) {
+      Animated.sequence([
+        Animated.timing(fadeAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
         }),
+      ]).start(() => {
+        router.replace('/(tabs)/profile');
       });
-
-      const data = await response.json();
-
-      if (response.ok && data.user_id) {
-        const loginResult = await socialLogin(data.user_id.toString());
-
-        if (loginResult.success) {
-          Animated.sequence([
-            Animated.timing(fadeAnim, {
-              toValue: 0,
-              duration: 300,
-              useNativeDriver: true,
-            }),
-          ]).start(() => {
-            router.replace('/(tabs)/profile');
-          });
-        } else {
-          Alert.alert('Error', 'No se pudo completar el inicio de sesión.');
-        }
-      } else {
-        Alert.alert('Error', data.message || 'Credenciales incorrectas o usuario no encontrado');
-      }
-    } catch (error: any) {
-      console.error('❌ Login error:', error);
-      Alert.alert('Error', 'No se pudo completar el inicio de sesión. Inténtalo de nuevo.');
-    } finally {
-      setIsLoading(false);
+    } else {
+      Alert.alert('Error', result.error || 'No se pudo completar el inicio de sesión.');
     }
+    
+    setIsLoading(false);
   };
 
   return (
-    <>
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <TouchableOpacity
         style={styles.backButton}
@@ -302,46 +155,6 @@ export default function LoginScreen() {
                 )}
               </TouchableOpacity>
 
-              <View style={styles.divider}>
-                <View style={styles.dividerLine} />
-                <Text style={styles.dividerText}>O continúa con</Text>
-                <View style={styles.dividerLine} />
-              </View>
-
-              <TouchableOpacity
-                style={styles.socialButton}
-                onPress={handleGoogleLogin}
-                disabled={isGoogleLoading || isLoading}
-                activeOpacity={0.8}
-              >
-                {isGoogleLoading ? (
-                  <ActivityIndicator color="#666" />
-                ) : (
-                  <>
-                    <Text style={styles.socialButtonIcon}>G</Text>
-                    <Text style={styles.socialButtonText}>Continuar con Google</Text>
-                  </>
-                )}
-              </TouchableOpacity>
-
-              {Platform.OS === 'ios' && (
-                <TouchableOpacity
-                  style={[styles.socialButton, styles.appleButton]}
-                  onPress={handleAppleLogin}
-                  disabled={isAppleLoading || isLoading}
-                  activeOpacity={0.8}
-                >
-                  {isAppleLoading ? (
-                    <ActivityIndicator color="#fff" />
-                  ) : (
-                    <>
-                      <Text style={styles.appleButtonIcon}></Text>
-                      <Text style={styles.appleButtonText}>Continuar con Apple</Text>
-                    </>
-                  )}
-                </TouchableOpacity>
-              )}
-
               <View style={styles.footer}>
                 <Text style={styles.footerText}>¿No tienes cuenta? </Text>
                 <TouchableOpacity
@@ -356,47 +169,6 @@ export default function LoginScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
-
-    <Modal
-      visible={showWebView}
-      animationType="slide"
-      presentationStyle="fullScreen"
-      onRequestClose={handleCloseWebView}
-    >
-      <SafeAreaView style={styles.webViewContainer} edges={['top', 'bottom']}>
-        <View style={styles.webViewHeader}>
-          <Text style={styles.webViewTitle}>
-            {socialProvider === 'google' ? 'Iniciar sesión con Google' : 'Iniciar sesión con Apple'}
-          </Text>
-          <TouchableOpacity
-            style={styles.closeButton}
-            onPress={handleCloseWebView}
-            activeOpacity={0.7}
-          >
-            <X size={24} color="#1a1a1a" strokeWidth={2} />
-          </TouchableOpacity>
-        </View>
-        {socialProvider && (
-          <WebView
-            ref={webViewRef}
-            source={{ uri: `${WP_BASE_URL}/wp-login.php?loginSocial=${socialProvider}` }}
-            onNavigationStateChange={handleWebViewNavigationStateChange}
-            onMessage={handleWebViewMessage}
-            javaScriptEnabled
-            domStorageEnabled
-            sharedCookiesEnabled
-            thirdPartyCookiesEnabled
-            startInLoadingState
-            renderLoading={() => (
-              <View style={styles.webViewLoading}>
-                <ActivityIndicator size="large" color={LPBE_RED} />
-              </View>
-            )}
-          />
-        )}
-      </SafeAreaView>
-    </Modal>
-    </>
   );
 }
 
@@ -521,103 +293,5 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600' as const,
     color: LPBE_RED,
-  },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 28,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#e0e0e0',
-  },
-  dividerText: {
-    marginHorizontal: 16,
-    fontSize: 14,
-    color: '#999',
-    fontWeight: '500' as const,
-  },
-  socialButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    paddingVertical: 16,
-    marginBottom: 12,
-    borderWidth: 1.5,
-    borderColor: '#e0e0e0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  socialButtonIcon: {
-    fontSize: 20,
-    fontWeight: '700' as const,
-    color: '#4285F4',
-    marginRight: 12,
-  },
-  socialButtonText: {
-    fontSize: 16,
-    fontWeight: '600' as const,
-    color: '#333',
-  },
-  appleButton: {
-    backgroundColor: '#000',
-    borderColor: '#000',
-  },
-  appleButtonIcon: {
-    fontSize: 20,
-    marginRight: 12,
-    color: '#fff',
-  },
-  appleButtonText: {
-    fontSize: 16,
-    fontWeight: '600' as const,
-    color: '#fff',
-  },
-  webViewContainer: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  webViewHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-    backgroundColor: '#fff',
-  },
-  webViewTitle: {
-    fontSize: 18,
-    fontWeight: '600' as const,
-    color: '#1a1a1a',
-    flex: 1,
-    textAlign: 'center',
-  },
-  closeButton: {
-    position: 'absolute' as const,
-    right: 20,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#f8f8f8',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  webViewLoading: {
-    position: 'absolute' as const,
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#fff',
   },
 });
