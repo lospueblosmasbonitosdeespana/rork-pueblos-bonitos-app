@@ -28,11 +28,31 @@ export default function ExperienciaScreen() {
           domStorageEnabled={true}
           geolocationEnabled={true}
           setSupportMultipleWindows={false}
+          injectedJavaScript={`
+            (function() {
+              const style = document.createElement('style');
+              style.innerHTML = 'a[href*="saber-mas"], .saber-mas, button:contains("Saber más"), a:contains("Saber más") { pointer-events: none !important; cursor: default !important; }';
+              document.head.appendChild(style);
+              
+              setTimeout(() => {
+                const links = document.querySelectorAll('a');
+                links.forEach(link => {
+                  const text = link.textContent || link.innerText;
+                  if (text && text.toLowerCase().includes('saber más')) {
+                    link.style.pointerEvents = 'none';
+                    link.style.cursor = 'default';
+                    link.onclick = (e) => { e.preventDefault(); return false; };
+                  }
+                });
+              }, 1000);
+            })();
+            true;
+          `}
         />
         
         <TouchableOpacity
           style={[styles.backButton, { top: insets.top + 16 }]}
-          onPress={() => router.back()}
+          onPress={() => router.push('/(tabs)/multiexperiencias')}
           activeOpacity={0.7}
         >
           <ArrowLeft size={20} color="#7A1C1C" strokeWidth={2.5} />
