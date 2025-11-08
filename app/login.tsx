@@ -1,13 +1,15 @@
 import { router } from 'expo-router';
-import { ArrowLeft, LogIn } from 'lucide-react-native';
-import React, { useState } from 'react';
+import { ArrowLeft, LogIn, X } from 'lucide-react-native';
+import React, { useState, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import * as WebBrowser from 'expo-web-browser';
+import { WebView } from 'react-native-webview';
 import {
   ActivityIndicator,
   Alert,
   Animated,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   ScrollView,
   StyleSheet,
@@ -34,8 +36,11 @@ export default function LoginScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isAppleLoading, setIsAppleLoading] = useState(false);
+  const [showWebView, setShowWebView] = useState(false);
+  const [socialProvider, setSocialProvider] = useState<'google' | 'apple' | null>(null);
   const fadeAnim = useState(new Animated.Value(0))[0];
   const passwordInputRef = React.useRef<TextInput>(null);
+  const webViewRef = useRef<WebView>(null);
 
   React.useEffect(() => {
     Animated.timing(fadeAnim, {
@@ -55,62 +60,103 @@ export default function LoginScreen() {
       
       queryClient.clear();
 
-      const loginUrl = `${WP_BASE_URL}/wp-login.php?loginSocial=${provider}&app=1`;
-      console.log(`🔗 Abriendo login ${provider}:`, loginUrl);
-
-      const result = await WebBrowser.openAuthSessionAsync(
-        loginUrl,
-        `${WP_BASE_URL}/wp-login.php`
-      );
-
-      console.log('📱 Resultado WebBrowser:', result);
-
-      if (result.type === 'success' && result.url) {
-        const url = new URL(result.url);
-        const userId = url.searchParams.get('user_id');
-        
-        console.log('✅ Login social exitoso. User ID:', userId);
-
-        if (userId) {
-          const loginResult = await socialLogin(userId);
-
-          if (loginResult.success) {
-            router.replace('/(tabs)/profile');
-          } else {
-            Alert.alert('Error', 'No se pudo completar el inicio de sesión.');
-          }
-        } else {
-          const checkSession = await fetch(`${WP_BASE_URL}/wp-json/wp/v2/users/me`, {
-            credentials: 'include',
-          });
-
-          if (checkSession.ok) {
-            const userData = await checkSession.json();
-            console.log('✅ Sesión detectada:', userData);
-            
-            const loginResult = await socialLogin(userData.id.toString());
-            
-            if (loginResult.success) {
-              router.replace('/(tabs)/profile');
-            } else {
-              Alert.alert('Error', 'No se pudo completar el inicio de sesión.');
-            }
-          } else {
-            throw new Error('No se pudo verificar la sesión');
-          }
-        }
-      } else if (result.type === 'cancel') {
-        console.log('Usuario canceló el login');
-      } else {
-        throw new Error('No se completó el inicio de sesión');
-      }
+      console.log(`🔗 Abriendo login social ${provider} en WebView...`);
+      setSocialProvider(provider);
+      setShowWebView(true);
+      
     } catch (error: any) {
       console.error(`❌ Error login ${provider}:`, error);
-      Alert.alert('Error', error.message || 'No se pudo completar el inicio de sesión. Inténtalo de nuevo.');
-    } finally {
+      Alert.alert(
+        'Error de autenticación',
+        error.message || 'No se pudo completar el inicio de sesión. Por favor, inténtalo de nuevo.'
+      );
       setIsGoogleLoading(false);
       setIsAppleLoading(false);
     }
+  };
+
+  const handleWebViewNavigationStateChange = async (navState: any) => {
+    const { url } = navState;
+    console.log('🌐 WebView URL:', url);
+
+    if (url.includes('/account-2/') || url.includes('/mi-cuenta/') || url.includes('/my-account/')) {
+      console.log('✅ Redirigido a la página de cuenta, validando sesión...');
+      
+      webViewRef.current?.injectJavaScript(`
+        (async function() {
+          try {
+            const response = await fetch('${WP_BASE_URL}/wp-json/wp/v2/users/me', {
+              credentials: 'include',
+              headers: { 'Accept': 'application/json' }
+            });
+            
+            if (response.ok) {
+              const userData = await response.json();
+              window.ReactNativeWebView.postMessage(JSON.stringify({
+                type: 'USER_DATA',
+                data: userData
+              }));
+            } else {
+              window.ReactNativeWebView.postMessage(JSON.stringify({
+                type: 'ERROR',
+                message: 'No se pudo validar la sesión'
+              }));
+            }
+          } catch (error) {
+            window.ReactNativeWebView.postMessage(JSON.stringify({
+              type: 'ERROR',
+              message: error.message
+            }));
+          }
+        })();
+        true;
+      `);
+    }
+  };
+
+  const handleWebViewMessage = async (event: any) => {
+    try {
+      const message = JSON.parse(event.nativeEvent.data);
+      console.log('📨 Mensaje de WebView:', message);
+
+      if (message.type === 'USER_DATA') {
+        const userData = message.data;
+        console.log('✅ Usuario autenticado:', userData.name, '(ID:', userData.id, ')');
+        
+        setShowWebView(false);
+        setSocialProvider(null);
+        
+        const loginResult = await socialLogin(userData.id.toString());
+        
+        if (loginResult.success) {
+          console.log('✅ Login social completado');
+          setIsGoogleLoading(false);
+          setIsAppleLoading(false);
+          router.replace('/(tabs)/profile');
+        } else {
+          throw new Error('No se pudo completar el inicio de sesión');
+        }
+      } else if (message.type === 'ERROR') {
+        throw new Error(message.message);
+      }
+    } catch (error: any) {
+      console.error('❌ Error procesando mensaje WebView:', error);
+      setShowWebView(false);
+      setSocialProvider(null);
+      setIsGoogleLoading(false);
+      setIsAppleLoading(false);
+      Alert.alert(
+        'Error',
+        'No se pudo completar el inicio de sesión. Por favor, inténtalo de nuevo.'
+      );
+    }
+  };
+
+  const handleCloseWebView = () => {
+    setShowWebView(false);
+    setSocialProvider(null);
+    setIsGoogleLoading(false);
+    setIsAppleLoading(false);
   };
 
   const handleGoogleLogin = () => handleSocialLogin('google');
@@ -173,6 +219,7 @@ export default function LoginScreen() {
   };
 
   return (
+    <>
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <TouchableOpacity
         style={styles.backButton}
@@ -309,6 +356,47 @@ export default function LoginScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
+
+    <Modal
+      visible={showWebView}
+      animationType="slide"
+      presentationStyle="fullScreen"
+      onRequestClose={handleCloseWebView}
+    >
+      <SafeAreaView style={styles.webViewContainer} edges={['top', 'bottom']}>
+        <View style={styles.webViewHeader}>
+          <Text style={styles.webViewTitle}>
+            {socialProvider === 'google' ? 'Iniciar sesión con Google' : 'Iniciar sesión con Apple'}
+          </Text>
+          <TouchableOpacity
+            style={styles.closeButton}
+            onPress={handleCloseWebView}
+            activeOpacity={0.7}
+          >
+            <X size={24} color="#1a1a1a" strokeWidth={2} />
+          </TouchableOpacity>
+        </View>
+        {socialProvider && (
+          <WebView
+            ref={webViewRef}
+            source={{ uri: `${WP_BASE_URL}/wp-login.php?loginSocial=${socialProvider}` }}
+            onNavigationStateChange={handleWebViewNavigationStateChange}
+            onMessage={handleWebViewMessage}
+            javaScriptEnabled
+            domStorageEnabled
+            sharedCookiesEnabled
+            thirdPartyCookiesEnabled
+            startInLoadingState
+            renderLoading={() => (
+              <View style={styles.webViewLoading}>
+                <ActivityIndicator size="large" color={LPBE_RED} />
+              </View>
+            )}
+          />
+        )}
+      </SafeAreaView>
+    </Modal>
+    </>
   );
 }
 
@@ -490,5 +578,46 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600' as const,
     color: '#fff',
+  },
+  webViewContainer: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  webViewHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+    backgroundColor: '#fff',
+  },
+  webViewTitle: {
+    fontSize: 18,
+    fontWeight: '600' as const,
+    color: '#1a1a1a',
+    flex: 1,
+    textAlign: 'center',
+  },
+  closeButton: {
+    position: 'absolute' as const,
+    right: 20,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#f8f8f8',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  webViewLoading: {
+    position: 'absolute' as const,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fff',
   },
 });
