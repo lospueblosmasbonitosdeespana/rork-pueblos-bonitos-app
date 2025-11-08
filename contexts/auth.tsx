@@ -127,16 +127,17 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
     try {
       console.log('🔐 Autenticando con LPBE...');
       
+      const formData = new URLSearchParams();
+      formData.append('user_login', credentials.username.trim());
+      formData.append('user_password', credentials.password.trim());
+      
       const response = await fetch(`${API_BASE}/login`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/x-www-form-urlencoded',
         },
         credentials: 'include',
-        body: JSON.stringify({
-          username: credentials.username.trim(),
-          password: credentials.password.trim(),
-        }),
+        body: formData.toString(),
       });
 
       console.log('📊 Response status:', response.status);
