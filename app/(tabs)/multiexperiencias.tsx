@@ -44,13 +44,13 @@ export default function RutasScreen() {
         ref={webViewRef}
         source={{ uri: 'https://lospueblosmasbonitosdeespana.org/rutas-app/?app=1' }}
         style={styles.webview}
+        originWhitelist={['*']}
         javaScriptEnabled={true}
         domStorageEnabled={true}
-        sharedCookiesEnabled={false}
-        thirdPartyCookiesEnabled={false}
+        sharedCookiesEnabled={true}
+        thirdPartyCookiesEnabled={true}
         incognito={false}
         cacheEnabled={true}
-        originWhitelist={["*"]}
         setSupportMultipleWindows={false}
         mixedContentMode="always"
         startInLoadingState={true}
