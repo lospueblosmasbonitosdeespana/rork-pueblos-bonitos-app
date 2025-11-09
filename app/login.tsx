@@ -38,8 +38,9 @@ export default function LoginScreen() {
   const passwordInputRef = React.useRef<TextInput>(null);
 
   // ✅ Configuración de Google usando useIdTokenAuthRequest (añade nonce + openid)
+  // 🔴 IMPORTANTE: Pega aquí el nuevo Client ID (Web) que termina en .apps.googleusercontent.com
   const [googleRequest, googleResponse, googlePromptAsync] = Google.useIdTokenAuthRequest({
-    expoClientId: 'NUEVO_WEB_CLIENT_ID.apps.googleusercontent.com', // 👈 pon aquí el nuevo Client ID (Web) creado para Expo
+    expoClientId: '<<PEGA_AQUI_EL_NUEVO_CLIENT_ID>>.apps.googleusercontent.com',
     iosClientId: '668620158239-8bb43ohkh0f2cp8d8tc97a5aoglp2ua9.apps.googleusercontent.com',
     androidClientId: '668620158239-pnessev4surmlsjael5htsem06fcllvn.apps.googleusercontent.com',
   });
