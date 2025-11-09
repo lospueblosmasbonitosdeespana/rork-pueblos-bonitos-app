@@ -40,7 +40,7 @@ export default function LoginScreen() {
   // ✅ Configuración de Google usando useIdTokenAuthRequest (añade nonce + openid)
   // 🔴 IMPORTANTE: Pega aquí el nuevo Client ID (Web) que termina en .apps.googleusercontent.com
   const [googleRequest, googleResponse, googlePromptAsync] = Google.useIdTokenAuthRequest({
-    expoClientId: '<<PEGA_AQUI_EL_NUEVO_CLIENT_ID>>.apps.googleusercontent.com',
+    expoClientId: '668620158239-ihlevs7goul6q2s2cqpphbulakvseoth.apps.googleusercontent.com',
     iosClientId: '668620158239-8bb43ohkh0f2cp8d8tc97a5aoglp2ua9.apps.googleusercontent.com',
     androidClientId: '668620158239-pnessev4surmlsjael5htsem06fcllvn.apps.googleusercontent.com',
   });
