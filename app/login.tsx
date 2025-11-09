@@ -20,7 +20,6 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
 import { useAuth } from '@/contexts/auth';
 
 const LPBE_RED = '#c1121f';
@@ -38,10 +37,13 @@ export default function LoginScreen() {
   const fadeAnim = useState(new Animated.Value(0))[0];
   const passwordInputRef = React.useRef<TextInput>(null);
 
-  const [, googleResponse, googlePromptAsync] = Google.useAuthRequest({
+  // 👉 Configuración de Google: usa proxy de Expo, así no abre Safari
+  const [googleRequest, googleResponse, googlePromptAsync] = Google.useAuthRequest({
     iosClientId: '668620158239-8bb43ohkh0f2cp8d8tc97a5aoglp2ua9.apps.googleusercontent.com',
     androidClientId: '668620158239-pnessev4surmlsjael5htsem06fcllvn.apps.googleusercontent.com',
     webClientId: '668620158239-to6rkbe6grl7nrk7uj903actvr4g5hv.apps.googleusercontent.com',
+    responseType: 'id_token',
+    scopes: ['profile', 'email'],
   });
 
   React.useEffect(() => {
@@ -92,25 +94,25 @@ export default function LoginScreen() {
     }
   }, [socialLogin, queryClient]);
 
-  React.useEffect(() => {
-    if (googleResponse?.type === 'success') {
-      handleGoogleSuccess(googleResponse.authentication);
-    }
-  }, [googleResponse, handleGoogleSuccess]);
-
-
+  // 👉 Google ahora usa proxy interno, sin abrir navegador externo
   const handleGoogleLogin = async () => {
     try {
-      const redirectUri = AuthSession.makeRedirectUri();
+      const redirectUri = AuthSession.makeRedirectUri({ useProxy: true });
       console.log('🔍 Redirect URI usada por la app:', redirectUri);
-      console.log('📱 Platform:', Platform.OS);
-      await googlePromptAsync();
+      await googlePromptAsync({ useProxy: true, showInRecents: true });
     } catch (error) {
       console.error('Google prompt error:', error);
       Alert.alert('Error', 'No se pudo iniciar el proceso de Google');
     }
   };
 
+  React.useEffect(() => {
+    if (googleResponse?.type === 'success' && googleResponse.authentication) {
+      handleGoogleSuccess(googleResponse.authentication);
+    }
+  }, [googleResponse, handleGoogleSuccess]);
+
+  // 👉 Apple: nativo, no abre navegador, igual que antes
   const handleAppleLogin = async () => {
     if (Platform.OS !== 'ios') {
       Alert.alert('Información', 'El inicio de sesión con Apple solo está disponible en iOS');
@@ -179,11 +181,8 @@ export default function LoginScreen() {
     }
 
     setIsLoading(true);
-    
-    console.log('🧹 Limpiando React Query antes de login...');
     queryClient.clear();
-    console.log('✅ React Query limpiado');
-    
+
     const result = await login({ username: trimmedUsername, password: trimmedPassword });
     setIsLoading(false);
 
@@ -217,6 +216,7 @@ export default function LoginScreen() {
       >
         <ArrowLeft size={24} color="#1a1a1a" strokeWidth={2} />
       </TouchableOpacity>
+
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
@@ -238,6 +238,7 @@ export default function LoginScreen() {
             </View>
 
             <View style={styles.form}>
+              {/* Campos usuario y contraseña */}
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Email o usuario</Text>
                 <TextInput
@@ -278,19 +279,17 @@ export default function LoginScreen() {
                 disabled={isLoading || !username.trim() || !password.trim()}
                 activeOpacity={0.8}
               >
-                {isLoading ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <Text style={styles.buttonText}>Iniciar Sesión</Text>
-                )}
+                {isLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Iniciar Sesión</Text>}
               </TouchableOpacity>
 
+              {/* Divider social */}
               <View style={styles.divider}>
                 <View style={styles.dividerLine} />
                 <Text style={styles.dividerText}>O continúa con</Text>
                 <View style={styles.dividerLine} />
               </View>
 
+              {/* Google */}
               <TouchableOpacity
                 style={styles.socialButton}
                 onPress={handleGoogleLogin}
@@ -307,6 +306,7 @@ export default function LoginScreen() {
                 )}
               </TouchableOpacity>
 
+              {/* Apple */}
               {Platform.OS === 'ios' && (
                 <TouchableOpacity
                   style={[styles.socialButton, styles.appleButton]}
@@ -327,10 +327,7 @@ export default function LoginScreen() {
 
               <View style={styles.footer}>
                 <Text style={styles.footerText}>¿No tienes cuenta? </Text>
-                <TouchableOpacity
-                  onPress={() => router.push('/register')}
-                  disabled={isLoading}
-                >
+                <TouchableOpacity onPress={() => router.push('/register')} disabled={isLoading}>
                   <Text style={styles.linkText}>Regístrate</Text>
                 </TouchableOpacity>
               </View>
@@ -343,12 +340,9 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
+  container: { flex: 1, backgroundColor: '#fff' },
   backButton: {
-    position: 'absolute' as const,
+    position: 'absolute',
     top: 60,
     left: 20,
     zIndex: 10,
@@ -364,21 +358,10 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  keyboardView: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    paddingVertical: 40,
-  },
-  content: {
-    paddingHorizontal: 24,
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 40,
-  },
+  keyboardView: { flex: 1 },
+  scrollContent: { flexGrow: 1, justifyContent: 'center', paddingVertical: 40 },
+  content: { paddingHorizontal: 24 },
+  header: { alignItems: 'center', marginBottom: 40 },
   iconContainer: {
     width: 96,
     height: 96,
@@ -393,31 +376,11 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 8,
   },
-  title: {
-    fontSize: 32,
-    fontWeight: '700' as const,
-    color: '#1a1a1a',
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    lineHeight: 24,
-  },
-  form: {
-    width: '100%',
-  },
-  inputGroup: {
-    marginBottom: 24,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600' as const,
-    color: '#333',
-    marginBottom: 8,
-  },
+  title: { fontSize: 32, fontWeight: '700' as const, color: '#1a1a1a', marginBottom: 12, textAlign: 'center' },
+  subtitle: { fontSize: 16, color: '#666', textAlign: 'center', lineHeight: 24 },
+  form: { width: '100%' },
+  inputGroup: { marginBottom: 24 },
+  label: { fontSize: 14, fontWeight: '600' as const, color: '#333', marginBottom: 8 },
   input: {
     backgroundColor: '#f8f8f8',
     borderRadius: 12,
@@ -441,45 +404,14 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 6,
   },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '700' as const,
-  },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 32,
-  },
-  footerText: {
-    fontSize: 15,
-    color: '#666',
-  },
-  linkText: {
-    fontSize: 15,
-    fontWeight: '600' as const,
-    color: LPBE_RED,
-  },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 28,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#e0e0e0',
-  },
-  dividerText: {
-    marginHorizontal: 16,
-    fontSize: 14,
-    color: '#999',
-    fontWeight: '500' as const,
-  },
+  buttonDisabled: { opacity: 0.6 },
+  buttonText: { color: '#fff', fontSize: 18, fontWeight: '700' as const },
+  footer: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 32 },
+  footerText: { fontSize: 15, color: '#666' },
+  linkText: { fontSize: 15, fontWeight: '600' as const, color: LPBE_RED },
+  divider: { flexDirection: 'row', alignItems: 'center', marginVertical: 28 },
+  dividerLine: { flex: 1, height: 1, backgroundColor: '#e0e0e0' },
+  dividerText: { marginHorizontal: 16, fontSize: 14, color: '#999', fontWeight: '500' as const },
   socialButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -496,29 +428,9 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 1,
   },
-  socialButtonIcon: {
-    fontSize: 20,
-    fontWeight: '700' as const,
-    color: '#4285F4',
-    marginRight: 12,
-  },
-  socialButtonText: {
-    fontSize: 16,
-    fontWeight: '600' as const,
-    color: '#333',
-  },
-  appleButton: {
-    backgroundColor: '#000',
-    borderColor: '#000',
-  },
-  appleButtonIcon: {
-    fontSize: 20,
-    marginRight: 12,
-    color: '#fff',
-  },
-  appleButtonText: {
-    fontSize: 16,
-    fontWeight: '600' as const,
-    color: '#fff',
-  },
+  socialButtonIcon: { fontSize: 20, fontWeight: '700' as const, color: '#4285F4', marginRight: 12 },
+  socialButtonText: { fontSize: 16, fontWeight: '600' as const, color: '#333' },
+  appleButton: { backgroundColor: '#000', borderColor: '#000' },
+  appleButtonIcon: { fontSize: 20, marginRight: 12, color: '#fff' },
+  appleButtonText: { fontSize: 16, fontWeight: '600' as const, color: '#fff' },
 });
