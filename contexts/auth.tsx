@@ -359,12 +359,10 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
       }
       console.log('✅ AsyncStorage limpiado');
       
-      // extrae user_id desde el token o usa fallback
-        const userId = 14782;
-        console.log('🆔 user_id usado para perfil:', userId);
+      console.log('🆔 user_id usado para perfil:', userId);
 
-       const userResponse = await fetch(
-       `https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/user-profile?user_id=${userId}`
+      const userResponse = await fetch(
+        `https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v1/user-profile?user_id=${userId}`
       );
 
       if (!userResponse.ok) {
