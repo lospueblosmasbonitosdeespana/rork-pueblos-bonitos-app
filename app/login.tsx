@@ -37,12 +37,12 @@ export default function LoginScreen() {
   const fadeAnim = useState(new Animated.Value(0))[0];
   const passwordInputRef = React.useRef<TextInput>(null);
 
-  // ✅ Configuración de Google usando useIdTokenAuthRequest (añade nonce + openid)
-  // 🔴 IMPORTANTE: Pega aquí el nuevo Client ID (Web) que termina en .apps.googleusercontent.com
-  const [googleRequest, googleResponse, googlePromptAsync] = Google.useIdTokenAuthRequest({
+  // ✅ Configuración de Google usando useAuthRequest
+  const [googleRequest, googleResponse, googlePromptAsync] = Google.useAuthRequest({
     expoClientId: '668620158239-ihlevs7goul6q2s2cqpphbulakvseoth.apps.googleusercontent.com',
     iosClientId: '668620158239-8bb43ohkh0f2cp8d8tc97a5aoglp2ua9.apps.googleusercontent.com',
     androidClientId: '668620158239-pnessev4surmlsjael5htsem06fcllvn.apps.googleusercontent.com',
+    scopes: ['openid', 'profile', 'email'],
   });
 
   React.useEffect(() => {
@@ -65,11 +65,11 @@ export default function LoginScreen() {
     }
   };
 
-  // ✅ Cuando Google responde, procesa el idToken
+  // ✅ Cuando Google responde, procesa el accessToken
   React.useEffect(() => {
     (async () => {
-      if (googleResponse?.type === 'success' && googleResponse.authentication?.idToken) {
-        const idToken = googleResponse.authentication.idToken;
+      if (googleResponse?.type === 'success' && googleResponse.authentication?.accessToken) {
+        const accessToken = googleResponse.authentication.accessToken;
         setIsGoogleLoading(true);
         queryClient.clear();
 
@@ -77,7 +77,7 @@ export default function LoginScreen() {
           const response = await fetch('https://lospueblosmasbonitosdeespana.org/wp-json/um/v1/social-login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ provider: 'google', token: idToken }),
+            body: JSON.stringify({ provider: 'google', token: accessToken }),
           });
 
           const result = await response.json();
