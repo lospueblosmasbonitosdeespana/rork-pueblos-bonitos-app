@@ -99,7 +99,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="multiexperiencias"
+        name="rutas"
         options={{
           title: t.tabs.rutas,
           headerTitle: t.tabs.rutas,
