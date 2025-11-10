@@ -93,7 +93,7 @@ export default function HomeScreen() {
 
       <View style={styles.footer}>
         <Image
-          source={{ uri: 'https://lospueblosmasbonitosdeespana.org/wp-content/uploads/2024/12/logos-institucionales.png' }}
+          source={{ uri: 'https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/6c6z5dwc8gbsaxek2dmhu' }}
           style={styles.footerBanner}
           contentFit="contain"
         />
