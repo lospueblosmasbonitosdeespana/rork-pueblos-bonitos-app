@@ -79,7 +79,7 @@ export default function RutasScreen() {
                 const links = document.querySelectorAll('a, button');
                 links.forEach(function(element) {
                   const text = element.textContent || '';
-                  if (text.toLowerCase().includes('saber más') || text.toLowerCase().includes('saber mas')) {
+                  if (text.toLowerCase().includes('saber más') || text.toLowerCase().includes('saber mas') || text.toLowerCase().includes('conoce más rutas')) {
                     element.style.pointerEvents = 'none';
                     element.style.cursor = 'default';
                     element.onclick = function(e) {
@@ -106,7 +106,7 @@ export default function RutasScreen() {
             const links = document.querySelectorAll('a, button');
             links.forEach(function(element) {
               const text = element.textContent || '';
-              if (text.toLowerCase().includes('saber más') || text.toLowerCase().includes('saber mas')) {
+              if (text.toLowerCase().includes('saber más') || text.toLowerCase().includes('saber mas') || text.toLowerCase().includes('conoce más rutas')) {
                 element.style.pointerEvents = 'none';
                 element.style.cursor = 'default';
                 element.onclick = function(e) {
