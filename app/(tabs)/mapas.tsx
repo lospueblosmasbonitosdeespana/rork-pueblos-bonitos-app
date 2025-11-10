@@ -19,57 +19,60 @@ export default function Mapas() {
       ';
       document.head.appendChild(style);
       
-      function disableElements() {
-        const listadoBtns = document.querySelectorAll('button, a, div, span');
-        listadoBtns.forEach(btn => {
-          const text = btn.textContent?.toLowerCase() || '';
-          if (text.includes('listado')) {
-            btn.onclick = (e) => { e.preventDefault(); e.stopPropagation(); return false; };
-            btn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); }, true);
-            btn.addEventListener('touchstart', (e) => { e.preventDefault(); e.stopPropagation(); }, true);
-            btn.addEventListener('touchend', (e) => { e.preventDefault(); e.stopPropagation(); }, true);
-            btn.style.pointerEvents = 'none !important';
-            btn.style.opacity = '0.3';
-            btn.style.cursor = 'default';
+      function hideAllUIElements() {
+        const allButtons = document.querySelectorAll('button, a');
+        allButtons.forEach(btn => {
+          const text = (btn.textContent?.toLowerCase() || '').trim();
+          if (text === 'mapa' || text === 'listado' || text === 'lista') {
             btn.style.display = 'none !important';
-            if (btn.href) btn.removeAttribute('href');
+            btn.style.visibility = 'hidden !important';
+            btn.style.pointerEvents = 'none !important';
+            if (btn.parentElement) {
+              btn.parentElement.style.display = 'none !important';
+            }
           }
         });
         
         const allElements = document.querySelectorAll('*');
         allElements.forEach(el => {
-          const text = el.textContent?.trim() || '';
-          if (text === 'Disfruta nuestra red de Pueblos' || text.includes('Disfruta nuestra red de Pueblos')) {
-            el.style.display = 'none !important';
-            el.style.visibility = 'hidden !important';
-            el.style.height = '0 !important';
-            el.style.overflow = 'hidden !important';
-            el.remove();
+          const text = (el.textContent?.trim() || '');
+          if (text.includes('Disfruta nuestra red de Pueblos') || 
+              text === 'Mapa' || 
+              text === 'Listado' || 
+              text === 'LISTA') {
+            if (el.tagName !== 'BODY' && el.id !== 'map' && !el.classList.contains('leaflet-container')) {
+              el.style.display = 'none !important';
+              el.style.visibility = 'hidden !important';
+              el.style.height = '0 !important';
+              el.style.overflow = 'hidden !important';
+            }
           }
         });
         
-        const headers = document.querySelectorAll('h1, h2, h3, h4, h5, h6, p');
-        headers.forEach(header => {
-          const text = header.textContent?.trim() || '';
-          if (text === 'Disfruta nuestra red de Pueblos' || text.includes('Disfruta nuestra red de Pueblos')) {
-            header.style.display = 'none !important';
-            header.remove();
-          }
+        const navs = document.querySelectorAll('nav, header, .header, .nav, .navigation, .toolbar, .top-bar');
+        navs.forEach(nav => {
+          nav.style.display = 'none !important';
+        });
+        
+        const titles = document.querySelectorAll('h1, h2, h3, h4, h5, h6');
+        titles.forEach(title => {
+          title.style.display = 'none !important';
         });
       }
       
-      setTimeout(disableElements, 100);
-      setTimeout(disableElements, 300);
-      setTimeout(disableElements, 500);
-      setTimeout(disableElements, 1000);
-      setTimeout(disableElements, 1500);
-      setTimeout(disableElements, 2000);
+      setTimeout(hideAllUIElements, 0);
+      setTimeout(hideAllUIElements, 100);
+      setTimeout(hideAllUIElements, 300);
+      setTimeout(hideAllUIElements, 500);
+      setTimeout(hideAllUIElements, 1000);
+      setTimeout(hideAllUIElements, 1500);
+      setTimeout(hideAllUIElements, 2000);
       
-      const observer = new MutationObserver(disableElements);
+      const observer = new MutationObserver(hideAllUIElements);
       observer.observe(document.body, { childList: true, subtree: true });
       
-      document.addEventListener('DOMContentLoaded', disableElements);
-      window.addEventListener('load', disableElements);
+      document.addEventListener('DOMContentLoaded', hideAllUIElements);
+      window.addEventListener('load', hideAllUIElements);
     })();
   `;
 
