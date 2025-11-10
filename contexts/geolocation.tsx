@@ -1,6 +1,7 @@
 import createContextHook from '@nkzw/create-context-hook';
 import * as Location from 'expo-location';
 import * as Notifications from 'expo-notifications';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { Alert, Platform } from 'react-native';
 import { fetchLugaresStable } from '@/services/api';
@@ -12,6 +13,13 @@ export interface LocationData {
   accuracy: number | null;
   timestamp: number;
 }
+
+interface PueblosSaludados {
+  [puebloId: string]: string;
+}
+
+const STORAGE_KEY = 'pueblosSaludados';
+const COOLDOWN_HOURS = 24;
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -148,6 +156,54 @@ export const [GeolocationProvider, useGeolocation] = createContextHook(() => {
     }
   }, []);
 
+  const getPueblosSaludados = useCallback(async (): Promise<PueblosSaludados> => {
+    try {
+      const data = await AsyncStorage.getItem(STORAGE_KEY);
+      if (!data) return {};
+      return JSON.parse(data) as PueblosSaludados;
+    } catch (err) {
+      console.error('❌ Error al leer pueblos saludados:', err);
+      return {};
+    }
+  }, []);
+
+  const setPuebloSaludado = useCallback(async (puebloId: string) => {
+    try {
+      const saludados = await getPueblosSaludados();
+      saludados[puebloId] = new Date().toISOString();
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(saludados));
+      console.log(`✅ Pueblo ${puebloId} guardado en AsyncStorage`);
+    } catch (err) {
+      console.error('❌ Error al guardar pueblo saludado:', err);
+    }
+  }, [getPueblosSaludados]);
+
+  const canShowNotification = useCallback(async (puebloId: string): Promise<boolean> => {
+    try {
+      const saludados = await getPueblosSaludados();
+      const lastGreeted = saludados[puebloId];
+
+      if (!lastGreeted) {
+        return true;
+      }
+
+      const lastGreetedDate = new Date(lastGreeted);
+      const now = new Date();
+      const hoursDiff = (now.getTime() - lastGreetedDate.getTime()) / (1000 * 60 * 60);
+
+      const canShow = hoursDiff >= COOLDOWN_HOURS;
+      
+      if (!canShow) {
+        console.log(`⏳ Pueblo ${puebloId} ya saludado hace ${hoursDiff.toFixed(1)} horas (cooldown: ${COOLDOWN_HOURS}h)`);
+      }
+
+      return canShow;
+    } catch (err) {
+      console.error('❌ Error al verificar cooldown:', err);
+      return true;
+    }
+  }, [getPueblosSaludados]);
+
   const checkNearbyPueblos = useCallback(async (location: LocationData) => {
     try {
       if (pueblos.length === 0) {
@@ -172,7 +228,18 @@ export const [GeolocationProvider, useGeolocation] = createContextHook(() => {
 
         console.log(`📍 Distancia a ${pueblo.nombre}: ${distance.toFixed(2)} km`);
 
-        if (distance <= 2 && !notifiedPueblosRef.current.has(pueblo._ID)) {
+        if (distance <= 2) {
+          if (notifiedPueblosRef.current.has(pueblo._ID)) {
+            console.log(`⏭️ Ya notificado en esta sesión: ${pueblo.nombre}`);
+            continue;
+          }
+
+          const canNotify = await canShowNotification(pueblo._ID);
+          if (!canNotify) {
+            console.log(`⏳ Cooldown activo para ${pueblo.nombre}`);
+            continue;
+          }
+
           console.log(`🔔 Usuario cerca de ${pueblo.nombre}, enviando notificación...`);
           
           await Notifications.scheduleNotificationAsync({
@@ -185,13 +252,14 @@ export const [GeolocationProvider, useGeolocation] = createContextHook(() => {
           });
 
           notifiedPueblosRef.current.add(pueblo._ID);
+          await setPuebloSaludado(pueblo._ID);
           console.log(`✅ Notificación enviada para ${pueblo.nombre}`);
         }
       }
     } catch (err) {
       console.error('❌ Error al verificar pueblos cercanos:', err);
     }
-  }, [pueblos, hasNotificationPermission]);
+  }, [pueblos, hasNotificationPermission, canShowNotification, setPuebloSaludado]);
 
   const startLocationTracking = useCallback(async () => {
     try {
