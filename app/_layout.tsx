@@ -10,6 +10,7 @@ import { AuthProvider } from "@/contexts/auth";
 import { LanguageProvider } from "@/contexts/language";
 import { NotificationsProvider } from "@/contexts/notifications";
 import { CartProvider } from "@/contexts/cart";
+import { GeolocationProvider } from "@/contexts/geolocation";
 import { trpc, trpcClient } from "@/lib/trpc";
 
 SplashScreen.preventAutoHideAsync();
@@ -352,7 +353,9 @@ export default function RootLayout() {
                 <LanguageProvider>
                   <NotificationsProvider>
                     <CartProvider>
-                      <RootLayoutNav />
+                      <GeolocationProvider>
+                        <RootLayoutNav />
+                      </GeolocationProvider>
                     </CartProvider>
                   </NotificationsProvider>
                 </LanguageProvider>
