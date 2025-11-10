@@ -37,7 +37,7 @@ export default function HomeScreen() {
 
         <TouchableOpacity
           style={styles.button}
-          onPress={() => router.push('/(tabs)/multiexperiencias')}
+          onPress={() => router.push('/(tabs)/rutas')}
           activeOpacity={0.8}
         >
           <View style={styles.iconContainer}>
