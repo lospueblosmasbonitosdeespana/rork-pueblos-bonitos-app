@@ -14,7 +14,10 @@ export default function Mapas() {
         a[href*="listado"],
         nav,
         header,
-        footer {
+        footer,
+        h1:contains("Disfruta nuestra red de Pueblos"),
+        .page-title,
+        .hero-title {
           display: none !important;
         }
         body {
@@ -28,6 +31,21 @@ export default function Mapas() {
         }
       ';
       document.head.appendChild(style);
+      
+      setTimeout(() => {
+        const listadoBtn = document.querySelector('button[data-view="listado"], a[href*="listado"], button:contains("Listado")');
+        if (listadoBtn) {
+          listadoBtn.style.pointerEvents = 'none';
+          listadoBtn.style.opacity = '0.5';
+        }
+        
+        const titles = document.querySelectorAll('h1, h2, .title, .page-title');
+        titles.forEach(title => {
+          if (title.textContent.includes('Disfruta nuestra red de Pueblos')) {
+            title.style.display = 'none';
+          }
+        });
+      }, 500);
     })();
   `;
 
