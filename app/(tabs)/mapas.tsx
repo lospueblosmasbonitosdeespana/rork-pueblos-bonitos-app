@@ -7,19 +7,6 @@ export default function Mapas() {
     (function() {
       const style = document.createElement('style');
       style.innerHTML = '
-        .view-toggle,
-        .view-buttons,
-        button[data-view],
-        a[href*="mapa"],
-        a[href*="listado"],
-        nav,
-        header,
-        footer,
-        h1:contains("Disfruta nuestra red de Pueblos"),
-        .page-title,
-        .hero-title {
-          display: none !important;
-        }
         body {
           margin: 0 !important;
           padding: 0 !important;
@@ -32,20 +19,37 @@ export default function Mapas() {
       ';
       document.head.appendChild(style);
       
-      setTimeout(() => {
-        const listadoBtn = document.querySelector('button[data-view="listado"], a[href*="listado"], button:contains("Listado")');
-        if (listadoBtn) {
-          listadoBtn.style.pointerEvents = 'none';
-          listadoBtn.style.opacity = '0.5';
-        }
-        
-        const titles = document.querySelectorAll('h1, h2, .title, .page-title');
-        titles.forEach(title => {
-          if (title.textContent.includes('Disfruta nuestra red de Pueblos')) {
-            title.style.display = 'none';
+      function disableElements() {
+        const listadoBtns = document.querySelectorAll('button, a');
+        listadoBtns.forEach(btn => {
+          const text = btn.textContent?.toLowerCase() || '';
+          if (text.includes('listado')) {
+            btn.onclick = (e) => { e.preventDefault(); e.stopPropagation(); return false; };
+            btn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); }, true);
+            btn.style.pointerEvents = 'none';
+            btn.style.opacity = '0.5';
+            btn.style.cursor = 'default';
+            if (btn.href) btn.removeAttribute('href');
           }
         });
-      }, 500);
+        
+        const allElements = document.querySelectorAll('*');
+        allElements.forEach(el => {
+          const text = el.textContent?.trim() || '';
+          if (text === 'Disfruta nuestra red de Pueblos' || text.includes('Disfruta nuestra red de Pueblos')) {
+            if (el.children.length === 0 || (el.children.length === 1 && el.children[0].textContent.trim() === text)) {
+              el.remove();
+            }
+          }
+        });
+      }
+      
+      setTimeout(disableElements, 500);
+      setTimeout(disableElements, 1000);
+      setTimeout(disableElements, 1500);
+      
+      const observer = new MutationObserver(disableElements);
+      observer.observe(document.body, { childList: true, subtree: true });
     })();
   `;
 
