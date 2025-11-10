@@ -6,6 +6,7 @@ import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { Alert, Platform } from 'react-native';
 import { fetchLugaresStable } from '@/services/api';
 import type { Lugar } from '@/types/api';
+import { useAuth } from './auth';
 
 export interface LocationData {
   latitude: number;
@@ -42,6 +43,8 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
 }
 
 export const [GeolocationProvider, useGeolocation] = createContextHook(() => {
+  const { isAuthenticated } = useAuth();
+  
   const [hasPermission, setHasPermission] = useState<boolean>(false);
   const [hasNotificationPermission, setHasNotificationPermission] = useState<boolean>(false);
   const [currentLocation, setCurrentLocation] = useState<LocationData | null>(null);
@@ -53,6 +56,11 @@ export const [GeolocationProvider, useGeolocation] = createContextHook(() => {
 
   const requestPermission = useCallback(async (): Promise<boolean> => {
     try {
+      if (!isAuthenticated) {
+        console.log('⚠️ Usuario no autenticado, no se solicitarán permisos');
+        return false;
+      }
+
       console.log('📍 Solicitando permisos de geolocalización...');
       setIsLoading(true);
       setError(null);
@@ -89,7 +97,7 @@ export const [GeolocationProvider, useGeolocation] = createContextHook(() => {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [isAuthenticated]);
 
   const getCurrentLocation = useCallback(async (): Promise<LocationData | null> => {
     try {
@@ -206,13 +214,15 @@ export const [GeolocationProvider, useGeolocation] = createContextHook(() => {
 
   const checkNearbyPueblos = useCallback(async (location: LocationData) => {
     try {
+      if (!isAuthenticated) {
+        return;
+      }
+
       if (pueblos.length === 0) {
-        console.log('⚠️ No hay pueblos cargados aún');
         return;
       }
 
       if (!hasNotificationPermission) {
-        console.log('⚠️ Sin permisos de notificaciones');
         return;
       }
 
@@ -226,21 +236,17 @@ export const [GeolocationProvider, useGeolocation] = createContextHook(() => {
           pueblo.lng
         );
 
-        console.log(`📍 Distancia a ${pueblo.nombre}: ${distance.toFixed(2)} km`);
-
         if (distance <= 2) {
           if (notifiedPueblosRef.current.has(pueblo._ID)) {
-            console.log(`⏭️ Ya notificado en esta sesión: ${pueblo.nombre}`);
             continue;
           }
 
           const canNotify = await canShowNotification(pueblo._ID);
           if (!canNotify) {
-            console.log(`⏳ Cooldown activo para ${pueblo.nombre}`);
             continue;
           }
 
-          console.log(`🔔 Usuario cerca de ${pueblo.nombre}, enviando notificación...`);
+          console.log(`🔔 Usuario cerca de ${pueblo.nombre} (${distance.toFixed(2)} km), enviando notificación`);
           
           await Notifications.scheduleNotificationAsync({
             content: {
@@ -259,21 +265,27 @@ export const [GeolocationProvider, useGeolocation] = createContextHook(() => {
     } catch (err) {
       console.error('❌ Error al verificar pueblos cercanos:', err);
     }
-  }, [pueblos, hasNotificationPermission, canShowNotification, setPuebloSaludado]);
+  }, [isAuthenticated, pueblos, hasNotificationPermission, canShowNotification, setPuebloSaludado]);
 
   const startLocationTracking = useCallback(async () => {
     try {
+      if (!isAuthenticated) {
+        console.log('⚠️ Usuario no autenticado, no se iniciará el seguimiento');
+        return;
+      }
+
       if (!hasPermission) {
-        console.log('⚠️ Sin permisos de ubicación, no se puede iniciar el seguimiento');
+        console.log('⚠️ Sin permisos de ubicación');
+        const mensaje = 'La detección por geolocalización está desactivada. Actívala para registrar tus visitas automáticamente.';
+        setError(mensaje);
         return;
       }
 
       if (locationSubscriptionRef.current) {
-        console.log('⚠️ El seguimiento de ubicación ya está activo');
         return;
       }
 
-      console.log('📍 Iniciando seguimiento de ubicación...');
+      console.log('📍 Iniciando seguimiento de ubicación');
 
       locationSubscriptionRef.current = await Location.watchPositionAsync(
         {
@@ -290,17 +302,15 @@ export const [GeolocationProvider, useGeolocation] = createContextHook(() => {
           };
 
           setCurrentLocation(locationData);
-          console.log('📍 Ubicación actualizada:', locationData);
-
           checkNearbyPueblos(locationData);
         }
       );
 
-      console.log('✅ Seguimiento de ubicación iniciado');
+      console.log('✅ Seguimiento activo');
     } catch (err) {
-      console.error('❌ Error al iniciar seguimiento de ubicación:', err);
+      console.error('❌ Error al iniciar seguimiento:', err);
     }
-  }, [hasPermission, checkNearbyPueblos]);
+  }, [isAuthenticated, hasPermission, checkNearbyPueblos]);
 
   const stopLocationTracking = useCallback(async () => {
     try {
@@ -316,25 +326,39 @@ export const [GeolocationProvider, useGeolocation] = createContextHook(() => {
 
   const checkPermissions = useCallback(async () => {
     try {
+      if (!isAuthenticated) {
+        return false;
+      }
+
       const { status } = await Location.getForegroundPermissionsAsync();
       const granted = status === 'granted';
       setHasPermission(granted);
-      console.log('📍 Estado actual de permisos:', granted);
+      
+      if (!granted) {
+        const mensaje = 'La detección por geolocalización está desactivada. Actívala para registrar tus visitas automáticamente.';
+        setError(mensaje);
+      }
+      
       return granted;
     } catch (err) {
       console.error('❌ Error al verificar permisos:', err);
       return false;
     }
-  }, []);
+  }, [isAuthenticated]);
 
   useEffect(() => {
-    console.log('📍 GeolocationProvider inicializando...');
+    if (!isAuthenticated) {
+      console.log('⚠️ Usuario no autenticado, servicio de geolocalización desactivado');
+      stopLocationTracking();
+      return;
+    }
+
+    console.log('📍 GeolocationProvider inicializando');
     checkPermissions();
     requestNotificationPermission();
 
     const loadPueblos = async () => {
       try {
-        console.log('🏘️ Cargando lista de pueblos...');
         const lugaresData = await fetchLugaresStable();
         setPueblos(lugaresData);
         console.log(`✅ ${lugaresData.length} pueblos cargados`);
@@ -344,18 +368,22 @@ export const [GeolocationProvider, useGeolocation] = createContextHook(() => {
     };
 
     loadPueblos();
-  }, [checkPermissions, requestNotificationPermission]);
+  }, [isAuthenticated, checkPermissions, requestNotificationPermission, stopLocationTracking]);
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      return;
+    }
+
     if (hasPermission && hasNotificationPermission && pueblos.length > 0) {
-      console.log('✅ Condiciones cumplidas, iniciando seguimiento de ubicación');
+      console.log('✅ Iniciando seguimiento de ubicación');
       startLocationTracking();
     }
 
     return () => {
       stopLocationTracking();
     };
-  }, [hasPermission, hasNotificationPermission, pueblos.length, startLocationTracking, stopLocationTracking]);
+  }, [isAuthenticated, hasPermission, hasNotificationPermission, pueblos.length, startLocationTracking, stopLocationTracking]);
 
   return useMemo(() => ({
     hasPermission,
