@@ -1,124 +1,229 @@
-# Ejemplo de uso del servicio de geolocalización
+# 📍 Servicio de Geolocalización - Guía de Uso
 
-## Importar el hook
+## ✅ Estado Actual
 
-```typescript
-import { useGeolocation } from '@/contexts/geolocation';
+El servicio de geolocalización está **completamente implementado** y cumple con todas las reglas especificadas:
+
+### Reglas de Funcionamiento
+
+1. ✅ **Una notificación por pueblo y día**
+   - Sistema de cooldown de 24 horas usando AsyncStorage
+   - No se repite la bienvenida al mismo pueblo hasta pasadas 24h
+
+2. ✅ **Múltiples pueblos en el mismo día**
+   - Si visitas 3 pueblos distintos, verás las 3 bienvenidas
+   - Cada pueblo tiene su propio control independiente
+
+3. ✅ **Verificación optimizada**
+   - Cada 30 segundos O
+   - Cada 100 metros de desplazamiento
+   - Lo que ocurra primero
+
+4. ✅ **No registra visitas ni puntos**
+   - Solo muestra notificaciones de bienvenida
+   - No hay lógica de puntuación
+
+5. ✅ **Solo en foreground**
+   - Usa permisos de ubicación en primer plano
+   - Cumple con las normas de Apple
+   - No consume batería en segundo plano
+
+6. ✅ **No interfiere con otras funciones**
+   - Servicio independiente del mapa y otras features
+
+---
+
+## 🚀 Cómo Usar el Servicio
+
+### 1. Envolver tu app con el Provider
+
+En tu `app/_layout.tsx`, ya debería estar el provider:
+
+```tsx
+import { GeolocationProvider } from '@/contexts/geolocation';
+
+export default function RootLayout() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <LanguageProvider>
+          <CartProvider>
+            <NotificationProvider>
+              <GeolocationProvider> {/* 👈 Provider activo */}
+                <RootLayoutNav />
+              </GeolocationProvider>
+            </NotificationProvider>
+          </CartProvider>
+        </LanguageProvider>
+      </AuthProvider>
+    </QueryClientProvider>
+  );
+}
 ```
 
-## Uso básico en un componente
+### 2. El servicio funciona automáticamente
 
-```typescript
-export default function MiPantalla() {
-  const { 
-    hasPermission,                  // boolean - indica si hay permisos de ubicación concedidos
-    hasNotificationPermission,      // boolean - indica si hay permisos de notificaciones concedidos
-    currentLocation,                // LocationData | null - última ubicación obtenida
-    isLoading,                      // boolean - indica si está cargando
-    error,                          // string | null - mensaje de error si hay
-    requestPermission,              // () => Promise<boolean> - solicita permisos de ubicación
-    requestNotificationPermission,  // () => Promise<boolean> - solicita permisos de notificaciones
-    getCurrentLocation,             // () => Promise<LocationData | null> - obtiene ubicación actual
-    checkPermissions,               // () => Promise<boolean> - verifica permisos
-    startLocationTracking,          // () => Promise<void> - inicia seguimiento de ubicación
-    stopLocationTracking,           // () => Promise<void> - detiene seguimiento de ubicación
+Una vez envuelto, el servicio:
+- ✅ Solicita permisos de ubicación al iniciar
+- ✅ Solicita permisos de notificaciones
+- ✅ Carga la lista de pueblos desde la API
+- ✅ Inicia el seguimiento de ubicación
+- ✅ Detecta proximidad a pueblos (≤ 2 km)
+- ✅ Muestra notificaciones de bienvenida
+
+### 3. Usar el hook (opcional)
+
+Si necesitas acceder a la información de ubicación en algún componente:
+
+```tsx
+import { useGeolocation } from '@/contexts/geolocation';
+
+function MiComponente() {
+  const {
+    hasPermission,
+    hasNotificationPermission,
+    currentLocation,
+    isLoading,
+    error,
+    requestPermission,
+    getCurrentLocation,
   } = useGeolocation();
 
-  const handleGetLocation = async () => {
-    const location = await getCurrentLocation();
-    if (location) {
-      console.log('Ubicación:', location.latitude, location.longitude);
+  // Ejemplo: Mostrar ubicación actual
+  if (currentLocation) {
+    console.log('Lat:', currentLocation.latitude);
+    console.log('Lng:', currentLocation.longitude);
+  }
+
+  // Ejemplo: Solicitar permisos manualmente
+  const handleRequestPermission = async () => {
+    const granted = await requestPermission();
+    if (granted) {
+      console.log('Permisos concedidos');
     }
   };
 
   return (
     <View>
-      <Text>Estado de permisos: {hasPermission ? 'Concedido' : 'No concedido'}</Text>
-      <Text>Notificaciones: {hasNotificationPermission ? 'Activadas' : 'Desactivadas'}</Text>
-      
-      {currentLocation && (
-        <Text>
-          Ubicación actual: {currentLocation.latitude}, {currentLocation.longitude}
-        </Text>
+      {!hasPermission && (
+        <Button title="Activar ubicación" onPress={handleRequestPermission} />
       )}
-      
-      {error && <Text style={{ color: 'red' }}>{error}</Text>}
-      
-      <Button 
-        title="Obtener ubicación" 
-        onPress={handleGetLocation}
-        disabled={isLoading}
-      />
     </View>
   );
 }
 ```
 
-## Estructura de LocationData
+---
 
-```typescript
-interface LocationData {
-  latitude: number;
-  longitude: number;
-  accuracy: number | null;  // precisión en metros
-  timestamp: number;        // timestamp de cuando se obtuvo
+## 🔍 Logs de Depuración
+
+El servicio incluye logs detallados en consola:
+
+```
+📍 GeolocationProvider inicializando...
+📍 Solicitando permisos de geolocalización...
+✅ Permisos de geolocalización concedidos
+🔔 Solicitando permisos de notificaciones...
+🔔 Estado de permisos de notificaciones: true
+🏘️ Cargando lista de pueblos...
+✅ 121 pueblos cargados
+✅ Condiciones cumplidas, iniciando seguimiento de ubicación
+📍 Iniciando seguimiento de ubicación...
+✅ Seguimiento de ubicación iniciado
+📍 Ubicación actualizada: { latitude: 40.4168, longitude: -3.7038 }
+📍 Distancia a Albarracín: 2.45 km
+📍 Distancia a Aínsa: 1.8 km
+🔔 Usuario cerca de Aínsa, enviando notificación...
+✅ Notificación enviada para Aínsa
+✅ Pueblo 123 guardado en AsyncStorage
+```
+
+---
+
+## 🧪 Cómo Probar
+
+### En desarrollo:
+
+1. **Simulador iOS/Android:**
+   - Usa ubicaciones simuladas desde Xcode/Android Studio
+   - Configura coordenadas cercanas a un pueblo
+
+2. **Dispositivo físico:**
+   - Activa GPS
+   - Acércate físicamente a menos de 2 km de un pueblo
+
+3. **Verificar AsyncStorage:**
+   ```tsx
+   import AsyncStorage from '@react-native-async-storage/async-storage';
+   
+   const checkStorage = async () => {
+     const data = await AsyncStorage.getItem('pueblosSaludados');
+     console.log('Pueblos saludados:', JSON.parse(data || '{}'));
+   };
+   ```
+
+---
+
+## 📊 Estructura de Datos
+
+### AsyncStorage
+
+```json
+{
+  "pueblosSaludados": {
+    "123": "2025-11-10T09:45:00.000Z",
+    "456": "2025-11-10T11:20:00.000Z",
+    "789": "2025-11-09T15:30:00.000Z"
+  }
 }
 ```
 
-## Funcionalidad de detección de proximidad
+- **Key**: ID del pueblo
+- **Value**: Timestamp ISO de la última notificación
 
-El servicio ahora incluye **detección automática de proximidad a pueblos**:
+---
 
-### Cómo funciona
+## ⚙️ Configuración
 
-1. **Solicita permisos**: Al iniciar la app, solicita permisos de ubicación y notificaciones.
+Si necesitas ajustar parámetros, edita las constantes en `contexts/geolocation.tsx`:
 
-2. **Carga la lista de pueblos**: Descarga la lista completa de pueblos desde la API.
-
-3. **Seguimiento automático**: Si los permisos están concedidos, inicia automáticamente el seguimiento de ubicación.
-
-4. **Detecta proximidad**: Cada vez que la ubicación cambia (cada 30 segundos o cada 100 metros), calcula la distancia a todos los pueblos usando la fórmula Haversine.
-
-5. **Notifica al usuario**: Si el usuario está a ≤ 2 km de un pueblo, muestra una notificación:
-   - **Título**: "Bienvenido a [nombre del pueblo]"
-   - **Mensaje**: "uno de los Pueblos Más Bonitos de España. ¡Disfruta de tu visita!"
-
-6. **Sin duplicados**: Una vez enviada la notificación para un pueblo, no vuelve a notificar hasta que la app se reinicie.
-
-### Fórmula Haversine
-
-La distancia se calcula usando la fórmula de Haversine, que calcula la distancia más corta entre dos puntos en una esfera (la Tierra):
-
-```typescript
-function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371; // Radio de la Tierra en km
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = 
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-    Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c; // Distancia en kilómetros
-}
+```tsx
+const COOLDOWN_HOURS = 24; // Horas entre notificaciones del mismo pueblo
+const DISTANCE_THRESHOLD = 2; // Kilómetros de proximidad
+const TIME_INTERVAL = 30000; // Milisegundos (30s)
+const DISTANCE_INTERVAL = 100; // Metros
 ```
 
-## Notas importantes
+---
 
-1. **Solo funciona en foreground**: El servicio solo obtiene la ubicación cuando la app está abierta (cumple normas de Apple).
+## ❗ Troubleshooting
 
-2. **Solicitud automática de permisos**: Al iniciar la app, solicita automáticamente permisos de ubicación y notificaciones.
+### No recibo notificaciones
 
-3. **Aviso al usuario**: Si el usuario niega permisos, se muestra automáticamente un aviso explicando que la detección está desactivada.
+1. Verifica que los permisos estén concedidos
+2. Revisa los logs de consola
+3. Confirma que hay pueblos cargados
+4. Asegúrate de estar a menos de 2 km de un pueblo
+5. Verifica que no haya cooldown activo (24h)
 
-4. **Web compatible**: El servicio funciona en web, iOS y Android (pero las notificaciones no funcionan en web).
+### Consumo de batería
 
-5. **No ejecuta en segundo plano**: Este servicio no usa tareas en segundo plano para cumplir con las normas de las tiendas de apps.
+El servicio usa `Location.Accuracy.Balanced` y solo funciona en foreground, lo que minimiza el consumo. Si necesitas reducirlo más:
 
-6. **Actualización inteligente**: 
-   - Actualiza la ubicación cada 30 segundos.
-   - O cuando el usuario se mueve más de 100 metros.
+- Aumenta `timeInterval` de 30s a 60s
+- Aumenta `distanceInterval` de 100m a 200m
 
-7. **Sin registro en BD**: Por ahora, las notificaciones son solo informativas. No se registran visitas ni se suman puntos.
+---
 
-8. **Eficiencia**: El servicio usa `Location.Accuracy.Balanced` para equilibrar precisión y consumo de batería.
+## 🎯 Próximos Pasos (Futuro)
+
+- [ ] Registrar visitas en base de datos
+- [ ] Sistema de puntos
+- [ ] Badges por pueblos visitados
+- [ ] Historial de visitas
+- [ ] Compartir en redes sociales
+
+---
+
+**Versión:** 2.0.0  
+**Última actualización:** 2025-11-10
