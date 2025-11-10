@@ -512,7 +512,8 @@ export async function fetchMultiexperienciaDetalle(
 
 export async function registrarVisita(
   idLugar: string,
-  token?: string
+  token?: string,
+  origen: 'qr' | 'geo' = 'qr'
 ): Promise<{ success: boolean; message: string }> {
   try {
     const headers: Record<string, string> = {
@@ -525,7 +526,7 @@ export async function registrarVisita(
 
     const body = {
       id_lugar: idLugar,
-      origen: 'qr',
+      origen,
       fecha_visita: new Date().toISOString(),
     };
 

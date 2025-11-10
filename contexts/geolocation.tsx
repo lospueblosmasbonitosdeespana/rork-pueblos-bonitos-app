@@ -4,7 +4,7 @@ import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { Alert, Platform } from 'react-native';
-import { fetchLugaresStable } from '@/services/api';
+import { fetchLugaresStable, registrarVisita } from '@/services/api';
 import type { Lugar } from '@/types/api';
 import { useAuth } from './auth';
 
@@ -43,7 +43,7 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
 }
 
 export const [GeolocationProvider, useGeolocation] = createContextHook(() => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, userId, token } = useAuth();
   
   const [hasPermission, setHasPermission] = useState<boolean>(false);
   const [hasNotificationPermission, setHasNotificationPermission] = useState<boolean>(false);
@@ -214,7 +214,7 @@ export const [GeolocationProvider, useGeolocation] = createContextHook(() => {
 
   const checkNearbyPueblos = useCallback(async (location: LocationData) => {
     try {
-      if (!isAuthenticated) {
+      if (!isAuthenticated || !userId) {
         return;
       }
 
@@ -260,12 +260,54 @@ export const [GeolocationProvider, useGeolocation] = createContextHook(() => {
           notifiedPueblosRef.current.add(pueblo._ID);
           await setPuebloSaludado(pueblo._ID);
           console.log(`✅ Notificación enviada para ${pueblo.nombre}`);
+          
+          try {
+            const API_BASE_URL = 'https://lospueblosmasbonitosdeespana.org/wp-json';
+            const visitasUrl = `${API_BASE_URL}/jet-cct/visita?user_id=${userId}`;
+            
+            console.log('🔍 Verificando visitas previas del usuario...');
+            const visitasResponse = await fetch(visitasUrl);
+            
+            if (visitasResponse.ok) {
+              const visitasData = await visitasResponse.json();
+              const yaVisitado = Array.isArray(visitasData) && visitasData.some(
+                (v: any) => String(v.id_lugar) === String(pueblo._ID)
+              );
+              
+              if (yaVisitado) {
+                console.log(`⏭️ Usuario ya visitó ${pueblo.nombre} previamente, no se registra de nuevo`);
+                continue;
+              }
+              
+              console.log(`📍 Registrando visita automática (geo) para ${pueblo.nombre}...`);
+              const result = await registrarVisita(pueblo._ID, token || undefined, 'geo');
+              
+              if (result.success) {
+                console.log(`✅ Visita registrada automáticamente (geo) para ${pueblo.nombre} - ${userId}`);
+              } else {
+                console.error(`❌ Error al registrar visita para ${pueblo.nombre}:`, result.message);
+              }
+            } else {
+              console.warn(`⚠️ No se pudo verificar visitas previas (status ${visitasResponse.status}), se intentará registrar`);
+              
+              console.log(`📍 Registrando visita automática (geo) para ${pueblo.nombre}...`);
+              const result = await registrarVisita(pueblo._ID, token || undefined, 'geo');
+              
+              if (result.success) {
+                console.log(`✅ Visita registrada automáticamente (geo) para ${pueblo.nombre} - ${userId}`);
+              } else {
+                console.error(`❌ Error al registrar visita para ${pueblo.nombre}:`, result.message);
+              }
+            }
+          } catch (visitError) {
+            console.error(`❌ Error al procesar visita para ${pueblo.nombre}:`, visitError);
+          }
         }
       }
     } catch (err) {
       console.error('❌ Error al verificar pueblos cercanos:', err);
     }
-  }, [isAuthenticated, pueblos, hasNotificationPermission, canShowNotification, setPuebloSaludado]);
+  }, [isAuthenticated, userId, token, pueblos, hasNotificationPermission, canShowNotification, setPuebloSaludado]);
 
   const startLocationTracking = useCallback(async () => {
     try {
