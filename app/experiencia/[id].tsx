@@ -43,6 +43,21 @@ export default function ExperienciaScreen() {
                     link.style.cursor = 'default';
                     link.onclick = (e) => { e.preventDefault(); return false; };
                   }
+                  if (text && text.toLowerCase().includes('conoce más rutas')) {
+                    link.style.pointerEvents = 'none';
+                    link.style.cursor = 'default';
+                    link.onclick = (e) => { e.preventDefault(); return false; };
+                  }
+                });
+                
+                const buttons = document.querySelectorAll('button');
+                buttons.forEach(button => {
+                  const text = button.textContent || button.innerText;
+                  if (text && text.toLowerCase().includes('conoce más rutas')) {
+                    button.style.pointerEvents = 'none';
+                    button.style.cursor = 'default';
+                    button.onclick = (e) => { e.preventDefault(); return false; };
+                  }
                 });
               }, 1000);
             })();
