@@ -100,7 +100,9 @@ export default function RutasScreen() {
         injectedJavaScript={`
           (function() {
             const style = document.createElement('style');
-            style.innerHTML = 'html, body { overflow-y: auto !important; -webkit-overflow-scrolling: touch !important; touch-action: pan-y !important; }';
+            style.innerHTML = 'html, body { overflow-y: auto !important; -webkit-overflow-scrolling: touch !important; touch-action: pan-y !important; }' +
+              'article, .ruta-card, .post, .elementor-post, .elementor-widget, a.elementor-post__card { transition: opacity 0.15s ease, transform 0.1s ease !important; }' +
+              'article:active, .ruta-card:active, .post:active, .elementor-post:active, a.elementor-post__card:active { opacity: 0.7 !important; transform: scale(0.98) !important; }';
             document.head.appendChild(style);
             
             const links = document.querySelectorAll('a, button');
