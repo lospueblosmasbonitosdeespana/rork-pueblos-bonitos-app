@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Constants from 'expo-constants';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
+import { router } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Platform } from 'react-native';
 
@@ -219,7 +220,16 @@ export const [NotificationsProvider, useNotifications] = createContextHook(() =>
       queryClient.invalidateQueries({ queryKey: ['notificaciones'] });
     });
 
-    const responseListener = Notifications.addNotificationResponseReceivedListener(() => {});
+    const responseListener = Notifications.addNotificationResponseReceivedListener((response) => {
+      const data = response.notification.request.content.data;
+      
+      if (data?.tipo === 'noticia' && data?.id) {
+        console.log('📰 Abriendo noticia desde notificación:', data.id);
+        router.push(`/noticia/${data.id}` as any);
+      } else {
+        console.log('📬 Notificación recibida (tipo: ' + (data?.tipo || 'desconocido') + '), no se requiere acción');
+      }
+    });
 
     return () => {
       isMounted = false;
