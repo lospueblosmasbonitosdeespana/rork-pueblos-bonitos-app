@@ -223,11 +223,14 @@ export const [NotificationsProvider, useNotifications] = createContextHook(() =>
     const responseListener = Notifications.addNotificationResponseReceivedListener((response) => {
       const data = response.notification.request.content.data;
       
+      console.log('📬 Notificación tocada:', JSON.stringify(data));
+      
       if (data?.tipo === 'noticia' && data?.id) {
-        console.log('📰 Abriendo noticia desde notificación:', data.id);
-        router.push(`/noticia/${data.id}` as any);
+        const noticiaId = String(data.id);
+        console.log('📰 Navegando a noticia con ID:', noticiaId);
+        router.push(`/noticia/${noticiaId}`);
       } else {
-        console.log('📬 Notificación recibida (tipo: ' + (data?.tipo || 'desconocido') + '), no se requiere acción');
+        console.log('📬 Notificación de tipo', data?.tipo || 'desconocido', '- no requiere navegación');
       }
     });
 
