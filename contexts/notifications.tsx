@@ -4,7 +4,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Constants from 'expo-constants';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
-import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Linking, Platform } from 'react-native';
@@ -102,6 +101,8 @@ async function registerForPushNotificationsAsync() {
   } catch (error: any) {
     if (error?.message?.includes('503') || error?.message?.includes('no healthy upstream')) {
       console.warn('⚠️ Expo push service temporarily unavailable. Will retry later.');
+    } else if (!Device.isDevice) {
+      console.warn('⚠️ Push notifications only work on physical devices');
     } else {
       console.error('❌ Error registering for push notifications:', error);
     }
@@ -226,11 +227,14 @@ export const [NotificationsProvider, useNotifications] = createContextHook(() =>
       
       console.log('📬 Notificación tocada - Payload completo:', JSON.stringify(data, null, 2));
       console.log('📬 data.tipo:', data?.tipo);
-      console.log('📬 data.id:', data?.id);
-      console.log('📬 data.post_id:', data?.post_id);
-      console.log('📬 data.slug:', data?.slug);
-      console.log('📬 data.link:', data?.link);
-      console.log('📬 data.url:', data?.url);
+      
+      queryClient.invalidateQueries({ queryKey: ['notificaciones'] });
+      
+      if (data?.tipo === 'noticia' || data?.tipo === 'alerta') {
+        console.log('📰 Notificación de tipo noticias/alerta - No se abre automáticamente');
+        console.log('ℹ️ El usuario puede verla en el Centro de Notificaciones');
+        return;
+      }
       
       if (data?.url) {
         console.log('🌐 Abriendo URL externa:', data.url);
@@ -249,33 +253,7 @@ export const [NotificationsProvider, useNotifications] = createContextHook(() =>
         return;
       }
       
-      if (data?.post_id) {
-        console.log('🚀 Navegando a /noticia/' + data.post_id + ' (usando post_id)');
-        router.push(`/noticia/${data.post_id}`);
-        return;
-      }
-      
-      if ((data?.tipo === 'noticia' || data?.tipo === 'alerta')) {
-        let slugToUse = null;
-        
-        if (data?.slug) {
-          slugToUse = data.slug;
-          console.log('✅ Usando slug directo:', slugToUse);
-        } else if (data?.link) {
-          const parts = data.link.split('/').filter((s: string) => s);
-          slugToUse = parts[parts.length - 1];
-          console.log('✅ Slug extraído del link:', slugToUse);
-        }
-        
-        if (slugToUse) {
-          console.log('🚀 Navegando a /noticia/' + slugToUse);
-          router.push(`/noticia/${slugToUse}`);
-        } else {
-          console.warn('⚠️ Notificación sin slug ni link válido. Data completo:', JSON.stringify(data));
-        }
-      } else {
-        console.log('📬 Notificación de tipo', data?.tipo || 'desconocido', '- no requiere navegación');
-      }
+      console.log('📬 Notificación de tipo', data?.tipo || 'desconocido', '- No requiere acción automática');
     });
 
     return () => {
