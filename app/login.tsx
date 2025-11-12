@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import { ArrowLeft, LogIn } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import * as AuthSession from 'expo-auth-session';
+import { makeRedirectUri } from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import {
   ActivityIndicator,
@@ -47,19 +47,18 @@ export default function LoginScreen() {
     try {
       setIsGoogleLoading(true);
 
-      // usamos el esquema actual "myapp"
-      const redirectUri = AuthSession.makeRedirectUri({
+      const redirectUri = makeRedirectUri({
         scheme: 'myapp',
         useProxy: true,
       });
       console.log('🔗 Redirect URI Google:', redirectUri);
 
-      const result = await AuthSession.startAsync({
-        authUrl: `https://lospueblosmasbonitosdeespana.org/wp-login.php?loginSocial=google&redirect_to=${encodeURIComponent(
+      const result = await WebBrowser.openAuthSessionAsync(
+        `https://lospueblosmasbonitosdeespana.org/wp-login.php?loginSocial=google&redirect_to=${encodeURIComponent(
           redirectUri
         )}`,
-        returnUrl: redirectUri,
-      });
+        redirectUri
+      );
 
       console.log('✅ Resultado Google:', result);
       Alert.alert('Google', 'Login completado o cancelado. Revisa consola.');
@@ -76,19 +75,18 @@ export default function LoginScreen() {
     try {
       setIsAppleLoading(true);
 
-      // usamos el esquema actual "myapp"
-      const redirectUri = AuthSession.makeRedirectUri({
+      const redirectUri = makeRedirectUri({
         scheme: 'myapp',
         useProxy: true,
       });
       console.log('🔗 Redirect URI Apple:', redirectUri);
 
-      const result = await AuthSession.startAsync({
-        authUrl: `https://lospueblosmasbonitosdeespana.org/wp-login.php?loginSocial=apple&redirect_to=${encodeURIComponent(
+      const result = await WebBrowser.openAuthSessionAsync(
+        `https://lospueblosmasbonitosdeespana.org/wp-login.php?loginSocial=apple&redirect_to=${encodeURIComponent(
           redirectUri
         )}`,
-        returnUrl: redirectUri,
-      });
+        redirectUri
+      );
 
       console.log('✅ Resultado Apple:', result);
       Alert.alert('Apple', 'Login completado o cancelado. Revisa consola.');
@@ -257,7 +255,7 @@ export default function LoginScreen() {
   );
 }
 
-// 🎨 Estilos
+// 🎨 Estilos (sin cambios)
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
   backButton: {
