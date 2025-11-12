@@ -2,8 +2,6 @@ import { router } from 'expo-router';
 import { ArrowLeft, LogIn } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import * as AppleAuthentication from 'expo-apple-authentication';
-import * as Google from 'expo-auth-session/providers/google';
 import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import {
@@ -23,11 +21,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/contexts/auth';
 
 const LPBE_RED = '#c1121f';
-
 WebBrowser.maybeCompleteAuthSession();
 
 export default function LoginScreen() {
-  const { login, socialLogin } = useAuth();
+  const { login } = useAuth();
   const queryClient = useQueryClient();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -37,16 +34,6 @@ export default function LoginScreen() {
   const fadeAnim = useState(new Animated.Value(0))[0];
   const passwordInputRef = React.useRef<TextInput>(null);
 
-  // ✅ Configuración Google
-  const [googleRequest, googleResponse, googlePromptAsync] = Google.useAuthRequest({
-    expoClientId: '668620158239-ihlevs7goul6q2s2cqpphbulakvseoth.apps.googleusercontent.com',
-    iosClientId: '668620158239-8bb43ohkh0f2cp8d8tc97a5aoglp2ua9.apps.googleusercontent.com',
-    androidClientId: '668620158239-pnessev4surmlsjael5htsem06fcllvn.apps.googleusercontent.com',
-    scopes: ['openid', 'profile', 'email'],
-    responseType: 'token',
-    extraParams: { prompt: 'consent' },
-  });
-
   React.useEffect(() => {
     Animated.timing(fadeAnim, {
       toValue: 1,
@@ -55,133 +42,49 @@ export default function LoginScreen() {
     }).start();
   }, [fadeAnim]);
 
-  // 🔵 Login con Google
+  // 🔵 Login con Google (flujo web de Nextend)
   const handleGoogleLogin = async () => {
     try {
+      setIsGoogleLoading(true);
       const redirectUri = AuthSession.makeRedirectUri({ useProxy: true });
-      console.log('🔍 Redirect URI usada:', redirectUri);
-      await googlePromptAsync({ useProxy: true, showInRecents: true });
+      console.log('🔗 Redirect URI Google:', redirectUri);
+
+      const result = await AuthSession.startAsync({
+        authUrl: `https://lospueblosmasbonitosdeespana.org/wp-login.php?loginSocial=google&redirect_to=${encodeURIComponent(
+          redirectUri
+        )}`,
+        returnUrl: redirectUri,
+      });
+
+      console.log('✅ Resultado Google:', result);
+      Alert.alert('Google', 'Login completado o cancelado. Revisa consola.');
     } catch (error) {
-      console.error('Google prompt error:', error);
-      Alert.alert('Error', 'No se pudo iniciar sesión con Google');
+      console.error('Google web login error:', error);
+      Alert.alert('Error', 'No se pudo completar el inicio de sesión con Google.');
+    } finally {
+      setIsGoogleLoading(false);
     }
   };
 
-  // 🔵 Procesar respuesta de Google
-  React.useEffect(() => {
-    (async () => {
-      if (googleResponse?.type === 'success' && googleResponse.authentication?.accessToken) {
-        const accessToken = googleResponse.authentication.accessToken;
-        console.log('🔑 Google accessToken obtenido:', accessToken ? 'sí' : 'no');
-        setIsGoogleLoading(true);
-        queryClient.clear();
-
-        try {
-          const response = await fetch(
-            'https://lospueblosmasbonitosdeespana.org/wp-json/nextend-social-login/v1/google/get_user',
-            {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                provider: 'google',
-                access_token: accessToken,
-              }),
-            }
-          );
-
-          const raw = await response.text();
-          let result: any = null;
-          try {
-            result = JSON.parse(raw);
-          } catch (e) {
-            console.error('Google raw response:', raw);
-            Alert.alert('Error', 'Respuesta no válida del servidor (Google).');
-            setIsGoogleLoading(false);
-            return;
-          }
-
-          console.log('HTTP status:', response.status, '→ result:', result);
-
-          if (response.ok && result && result.user_id) {
-            const loginResult = await socialLogin(result.user_id.toString());
-            if (loginResult.success) router.replace('/(tabs)/profile');
-            else Alert.alert('Error', 'No se pudo completar el inicio de sesión con Google.');
-          } else {
-            Alert.alert('Error', result?.message || 'No se pudo completar el inicio de sesión con Google.');
-          }
-        } catch (err) {
-          console.error('Google login error:', err);
-          Alert.alert('Error', 'No se pudo completar el inicio de sesión con Google.');
-        } finally {
-          setIsGoogleLoading(false);
-        }
-      }
-    })();
-  }, [googleResponse]);
-
-  // 🍎 Login con Apple
+  // 🍎 Login con Apple (flujo web de Nextend)
   const handleAppleLogin = async () => {
-    if (Platform.OS !== 'ios') {
-      Alert.alert('Información', 'El inicio de sesión con Apple solo está disponible en iOS');
-      return;
-    }
-
     try {
       setIsAppleLoading(true);
-      queryClient.clear();
+      const redirectUri = AuthSession.makeRedirectUri({ useProxy: true });
+      console.log('🔗 Redirect URI Apple:', redirectUri);
 
-      const credential = await AppleAuthentication.signInAsync({
-        requestedScopes: [
-          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
-          AppleAuthentication.AppleAuthenticationScope.EMAIL,
-        ],
+      const result = await AuthSession.startAsync({
+        authUrl: `https://lospueblosmasbonitosdeespana.org/wp-login.php?loginSocial=apple&redirect_to=${encodeURIComponent(
+          redirectUri
+        )}`,
+        returnUrl: redirectUri,
       });
 
-      if (!credential.identityToken) {
-        Alert.alert('Error', 'No se pudo obtener el token de Apple');
-        setIsAppleLoading(false);
-        return;
-      }
-
-      const response = await fetch(
-        'https://lospueblosmasbonitosdeespana.org/wp-json/nextend-social-login/v1/apple/get_user',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            provider: 'apple',
-            access_token: credential.identityToken,
-          }),
-        }
-      );
-
-      const raw = await response.text();
-      let result: any = null;
-      try {
-        result = JSON.parse(raw);
-      } catch (e) {
-        console.error('Apple raw response:', raw);
-        Alert.alert('Error', 'Respuesta no válida del servidor (Apple).');
-        setIsAppleLoading(false);
-        return;
-      }
-
-      console.log('HTTP status:', response.status, '→ result:', result);
-
-      if (response.ok && result && result.user_id) {
-        const loginResult = await socialLogin(result.user_id.toString());
-        if (loginResult.success) router.replace('/(tabs)/profile');
-        else Alert.alert('Error', 'No se pudo completar el inicio de sesión con Apple.');
-      } else {
-        Alert.alert('Error', result?.message || 'No se pudo completar el inicio de sesión con Apple.');
-      }
-    } catch (error: any) {
-      if (error.code === 'ERR_REQUEST_CANCELED') {
-        console.log('Usuario canceló el login con Apple');
-      } else {
-        console.error('Apple login error:', error);
-        Alert.alert('Error', 'No se pudo completar el inicio de sesión. Inténtalo de nuevo.');
-      }
+      console.log('✅ Resultado Apple:', result);
+      Alert.alert('Apple', 'Login completado o cancelado. Revisa consola.');
+    } catch (error) {
+      console.error('Apple web login error:', error);
+      Alert.alert('Error', 'No se pudo completar el inicio de sesión con Apple.');
     } finally {
       setIsAppleLoading(false);
     }
@@ -344,7 +247,7 @@ export default function LoginScreen() {
   );
 }
 
-// 🎨 Estilos (sin cambios)
+// 🎨 Estilos
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
   backButton: {
@@ -382,13 +285,7 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 8,
   },
-  title: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: '#1a1a1a',
-    marginBottom: 12,
-    textAlign: 'center',
-  },
+  title: { fontSize: 32, fontWeight: '700', color: '#1a1a1a', marginBottom: 12, textAlign: 'center' },
   subtitle: { fontSize: 16, color: '#666', textAlign: 'center', lineHeight: 24 },
   form: { width: '100%' },
   inputGroup: { marginBottom: 24 },
