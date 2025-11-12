@@ -141,7 +141,7 @@ export default function CentroNotificaciones() {
             const isUnread = index < unreadCount;
             const iconData = getNotificationIcon(item.tipo);
             const IconComponent = iconData?.icon;
-            const hasLink = (item.tipo === 'noticia' || item.tipo === 'alerta' || item.tipo === 'nieve') && item.enlace && item.enlace.trim() !== '';
+            const hasLink = item.tipo !== 'noticia' && item.tipo !== 'alerta' && item.enlace && item.enlace.trim() !== '';
             const subtitleText = getSubtitleText(item.tipo);
 
 
@@ -188,7 +188,7 @@ export default function CentroNotificaciones() {
                     ) : null}
                     <View style={styles.headerTextContainer}>
                       <Text style={styles.subtitleText}>{subtitleText}</Text>
-                      <Text style={styles.cardTitle} numberOfLines={item.tipo === 'noticia' ? 2 : 1}>
+                      <Text style={styles.cardTitle} numberOfLines={0}>
                         {item.tipo === 'semaforo' 
                           ? item.titulo.replace(/^Semáforo de /i, '').trim() 
                           : item.titulo.replace(/^Nueva noticia:\s*/i, '').trim()}
@@ -207,6 +207,11 @@ export default function CentroNotificaciones() {
                   <View style={styles.motivoContainer}>
                     <Text style={styles.motivoLabel}>Motivo:</Text>
                     <Text style={styles.motivoText} numberOfLines={6}>{item.motivo}</Text>
+                  </View>
+                )}
+                {(item.tipo === 'noticia' || item.tipo === 'alerta') && (
+                  <View style={styles.linkIndicator}>
+                    <Text style={styles.verNoticiasText}>Ver en noticias</Text>
                   </View>
                 )}
                 {hasLink && (
@@ -406,5 +411,10 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#800000',
     fontWeight: '600',
+  },
+  verNoticiasText: {
+    fontSize: 13,
+    color: '#666',
+    fontWeight: '500',
   },
 });
