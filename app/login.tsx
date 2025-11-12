@@ -83,7 +83,7 @@ export default function LoginScreen() {
 
         try {
           const response = await fetch(
-            'https://lospueblosmasbonitosdeespana.org/wp-json/um/v1/social-login',
+            'https://lospueblosmasbonitosdeespana.org/wp-json/nextend-social-login/v1/google/get_user',
             {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -146,7 +146,7 @@ export default function LoginScreen() {
       }
 
       const response = await fetch(
-        'https://lospueblosmasbonitosdeespana.org/wp-json/um/v1/social-login',
+        'https://lospueblosmasbonitosdeespana.org/wp-json/nextend-social-login/v1/apple/get_user',
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
