@@ -29,16 +29,22 @@ async function fetchNoticiaDetalle(noticiaId: string): Promise<NoticiaDetalle> {
     ? `https://lospueblosmasbonitosdeespana.org/wp-json/wp/v2/posts/${noticiaId}?_embed=1`
     : `https://lospueblosmasbonitosdeespana.org/wp-json/wp/v2/posts?slug=${noticiaId}&_embed=1`;
   
-  console.log('📰 Cargando noticia desde:', url);
+  console.log('📰 Parámetro recibido:', noticiaId);
+  console.log('📰 Es ID numérico:', isNumericId);
+  console.log('📰 URL generada:', url);
   
   const response = await fetch(url);
 
   if (!response.ok) {
+    const errorText = await response.text();
     console.error('❌ Error al cargar noticia:', response.status, response.statusText);
+    console.error('❌ Respuesta del servidor:', errorText);
     throw new Error(`Error ${response.status}: no se pudo cargar la noticia`);
   }
 
   const data = await response.json();
+  console.log('📦 Tipo de respuesta:', Array.isArray(data) ? 'Array' : 'Object');
+  console.log('📦 Datos recibidos:', Array.isArray(data) ? `${data.length} elementos` : 'Objeto único');
   const noticia = Array.isArray(data) ? data[0] : data;
   
   if (!noticia) {
