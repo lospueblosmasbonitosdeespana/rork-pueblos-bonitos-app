@@ -214,7 +214,7 @@ export default function CentroNotificaciones() {
                     <Text style={styles.verNoticiasText}>Ver en noticias</Text>
                   </View>
                 )}
-                {hasLink && (
+                {hasLink && item.tipo !== 'semaforo' && (
                   <View style={styles.linkIndicator}>
                     <Text style={styles.linkText}>Toca para abrir ›</Text>
                   </View>
