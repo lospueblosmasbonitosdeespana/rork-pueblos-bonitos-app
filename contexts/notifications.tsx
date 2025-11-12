@@ -226,12 +226,19 @@ export const [NotificationsProvider, useNotifications] = createContextHook(() =>
       console.log('📬 Notificación tocada:', JSON.stringify(data));
       
       if ((data?.tipo === 'noticia' || data?.tipo === 'alerta')) {
-        const slug = data?.slug || data?.id;
-        if (slug) {
-          console.log('📰 Navegando a noticia con slug:', slug, 'tipo:', data.tipo);
-          router.push(`/noticia/${slug}`);
+        if (data?.slug) {
+          console.log('📰 Navegando a noticia con slug:', data.slug, 'tipo:', data.tipo);
+          router.push(`/noticia/${data.slug}`);
+        } else if (data?.link) {
+          const slug = data.link.split('/').filter((s: string) => s).pop();
+          if (slug) {
+            console.log('📰 Navegando a noticia con slug extraído del link:', slug, 'tipo:', data.tipo);
+            router.push(`/noticia/${slug}`);
+          } else {
+            console.warn('⚠️ No se pudo extraer slug del link - mostrando solo banner');
+          }
         } else {
-          console.warn('⚠️ Notificación de tipo', data.tipo, 'sin slug ni ID válido - mostrando solo banner');
+          console.warn('⚠️ Notificación de tipo', data.tipo, 'sin slug ni link válido - mostrando solo banner');
         }
       } else {
         console.log('📬 Notificación de tipo', data?.tipo || 'desconocido', '- no requiere navegación');
