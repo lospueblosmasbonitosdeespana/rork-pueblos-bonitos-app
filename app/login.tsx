@@ -47,19 +47,19 @@ export default function LoginScreen() {
     try {
       setIsGoogleLoading(true);
 
-      const redirectUri = makeRedirectUri({
+      // Deep link directo a la app (sin proxy)
+      const returnUrl = makeRedirectUri({
         scheme: 'myapp',
-        useProxy: true,
+        path: 'login-success',
+        useProxy: false,
       });
-      console.log('🔗 Redirect URI Google:', redirectUri);
+      console.log('🔗 Google returnUrl:', returnUrl);
 
-      const result = await WebBrowser.openAuthSessionAsync(
-        `https://lospueblosmasbonitosdeespana.org/wp-login.php?loginSocial=google&redirect_to=${encodeURIComponent(
-          redirectUri
-        )}`,
-        redirectUri
-      );
+      const authUrl =
+        `https://lospueblosmasbonitosdeespana.org/wp-login.php?loginSocial=google` +
+        `&redirect_to=${encodeURIComponent(returnUrl)}`;
 
+      const result = await WebBrowser.openAuthSessionAsync(authUrl, returnUrl);
       console.log('✅ Resultado Google:', result);
       Alert.alert('Google', 'Login completado o cancelado. Revisa consola.');
     } catch (error) {
@@ -75,19 +75,19 @@ export default function LoginScreen() {
     try {
       setIsAppleLoading(true);
 
-      const redirectUri = makeRedirectUri({
+      // Deep link directo a la app (sin proxy)
+      const returnUrl = makeRedirectUri({
         scheme: 'myapp',
-        useProxy: true,
+        path: 'login-success',
+        useProxy: false,
       });
-      console.log('🔗 Redirect URI Apple:', redirectUri);
+      console.log('🔗 Apple returnUrl:', returnUrl);
 
-      const result = await WebBrowser.openAuthSessionAsync(
-        `https://lospueblosmasbonitosdeespana.org/wp-login.php?loginSocial=apple&redirect_to=${encodeURIComponent(
-          redirectUri
-        )}`,
-        redirectUri
-      );
+      const authUrl =
+        `https://lospueblosmasbonitosdeespana.org/wp-login.php?loginSocial=apple` +
+        `&redirect_to=${encodeURIComponent(returnUrl)}`;
 
+      const result = await WebBrowser.openAuthSessionAsync(authUrl, returnUrl);
       console.log('✅ Resultado Apple:', result);
       Alert.alert('Apple', 'Login completado o cancelado. Revisa consola.');
     } catch (error) {
@@ -98,7 +98,7 @@ export default function LoginScreen() {
     }
   };
 
-  // 🔐 Login clásico con usuario/contraseña
+  // 🔐 Login clásico con usuario/contraseña (no se toca)
   const handleLogin = async () => {
     const trimmedUsername = username.trim();
     const trimmedPassword = password.trim();
