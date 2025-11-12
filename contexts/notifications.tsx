@@ -223,22 +223,29 @@ export const [NotificationsProvider, useNotifications] = createContextHook(() =>
     const responseListener = Notifications.addNotificationResponseReceivedListener((response) => {
       const data = response.notification.request.content.data;
       
-      console.log('📬 Notificación tocada:', JSON.stringify(data));
+      console.log('📬 Notificación tocada - Payload completo:', JSON.stringify(data, null, 2));
+      console.log('📬 data.tipo:', data?.tipo);
+      console.log('📬 data.id:', data?.id);
+      console.log('📬 data.slug:', data?.slug);
+      console.log('📬 data.link:', data?.link);
       
       if ((data?.tipo === 'noticia' || data?.tipo === 'alerta')) {
+        let slugToUse = null;
+        
         if (data?.slug) {
-          console.log('📰 Navegando a noticia con slug:', data.slug, 'tipo:', data.tipo);
-          router.push(`/noticia/${data.slug}`);
+          slugToUse = data.slug;
+          console.log('✅ Usando slug directo:', slugToUse);
         } else if (data?.link) {
-          const slug = data.link.split('/').filter((s: string) => s).pop();
-          if (slug) {
-            console.log('📰 Navegando a noticia con slug extraído del link:', slug, 'tipo:', data.tipo);
-            router.push(`/noticia/${slug}`);
-          } else {
-            console.warn('⚠️ No se pudo extraer slug del link - mostrando solo banner');
-          }
+          const parts = data.link.split('/').filter((s: string) => s);
+          slugToUse = parts[parts.length - 1];
+          console.log('✅ Slug extraído del link:', slugToUse);
+        }
+        
+        if (slugToUse) {
+          console.log('🚀 Navegando a /noticia/' + slugToUse);
+          router.push(`/noticia/${slugToUse}`);
         } else {
-          console.warn('⚠️ Notificación de tipo', data.tipo, 'sin slug ni link válido - mostrando solo banner');
+          console.warn('⚠️ Notificación sin slug ni link válido. Data completo:', JSON.stringify(data));
         }
       } else {
         console.log('📬 Notificación de tipo', data?.tipo || 'desconocido', '- no requiere navegación');
