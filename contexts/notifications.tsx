@@ -225,38 +225,16 @@ export const [NotificationsProvider, useNotifications] = createContextHook(() =>
       
       console.log('📬 Notificación tocada:', JSON.stringify(data));
       
-      if (data?.tipo === 'noticia') {
-        let postId: string | null = null;
-        
-        if (data.enlace) {
-          const enlaceStr = String(data.enlace);
-          console.log('🔗 Procesando enlace:', enlaceStr);
-          
-          const wpPostMatch = enlaceStr.match(/\/wp\/v2\/posts\/(\d+)/);
-          if (wpPostMatch) {
-            postId = wpPostMatch[1];
-          } else if (enlaceStr.match(/^\d+$/)) {
-            postId = enlaceStr;
-          } else {
-            const urlMatch = enlaceStr.match(/[?&]p=(\d+)/);
-            if (urlMatch) {
-              postId = urlMatch[1];
-            }
-          }
-        }
-        
-        if (!postId && data.id) {
-          postId = String(data.id);
-        }
-        
-        if (postId) {
-          console.log('📰 Navegando a noticia con post ID:', postId);
-          router.push(`/noticia/${postId}`);
-        } else {
-          console.warn('⚠️ No se pudo extraer el ID del post de la notificación');
-        }
+      if ((data?.tipo === 'noticia' || data?.tipo === 'alerta') && data?.id) {
+        const postId = String(data.id);
+        console.log('📰 Navegando a noticia con ID:', postId, 'tipo:', data.tipo);
+        router.push(`/noticia/${postId}`);
       } else {
-        console.log('📬 Notificación de tipo', data?.tipo || 'desconocido', '- no requiere navegación');
+        if (data?.tipo === 'noticia' || data?.tipo === 'alerta') {
+          console.warn('⚠️ Notificación de tipo', data.tipo, 'sin ID válido - mostrando solo banner');
+        } else {
+          console.log('📬 Notificación de tipo', data?.tipo || 'desconocido', '- no requiere navegación');
+        }
       }
     });
 
