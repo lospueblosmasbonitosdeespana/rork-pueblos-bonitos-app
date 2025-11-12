@@ -5,8 +5,9 @@ import Constants from 'expo-constants';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import { router } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Platform } from 'react-native';
+import { Linking, Platform } from 'react-native';
 
 import { Notificacion } from '@/types/api';
 
@@ -220,7 +221,7 @@ export const [NotificationsProvider, useNotifications] = createContextHook(() =>
       queryClient.invalidateQueries({ queryKey: ['notificaciones'] });
     });
 
-    const responseListener = Notifications.addNotificationResponseReceivedListener((response) => {
+    const responseListener = Notifications.addNotificationResponseReceivedListener(async (response) => {
       const data = response.notification.request.content.data;
       
       console.log('📬 Notificación tocada - Payload completo:', JSON.stringify(data, null, 2));
@@ -228,6 +229,24 @@ export const [NotificationsProvider, useNotifications] = createContextHook(() =>
       console.log('📬 data.id:', data?.id);
       console.log('📬 data.slug:', data?.slug);
       console.log('📬 data.link:', data?.link);
+      console.log('📬 data.url:', data?.url);
+      
+      if (data?.url) {
+        console.log('🌐 Abriendo URL externa:', data.url);
+        try {
+          if (Platform.OS === 'web') {
+            window.open(data.url, '_blank');
+          } else {
+            await WebBrowser.openBrowserAsync(data.url);
+          }
+        } catch (error) {
+          console.error('❌ Error al abrir URL:', error);
+          Linking.openURL(data.url).catch(err => 
+            console.error('❌ Error con Linking.openURL:', err)
+          );
+        }
+        return;
+      }
       
       if ((data?.tipo === 'noticia' || data?.tipo === 'alerta')) {
         let slugToUse = null;
