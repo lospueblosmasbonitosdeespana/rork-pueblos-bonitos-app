@@ -227,6 +227,7 @@ export const [NotificationsProvider, useNotifications] = createContextHook(() =>
       console.log('📬 Notificación tocada - Payload completo:', JSON.stringify(data, null, 2));
       console.log('📬 data.tipo:', data?.tipo);
       console.log('📬 data.id:', data?.id);
+      console.log('📬 data.post_id:', data?.post_id);
       console.log('📬 data.slug:', data?.slug);
       console.log('📬 data.link:', data?.link);
       console.log('📬 data.url:', data?.url);
@@ -245,6 +246,12 @@ export const [NotificationsProvider, useNotifications] = createContextHook(() =>
             console.error('❌ Error con Linking.openURL:', err)
           );
         }
+        return;
+      }
+      
+      if (data?.post_id) {
+        console.log('🚀 Navegando a /noticia/' + data.post_id + ' (usando post_id)');
+        router.push(`/noticia/${data.post_id}`);
         return;
       }
       
