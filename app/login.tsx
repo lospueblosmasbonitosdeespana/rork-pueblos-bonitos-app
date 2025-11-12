@@ -37,13 +37,13 @@ export default function LoginScreen() {
   const fadeAnim = useState(new Animated.Value(0))[0];
   const passwordInputRef = React.useRef<TextInput>(null);
 
-  // ✅ Configuración de Google
+  // ✅ Configuración Google
   const [googleRequest, googleResponse, googlePromptAsync] = Google.useAuthRequest({
     expoClientId: '668620158239-ihlevs7goul6q2s2cqpphbulakvseoth.apps.googleusercontent.com',
     iosClientId: '668620158239-8bb43ohkh0f2cp8d8tc97a5aoglp2ua9.apps.googleusercontent.com',
     androidClientId: '668620158239-pnessev4surmlsjael5htsem06fcllvn.apps.googleusercontent.com',
     scopes: ['openid', 'profile', 'email'],
-    responseType: 'id_token',
+    responseType: 'token',
     extraParams: { prompt: 'consent' },
   });
 
@@ -70,14 +70,9 @@ export default function LoginScreen() {
   // 🔵 Procesar respuesta de Google
   React.useEffect(() => {
     (async () => {
-      if (googleResponse?.type === 'success') {
-        const idToken = googleResponse.params?.id_token || googleResponse.authentication?.idToken;
-        if (!idToken) {
-          console.error('No id_token from Google');
-          Alert.alert('Error', 'No se pudo obtener el id_token de Google.');
-          return;
-        }
-
+      if (googleResponse?.type === 'success' && googleResponse.authentication?.accessToken) {
+        const accessToken = googleResponse.authentication.accessToken;
+        console.log('🔑 Google accessToken obtenido:', accessToken ? 'sí' : 'no');
         setIsGoogleLoading(true);
         queryClient.clear();
 
@@ -87,7 +82,10 @@ export default function LoginScreen() {
             {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ provider: 'google', token: idToken }),
+              body: JSON.stringify({
+                provider: 'google',
+                access_token: accessToken,
+              }),
             }
           );
 
@@ -150,7 +148,10 @@ export default function LoginScreen() {
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ provider: 'apple', token: credential.identityToken }),
+          body: JSON.stringify({
+            provider: 'apple',
+            access_token: credential.identityToken,
+          }),
         }
       );
 
@@ -343,7 +344,7 @@ export default function LoginScreen() {
   );
 }
 
-// 🎨 Estilos
+// 🎨 Estilos (sin cambios)
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
   backButton: {
