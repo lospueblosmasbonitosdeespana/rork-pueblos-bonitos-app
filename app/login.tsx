@@ -37,12 +37,14 @@ export default function LoginScreen() {
   const fadeAnim = useState(new Animated.Value(0))[0];
   const passwordInputRef = React.useRef<TextInput>(null);
 
-  // ✅ Configuración de Google usando useAuthRequest
+  // ✅ Configuración de Google
   const [googleRequest, googleResponse, googlePromptAsync] = Google.useAuthRequest({
     expoClientId: '668620158239-ihlevs7goul6q2s2cqpphbulakvseoth.apps.googleusercontent.com',
     iosClientId: '668620158239-8bb43ohkh0f2cp8d8tc97a5aoglp2ua9.apps.googleusercontent.com',
     androidClientId: '668620158239-pnessev4surmlsjael5htsem06fcllvn.apps.googleusercontent.com',
     scopes: ['openid', 'profile', 'email'],
+    responseType: 'id_token',
+    extraParams: { prompt: 'consent' },
   });
 
   React.useEffect(() => {
@@ -53,7 +55,7 @@ export default function LoginScreen() {
     }).start();
   }, [fadeAnim]);
 
-  // ✅ Login con Google (sin Safari, usando el proxy interno de Expo)
+  // 🔵 Login con Google
   const handleGoogleLogin = async () => {
     try {
       const redirectUri = AuthSession.makeRedirectUri({ useProxy: true });
@@ -65,29 +67,49 @@ export default function LoginScreen() {
     }
   };
 
-  // ✅ Cuando Google responde, procesa el accessToken
+  // 🔵 Procesar respuesta de Google
   React.useEffect(() => {
     (async () => {
-      if (googleResponse?.type === 'success' && googleResponse.authentication?.accessToken) {
-        const accessToken = googleResponse.authentication.accessToken;
+      if (googleResponse?.type === 'success') {
+        const idToken = googleResponse.params?.id_token || googleResponse.authentication?.idToken;
+        if (!idToken) {
+          console.error('No id_token from Google');
+          Alert.alert('Error', 'No se pudo obtener el id_token de Google.');
+          return;
+        }
+
         setIsGoogleLoading(true);
         queryClient.clear();
 
         try {
-          const response = await fetch('https://lospueblosmasbonitosdeespana.org/wp-json/um/v1/social-login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ provider: 'google', token: accessToken }),
-          });
+          const response = await fetch(
+            'https://lospueblosmasbonitosdeespana.org/wp-json/um/v1/social-login',
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ provider: 'google', token: idToken }),
+            }
+          );
 
-          const result = await response.json();
+          const raw = await response.text();
+          let result: any = null;
+          try {
+            result = JSON.parse(raw);
+          } catch (e) {
+            console.error('Google raw response:', raw);
+            Alert.alert('Error', 'Respuesta no válida del servidor (Google).');
+            setIsGoogleLoading(false);
+            return;
+          }
 
-          if (response.ok && result.success && result.user_id) {
+          console.log('HTTP status:', response.status, '→ result:', result);
+
+          if (response.ok && result && result.user_id) {
             const loginResult = await socialLogin(result.user_id.toString());
             if (loginResult.success) router.replace('/(tabs)/profile');
             else Alert.alert('Error', 'No se pudo completar el inicio de sesión con Google.');
           } else {
-            Alert.alert('Error', result.message || 'No se pudo completar el inicio de sesión con Google.');
+            Alert.alert('Error', result?.message || 'No se pudo completar el inicio de sesión con Google.');
           }
         } catch (err) {
           console.error('Google login error:', err);
@@ -99,7 +121,7 @@ export default function LoginScreen() {
     })();
   }, [googleResponse]);
 
-  // ✅ Login con Apple (nativo)
+  // 🍎 Login con Apple
   const handleAppleLogin = async () => {
     if (Platform.OS !== 'ios') {
       Alert.alert('Información', 'El inicio de sesión con Apple solo está disponible en iOS');
@@ -119,28 +141,38 @@ export default function LoginScreen() {
 
       if (!credential.identityToken) {
         Alert.alert('Error', 'No se pudo obtener el token de Apple');
+        setIsAppleLoading(false);
         return;
       }
 
       const response = await fetch(
-        'https://lospueblosmasbonitosdeespana.org/wp-json/nextend-social-login/v1/apple/get_user',
+        'https://lospueblosmasbonitosdeespana.org/wp-json/um/v1/social-login',
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ provider: 'apple', access_token: credential.identityToken }),
+          body: JSON.stringify({ provider: 'apple', token: credential.identityToken }),
         }
       );
 
-      const result = await response.json();
-      console.log('HTTP status:', response.status);
-      console.log('Respuesta del servidor:', result);
+      const raw = await response.text();
+      let result: any = null;
+      try {
+        result = JSON.parse(raw);
+      } catch (e) {
+        console.error('Apple raw response:', raw);
+        Alert.alert('Error', 'Respuesta no válida del servidor (Apple).');
+        setIsAppleLoading(false);
+        return;
+      }
+
+      console.log('HTTP status:', response.status, '→ result:', result);
 
       if (response.ok && result && result.user_id) {
         const loginResult = await socialLogin(result.user_id.toString());
         if (loginResult.success) router.replace('/(tabs)/profile');
         else Alert.alert('Error', 'No se pudo completar el inicio de sesión con Apple.');
       } else {
-        Alert.alert('Error', result.message || 'No se pudo completar el inicio de sesión con Apple.');
+        Alert.alert('Error', result?.message || 'No se pudo completar el inicio de sesión con Apple.');
       }
     } catch (error: any) {
       if (error.code === 'ERR_REQUEST_CANCELED') {
@@ -154,7 +186,7 @@ export default function LoginScreen() {
     }
   };
 
-  // ✅ Login clásico con usuario/contraseña
+  // 🔐 Login clásico con usuario/contraseña
   const handleLogin = async () => {
     const trimmedUsername = username.trim();
     const trimmedPassword = password.trim();
@@ -246,12 +278,19 @@ export default function LoginScreen() {
               </View>
 
               <TouchableOpacity
-                style={[styles.button, (isLoading || !username.trim() || !password.trim()) && styles.buttonDisabled]}
+                style={[
+                  styles.button,
+                  (isLoading || !username.trim() || !password.trim()) && styles.buttonDisabled,
+                ]}
                 onPress={handleLogin}
                 disabled={isLoading || !username.trim() || !password.trim()}
                 activeOpacity={0.8}
               >
-                {isLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Iniciar Sesión</Text>}
+                {isLoading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.buttonText}>Iniciar Sesión</Text>
+                )}
               </TouchableOpacity>
 
               {/* Divider social */}
@@ -261,7 +300,7 @@ export default function LoginScreen() {
                 <View style={styles.dividerLine} />
               </View>
 
-              {/* Botón Google */}
+              {/* Google */}
               <TouchableOpacity
                 style={styles.socialButton}
                 onPress={handleGoogleLogin}
@@ -278,7 +317,7 @@ export default function LoginScreen() {
                 )}
               </TouchableOpacity>
 
-              {/* Botón Apple */}
+              {/* Apple */}
               {Platform.OS === 'ios' && (
                 <TouchableOpacity
                   style={[styles.socialButton, styles.appleButton]}
@@ -304,7 +343,7 @@ export default function LoginScreen() {
   );
 }
 
-// 🎨 Estilos (idénticos a los anteriores)
+// 🎨 Estilos
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
   backButton: {
@@ -342,7 +381,13 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 8,
   },
-  title: { fontSize: 32, fontWeight: '700', color: '#1a1a1a', marginBottom: 12, textAlign: 'center' },
+  title: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: '#1a1a1a',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
   subtitle: { fontSize: 16, color: '#666', textAlign: 'center', lineHeight: 24 },
   form: { width: '100%' },
   inputGroup: { marginBottom: 24 },
