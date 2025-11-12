@@ -46,7 +46,12 @@ export default function LoginScreen() {
   const handleGoogleLogin = async () => {
     try {
       setIsGoogleLoading(true);
-      const redirectUri = AuthSession.makeRedirectUri({ useProxy: true });
+
+      // usamos el esquema actual "myapp"
+      const redirectUri = AuthSession.makeRedirectUri({
+        scheme: 'myapp',
+        useProxy: true,
+      });
       console.log('🔗 Redirect URI Google:', redirectUri);
 
       const result = await AuthSession.startAsync({
@@ -70,7 +75,12 @@ export default function LoginScreen() {
   const handleAppleLogin = async () => {
     try {
       setIsAppleLoading(true);
-      const redirectUri = AuthSession.makeRedirectUri({ useProxy: true });
+
+      // usamos el esquema actual "myapp"
+      const redirectUri = AuthSession.makeRedirectUri({
+        scheme: 'myapp',
+        useProxy: true,
+      });
       console.log('🔗 Redirect URI Apple:', redirectUri);
 
       const result = await AuthSession.startAsync({
