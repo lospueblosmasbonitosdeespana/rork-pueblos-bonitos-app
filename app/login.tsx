@@ -100,40 +100,26 @@ export default function LoginScreen() {
   }, [googleResponse]);
 
   // ✅ Login con Apple (nativo)
-  const handleAppleLogin = async () => {
-    if (Platform.OS !== 'ios') {
-      Alert.alert('Información', 'El inicio de sesión con Apple solo está disponible en iOS');
+   const response = await fetch(
+      'https://lospueblosmasbonitosdeespana.org/wp-json/um/v1/social-login',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ provider: 'apple', token: credential.identityToken }),
+      }
+    );
+
+    const raw = await response.text();
+    let result: any = null;
+    try {
+      result = JSON.parse(raw);
+    } catch (e) {
+      console.error('Apple social-login raw response:', raw);
+      Alert.alert('Error', 'Respuesta no válida del servidor (Apple).');
+      setIsAppleLoading(false);
       return;
     }
-
-    try {
-      setIsAppleLoading(true);
-      queryClient.clear();
-
-      const credential = await AppleAuthentication.signInAsync({
-        requestedScopes: [
-          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
-          AppleAuthentication.AppleAuthenticationScope.EMAIL,
-        ],
-      });
-
-      if (!credential.identityToken) {
-        Alert.alert('Error', 'No se pudo obtener el token de Apple');
-        return;
-      }
-
-      const response = await fetch(
-        'https://lospueblosmasbonitosdeespana.org/wp-json/nextend-social-login/v1/apple/get_user',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ provider: 'apple', access_token: credential.identityToken }),
-        }
-      );
-
-      const result = await response.json();
-      console.log('HTTP status:', response.status);
-      console.log('Respuesta del servidor:', result);
+    console.log('HTTP status:', response.status, '→ result:', result);
 
       if (response.ok && result && result.user_id) {
         const loginResult = await socialLogin(result.user_id.toString());
