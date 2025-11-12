@@ -225,16 +225,16 @@ export const [NotificationsProvider, useNotifications] = createContextHook(() =>
       
       console.log('📬 Notificación tocada:', JSON.stringify(data));
       
-      if ((data?.tipo === 'noticia' || data?.tipo === 'alerta') && data?.id) {
-        const postId = String(data.id);
-        console.log('📰 Navegando a noticia con ID:', postId, 'tipo:', data.tipo);
-        router.push(`/noticia/${postId}`);
-      } else {
-        if (data?.tipo === 'noticia' || data?.tipo === 'alerta') {
-          console.warn('⚠️ Notificación de tipo', data.tipo, 'sin ID válido - mostrando solo banner');
+      if ((data?.tipo === 'noticia' || data?.tipo === 'alerta')) {
+        const slug = data?.slug || data?.id;
+        if (slug) {
+          console.log('📰 Navegando a noticia con slug:', slug, 'tipo:', data.tipo);
+          router.push(`/noticia/${slug}`);
         } else {
-          console.log('📬 Notificación de tipo', data?.tipo || 'desconocido', '- no requiere navegación');
+          console.warn('⚠️ Notificación de tipo', data.tipo, 'sin slug ni ID válido - mostrando solo banner');
         }
+      } else {
+        console.log('📬 Notificación de tipo', data?.tipo || 'desconocido', '- no requiere navegación');
       }
     });
 

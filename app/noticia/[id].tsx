@@ -24,7 +24,10 @@ interface NoticiaDetalle {
 
 
 async function fetchNoticiaDetalle(noticiaId: string): Promise<NoticiaDetalle> {
-  const url = `https://lospueblosmasbonitosdeespana.org/wp-json/wp/v2/posts/${noticiaId}?_embed=1`;
+  const isNumericId = /^\d+$/.test(noticiaId);
+  const url = isNumericId
+    ? `https://lospueblosmasbonitosdeespana.org/wp-json/wp/v2/posts/${noticiaId}?_embed=1`
+    : `https://lospueblosmasbonitosdeespana.org/wp-json/wp/v2/posts?slug=${noticiaId}&_embed=1`;
   
   console.log('📰 Cargando noticia desde:', url);
   
@@ -35,7 +38,12 @@ async function fetchNoticiaDetalle(noticiaId: string): Promise<NoticiaDetalle> {
     throw new Error(`Error ${response.status}: no se pudo cargar la noticia`);
   }
 
-  const noticia = await response.json();
+  const data = await response.json();
+  const noticia = Array.isArray(data) ? data[0] : data;
+  
+  if (!noticia) {
+    throw new Error('No se encontró la noticia');
+  }
   
   console.log('📋 Datos recibidos para noticia:', noticia.id);
 
