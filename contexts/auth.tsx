@@ -151,7 +151,10 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
     }
   };
 
-  const login = async (credentials: LoginCredentials): Promise<{ success: boolean; error?: string }> => {
+  const login = async (
+    credentials: LoginCredentials, 
+    options?: { appleIdentityToken?: string }
+  ): Promise<{ success: boolean; error?: string }> => {
     try {
       console.log('🔐 Autenticando con LPBE...');
       
@@ -172,6 +175,53 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
         console.log('✅ React Query limpiado');
       } catch (qErr) {
         console.warn('⚠️ No se pudo limpiar React Query:', qErr);
+      }
+      
+      // Si es Apple Login, usar endpoint diferente
+      if (options?.appleIdentityToken) {
+        console.log('🍎 Autenticando con Apple Login...');
+        const appleResponse = await fetch('https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v2/apple-login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            token: options.appleIdentityToken,
+          }),
+        });
+
+        console.log('📊 Apple Login response status:', appleResponse.status);
+
+        if (!appleResponse.ok) {
+          const errorData = await appleResponse.json();
+          console.error('❌ Error Apple Login:', errorData);
+          return { 
+            success: false, 
+            error: errorData.message || 'Error al iniciar sesión con Apple' 
+          };
+        }
+
+        const appleData = await appleResponse.json();
+        console.log('✅ Apple Login exitoso:', appleData);
+
+        if (!appleData.jwt || !appleData.user) {
+          return { success: false, error: 'Respuesta del servidor inválida' };
+        }
+
+        const user = appleData.user;
+        await setStoredUserId(user.id.toString());
+        await setStoredToken(appleData.jwt);
+        
+        setState({ 
+          user: { ...user, role: 'subscriber' }, 
+          userId: user.id.toString(), 
+          token: appleData.jwt,
+          isLoading: false, 
+          isAuthenticated: true 
+        });
+
+        console.log('✅ Apple Login completado exitosamente');
+        return { success: true };
       }
       
       const loginResponse = await fetch('https://lospueblosmasbonitosdeespana.org/wp-json/jwt-auth/v1/token', {

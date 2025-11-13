@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { makeRedirectUri } from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
+import * as AppleAuthentication from 'expo-apple-authentication';
 import {
   ActivityIndicator,
   Alert,
@@ -70,29 +71,53 @@ export default function LoginScreen() {
     }
   };
 
-  // 🍎 Login con Apple (flujo web de Nextend)
+  // 🍎 Login con Apple (flujo nativo)
   const handleAppleLogin = async () => {
     try {
       setIsAppleLoading(true);
 
-      // Deep link directo a la app (sin proxy)
-      const returnUrl = makeRedirectUri({
-        scheme: 'myapp',
-        path: 'login-success',
-        useProxy: false,
+      console.log('🍎 Iniciando Apple Login nativo...');
+      
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
       });
-      console.log('🔗 Apple returnUrl:', returnUrl);
 
-      const authUrl =
-        `https://lospueblosmasbonitosdeespana.org/wp-login.php?loginSocial=apple` +
-        `&redirect_to=${encodeURIComponent(returnUrl)}`;
+      console.log('✅ Credencial Apple recibida:', {
+        user: credential.user,
+        email: credential.email,
+        fullName: credential.fullName,
+        identityToken: credential.identityToken ? 'Presente' : 'Ausente',
+      });
 
-      const result = await WebBrowser.openAuthSessionAsync(authUrl, returnUrl);
-      console.log('✅ Resultado Apple:', result);
-      Alert.alert('Apple', 'Login completado o cancelado. Revisa consola.');
-    } catch (error) {
-      console.error('Apple web login error:', error);
-      Alert.alert('Error', 'No se pudo completar el inicio de sesión con Apple.');
+      if (!credential.identityToken) {
+        Alert.alert('Error', 'No se recibió el token de identidad de Apple.');
+        return;
+      }
+
+      console.log('📡 Enviando token al backend...');
+      const result = await login(
+        { username: '', password: '' },
+        { appleIdentityToken: credential.identityToken }
+      );
+
+      if (result.success) {
+        console.log('✅ Apple Login exitoso');
+        Animated.sequence([
+          Animated.timing(fadeAnim, { toValue: 0, duration: 300, useNativeDriver: true }),
+        ]).start(() => router.replace('/(tabs)/profile'));
+      } else {
+        Alert.alert('Error', result.error || 'No se pudo completar el inicio de sesión con Apple.');
+      }
+    } catch (error: any) {
+      console.error('Apple login error:', error);
+      if (error.code === 'ERR_CANCELED') {
+        console.log('🚫 Usuario canceló el login de Apple');
+      } else {
+        Alert.alert('Error', 'No se pudo completar el inicio de sesión con Apple.');
+      }
     } finally {
       setIsAppleLoading(false);
     }
