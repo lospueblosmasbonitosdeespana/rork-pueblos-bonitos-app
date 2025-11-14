@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { ArrowLeft, LogIn } from 'lucide-react-native';
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import * as WebBrowser from 'expo-web-browser';
 import * as AppleAuthentication from 'expo-apple-authentication';
@@ -27,6 +27,36 @@ WebBrowser.maybeCompleteAuthSession();
 const GOOGLE_IOS_CLIENT_ID = '668620158239-8bb43ohkh0f2cp8d8tc97a5aoglp2ua9.apps.googleusercontent.com';
 const GOOGLE_ANDROID_CLIENT_ID = '668620158239-pnessev4surmlsjael5htsem06fcllvn.apps.googleusercontent.com';
 const GOOGLE_WEB_CLIENT_ID = '668620158239-to6rkbe6grl7rnki7uj903actrv4g5hv.apps.googleusercontent.com';
+const GOOGLE_REDIRECT_URI = 'https://auth.expo.io/@franmestre/pueblos-bonitos-app';
+
+function useGoogleAuth() {
+  const isInitializedRef = useRef(false);
+  const [isReady, setIsReady] = useState(false);
+  
+  const [request, response, promptAsync] = Google.useAuthRequest(
+    {
+      iosClientId: GOOGLE_IOS_CLIENT_ID,
+      androidClientId: GOOGLE_ANDROID_CLIENT_ID,
+      webClientId: GOOGLE_WEB_CLIENT_ID,
+      redirectUri: GOOGLE_REDIRECT_URI,
+      responseType: 'id_token',
+    },
+    {
+      native: GOOGLE_REDIRECT_URI,
+    }
+  );
+
+  useEffect(() => {
+    if (request && !isInitializedRef.current) {
+      isInitializedRef.current = true;
+      setIsReady(true);
+      console.log('✅ Google Auth inicializado UNA SOLA VEZ');
+      console.log('📍 redirectUri:', request.redirectUri);
+    }
+  }, [request]);
+
+  return { request, response, promptAsync, isReady };
+}
 
 export default function LoginScreen() {
   const { login } = useAuth();
@@ -39,23 +69,7 @@ export default function LoginScreen() {
   const fadeAnim = useState(new Animated.Value(0))[0];
   const passwordInputRef = React.useRef<TextInput>(null);
 
-  const [googleReady, setGoogleReady] = useState(false);
-
-  const [googleRequest, googleResponse, googlePromptAsync] = Google.useAuthRequest({
-    iosClientId: GOOGLE_IOS_CLIENT_ID,
-    androidClientId: GOOGLE_ANDROID_CLIENT_ID,
-    webClientId: GOOGLE_WEB_CLIENT_ID,
-    redirectUri: "https://auth.expo.io/@franmestre/pueblos-bonitos-app",
-    responseType: "id_token",
-  });
-
-  useEffect(() => {
-    if (googleRequest) {
-      setGoogleReady(true);
-    }
-  }, [googleRequest]);
-
-  console.log("Google request final:", googleRequest?.redirectUri);
+  const { request: googleRequest, response: googleResponse, promptAsync: googlePromptAsync, isReady: googleReady } = useGoogleAuth();
 
   React.useEffect(() => {
     Animated.timing(fadeAnim, {
