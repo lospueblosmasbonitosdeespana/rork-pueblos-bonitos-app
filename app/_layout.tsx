@@ -1,3 +1,4 @@
+import { maybeCompleteAuthSession } from 'expo-auth-session';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack, router } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -6,6 +7,8 @@ import * as WebBrowser from "expo-web-browser";
 import React, { Component, useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { StatusBar, View, Text, StyleSheet, ScrollView } from "react-native";
+
+maybeCompleteAuthSession();
 
 import { AuthProvider } from "@/contexts/auth";
 import { LanguageProvider } from "@/contexts/language";

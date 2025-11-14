@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { ArrowLeft, LogIn } from 'lucide-react-native';
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import * as WebBrowser from 'expo-web-browser';
 import * as AppleAuthentication from 'expo-apple-authentication';
@@ -39,12 +39,23 @@ export default function LoginScreen() {
   const fadeAnim = useState(new Animated.Value(0))[0];
   const passwordInputRef = React.useRef<TextInput>(null);
 
-  const [, googleResponse, googlePromptAsync] = Google.useAuthRequest({
+  const [googleReady, setGoogleReady] = useState(false);
+
+  const [googleRequest, googleResponse, googlePromptAsync] = Google.useAuthRequest({
     iosClientId: GOOGLE_IOS_CLIENT_ID,
     androidClientId: GOOGLE_ANDROID_CLIENT_ID,
     webClientId: GOOGLE_WEB_CLIENT_ID,
-    redirectUri: 'https://auth.expo.io/@franmestre/pueblos-bonitos-app',
+    redirectUri: "https://auth.expo.io/@franmestre/pueblos-bonitos-app",
+    responseType: "id_token",
   });
+
+  useEffect(() => {
+    if (googleRequest) {
+      setGoogleReady(true);
+    }
+  }, [googleRequest]);
+
+  console.log("Google request final:", googleRequest?.redirectUri);
 
   React.useEffect(() => {
     Animated.timing(fadeAnim, {
@@ -299,7 +310,7 @@ export default function LoginScreen() {
               <TouchableOpacity
                 style={styles.socialButton}
                 onPress={handleGoogleLogin}
-                disabled={isGoogleLoading || isLoading}
+                disabled={!googleReady || isGoogleLoading || isLoading}
                 activeOpacity={0.8}
               >
                 {isGoogleLoading ? (
