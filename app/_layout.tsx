@@ -1,6 +1,3 @@
-import { maybeCompleteAuthSession } from 'expo-auth-session';
-maybeCompleteAuthSession();
-
 import { StatusBar, View, Text, StyleSheet, ScrollView } from 'react-native';
 import { AuthProvider } from '@/contexts/auth';
 import { LanguageProvider } from '@/contexts/language';
