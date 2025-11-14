@@ -49,11 +49,14 @@ export default function LoginScreen() {
   });
 
   useEffect(() => {
-    if (googleRequest) {
-      console.log('✅ Google Auth request creada');
-      console.log('📍 redirectUri:', googleRequest.redirectUri || 'undefined');
-    }
-  }, [googleRequest]);
+  if (googleRequest) {
+    console.log('✅ Google Auth request creada');
+    console.log('📍 redirectUri:', googleRequest.redirectUri || 'undefined');
+    console.log('🔥 URL DE AUTORIZACIÓN COMPLETA:', googleRequest?.url);
+    alert('URL REAL: ' + googleRequest?.url);
+  }
+}, [googleRequest]);
+  
 
   React.useEffect(() => {
     Animated.timing(fadeAnim, {
