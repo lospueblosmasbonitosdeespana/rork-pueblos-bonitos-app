@@ -24,9 +24,12 @@ import { useAuth } from '@/contexts/auth';
 const LPBE_RED = '#c1121f';
 WebBrowser.maybeCompleteAuthSession();
 
-const GOOGLE_IOS_CLIENT_ID = '668620158239-8bb43ohkh0f2cp8d8tc97a5aoglp2ua9.apps.googleusercontent.com';
-const GOOGLE_ANDROID_CLIENT_ID = '668620158239-pnessev4surmlsjael5htsem06fcllvn.apps.googleusercontent.com';
-const GOOGLE_WEB_CLIENT_ID = '668620158239-to6rkbe6grl7rnki7uj903actrv4g5hv.apps.googleusercontent.com';
+const GOOGLE_IOS_CLIENT_ID =
+  '668620158239-8bb43ohkh0f2cp8d8tc97a5aoglp2ua9.apps.googleusercontent.com';
+const GOOGLE_ANDROID_CLIENT_ID =
+  '668620158239-pnessev4surmlsjael5htsem06fcllvn.apps.googleusercontent.com';
+const GOOGLE_WEB_CLIENT_ID =
+  '668620158239-to6rkbe6grl7rnki7uj903actrv4g5hv.apps.googleusercontent.com';
 
 export default function LoginScreen() {
   const { login } = useAuth();
@@ -39,14 +42,25 @@ export default function LoginScreen() {
   const fadeAnim = useState(new Animated.Value(0))[0];
   const passwordInputRef = React.useRef<TextInput>(null);
 
-  const [googleRequest, googleResponse, googlePromptAsync, googleDiscovery] = Google.useAuthRequest({
-  iosClientId: GOOGLE_IOS_CLIENT_ID,
-  androidClientId: GOOGLE_ANDROID_CLIENT_ID,
-  webClientId: GOOGLE_WEB_CLIENT_ID,
-  redirectUri: "https://auth.expo.io/@franmestre/pueblos-bonitos-app",
-});
-console.log("🔍 redirectUri usada por Google:", googleRequest?.redirectUri);
-  
+  // 🔵 BLOQUE CORREGIDO DE GOOGLE (solo esto se ha tocado)
+  const GOOGLE_REDIRECT_URI = "https://auth.expo.io/@franmestre/pueblos-bonitos-app";
+
+  const [googleRequest, googleResponse, googlePromptAsync, googleDiscovery] =
+    Google.useAuthRequest(
+      {
+        iosClientId: GOOGLE_IOS_CLIENT_ID,
+        androidClientId: GOOGLE_ANDROID_CLIENT_ID,
+        webClientId: GOOGLE_WEB_CLIENT_ID,
+        redirectUri: GOOGLE_REDIRECT_URI,
+        responseType: "id_token",
+      },
+      {
+        useProxy: false,
+      }
+    );
+
+  console.log("🔍 Google redirectUri final usada:", googleRequest?.redirectUri);
+
   React.useEffect(() => {
     Animated.timing(fadeAnim, {
       toValue: 1,
@@ -68,60 +82,76 @@ console.log("🔍 redirectUri usada por Google:", googleRequest?.redirectUri);
     }
   };
 
-  const handleGoogleNativeLogin = useCallback(async (idToken: string) => {
-    try {
-      console.log('📡 Enviando id_token de Google al backend...');
-      
-      const response = await fetch('https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v2/google-login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          token: idToken,
-        }),
-      });
+  const handleGoogleNativeLogin = useCallback(
+    async (idToken: string) => {
+      try {
+        console.log('📡 Enviando id_token de Google al backend...');
 
-      console.log('📊 Google Login response status:', response.status);
+        const response = await fetch(
+          'https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v2/google-login',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              token: idToken,
+            }),
+          }
+        );
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('❌ Error Google Login:', errorData);
-        Alert.alert('Error', errorData.message || 'No se pudo completar el inicio de sesión con Google.');
+        console.log('📊 Google Login response status:', response.status);
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error('❌ Error Google Login:', errorData);
+          Alert.alert(
+            'Error',
+            errorData.message || 'No se pudo completar el inicio de sesión con Google.'
+          );
+          setIsGoogleLoading(false);
+          return;
+        }
+
+        const data = await response.json();
+        console.log('✅ Google Login exitoso:', data);
+
+        if (!data.jwt || !data.user) {
+          Alert.alert('Error', 'Respuesta del servidor inválida.');
+          setIsGoogleLoading(false);
+          return;
+        }
+
+        console.log('💾 Guardando sesión en AuthContext...');
+        const result = await login(
+          { username: '', password: '' },
+          { googleJwt: data.jwt, googleUser: data.user }
+        );
+
+        if (result.success) {
+          console.log('✅ Google Login completado');
+          Animated.sequence([
+            Animated.timing(fadeAnim, {
+              toValue: 0,
+              duration: 300,
+              useNativeDriver: true,
+            }),
+          ]).start(() => router.replace('/(tabs)/profile'));
+        } else {
+          Alert.alert(
+            'Error',
+            result.error || 'No se pudo completar el inicio de sesión con Google.'
+          );
+        }
+      } catch (error: any) {
+        console.error('Google login error:', error);
+        Alert.alert('Error', 'No se pudo completar el inicio de sesión con Google.');
+      } finally {
         setIsGoogleLoading(false);
-        return;
       }
-
-      const data = await response.json();
-      console.log('✅ Google Login exitoso:', data);
-
-      if (!data.jwt || !data.user) {
-        Alert.alert('Error', 'Respuesta del servidor inválida.');
-        setIsGoogleLoading(false);
-        return;
-      }
-
-      console.log('💾 Guardando sesión en AuthContext...');
-      const result = await login(
-        { username: '', password: '' },
-        { googleJwt: data.jwt, googleUser: data.user }
-      );
-
-      if (result.success) {
-        console.log('✅ Google Login completado');
-        Animated.sequence([
-          Animated.timing(fadeAnim, { toValue: 0, duration: 300, useNativeDriver: true }),
-        ]).start(() => router.replace('/(tabs)/profile'));
-      } else {
-        Alert.alert('Error', result.error || 'No se pudo completar el inicio de sesión con Google.');
-      }
-    } catch (error: any) {
-      console.error('Google login error:', error);
-      Alert.alert('Error', 'No se pudo completar el inicio de sesión con Google.');
-    } finally {
-      setIsGoogleLoading(false);
-    }
-  }, [login, fadeAnim]);
+    },
+    [login, fadeAnim]
+  );
 
   React.useEffect(() => {
     if (googleResponse?.type === 'success') {
@@ -130,13 +160,13 @@ console.log("🔍 redirectUri usada por Google:", googleRequest?.redirectUri);
     }
   }, [googleResponse, handleGoogleNativeLogin]);
 
-  // 🍎 Login con Apple (flujo nativo)
+  // 🍎 Login con Apple (NO TOCADO)
   const handleAppleLogin = async () => {
     try {
       setIsAppleLoading(true);
 
       console.log('🍎 Iniciando Apple Login nativo...');
-      
+
       const credential = await AppleAuthentication.signInAsync({
         requestedScopes: [
           AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
@@ -165,10 +195,17 @@ console.log("🔍 redirectUri usada por Google:", googleRequest?.redirectUri);
       if (result.success) {
         console.log('✅ Apple Login exitoso');
         Animated.sequence([
-          Animated.timing(fadeAnim, { toValue: 0, duration: 300, useNativeDriver: true }),
+          Animated.timing(fadeAnim, {
+            toValue: 0,
+            duration: 300,
+            useNativeDriver: true,
+          }),
         ]).start(() => router.replace('/(tabs)/profile'));
       } else {
-        Alert.alert('Error', result.error || 'No se pudo completar el inicio de sesión con Apple.');
+        Alert.alert(
+          'Error',
+          result.error || 'No se pudo completar el inicio de sesión con Apple.'
+        );
       }
     } catch (error: any) {
       console.error('Apple login error:', error);
@@ -182,7 +219,7 @@ console.log("🔍 redirectUri usada por Google:", googleRequest?.redirectUri);
     }
   };
 
-  // 🔐 Login clásico con usuario/contraseña (no se toca)
+  // 🔐 Login clásico
   const handleLogin = async () => {
     const trimmedUsername = username.trim();
     const trimmedPassword = password.trim();
@@ -200,10 +237,17 @@ console.log("🔍 redirectUri usada por Google:", googleRequest?.redirectUri);
 
     if (result.success) {
       Animated.sequence([
-        Animated.timing(fadeAnim, { toValue: 0, duration: 300, useNativeDriver: true }),
+        Animated.timing(fadeAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
       ]).start(() => router.replace('/(tabs)/profile'));
     } else {
-      Alert.alert('Error', result.error || 'Credenciales incorrectas o usuario no encontrado');
+      Alert.alert(
+        'Error',
+        result.error || 'Credenciales incorrectas o usuario no encontrado'
+      );
     }
   };
 
@@ -211,7 +255,9 @@ console.log("🔍 redirectUri usada por Google:", googleRequest?.redirectUri);
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <TouchableOpacity
         style={styles.backButton}
-        onPress={() => (router.canGoBack() ? router.back() : router.replace('/(tabs)/home'))}
+        onPress={() =>
+          router.canGoBack() ? router.back() : router.replace('/(tabs)/home')
+        }
         activeOpacity={0.7}
       >
         <ArrowLeft size={24} color="#1a1a1a" strokeWidth={2} />
@@ -276,7 +322,8 @@ console.log("🔍 redirectUri usada por Google:", googleRequest?.redirectUri);
               <TouchableOpacity
                 style={[
                   styles.button,
-                  (isLoading || !username.trim() || !password.trim()) && styles.buttonDisabled,
+                  (isLoading || !username.trim() || !password.trim()) &&
+                    styles.buttonDisabled,
                 ]}
                 onPress={handleLogin}
                 disabled={isLoading || !username.trim() || !password.trim()}
@@ -308,7 +355,9 @@ console.log("🔍 redirectUri usada por Google:", googleRequest?.redirectUri);
                 ) : (
                   <>
                     <Text style={styles.socialButtonIcon}>G</Text>
-                    <Text style={styles.socialButtonText}>Continuar con Google</Text>
+                    <Text style={styles.socialButtonText}>
+                      Continuar con Google
+                    </Text>
                   </>
                 )}
               </TouchableOpacity>
@@ -326,7 +375,9 @@ console.log("🔍 redirectUri usada por Google:", googleRequest?.redirectUri);
                   ) : (
                     <>
                       <Text style={styles.appleButtonIcon}></Text>
-                      <Text style={styles.appleButtonText}>Continuar con Apple</Text>
+                      <Text style={styles.appleButtonText}>
+                        Continuar con Apple
+                      </Text>
                     </>
                   )}
                 </TouchableOpacity>
@@ -377,8 +428,19 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 8,
   },
-  title: { fontSize: 32, fontWeight: '700', color: '#1a1a1a', marginBottom: 12, textAlign: 'center' },
-  subtitle: { fontSize: 16, color: '#666', textAlign: 'center', lineHeight: 24 },
+  title: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: '#1a1a1a',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 24,
+  },
   form: { width: '100%' },
   inputGroup: { marginBottom: 24 },
   label: { fontSize: 14, fontWeight: '600', color: '#333', marginBottom: 8 },
@@ -407,9 +469,18 @@ const styles = StyleSheet.create({
   },
   buttonDisabled: { opacity: 0.6 },
   buttonText: { color: '#fff', fontSize: 18, fontWeight: '700' },
-  divider: { flexDirection: 'row', alignItems: 'center', marginVertical: 28 },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 28,
+  },
   dividerLine: { flex: 1, height: 1, backgroundColor: '#e0e0e0' },
-  dividerText: { marginHorizontal: 16, fontSize: 14, color: '#999', fontWeight: '500' },
+  dividerText: {
+    marginHorizontal: 16,
+    fontSize: 14,
+    color: '#999',
+    fontWeight: '500',
+  },
   socialButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -426,9 +497,21 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 1,
   },
-  socialButtonIcon: { fontSize: 20, fontWeight: '700', color: '#4285F4', marginRight: 12 },
-  socialButtonText: { fontSize: 16, fontWeight: '600', color: '#333' },
+  socialButtonIcon: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#4285F4',
+    marginRight: 12,
+  },
+  socialButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+  },
   appleButton: { backgroundColor: '#000', borderColor: '#000' },
-  appleButtonIcon: { fontSize: 20, marginRight: 12, color: '#fff' },
-  appleButtonText: { fontSize: 16, fontWeight: '600', color: '#fff' },
-});
+  appleButtonIcon: {
+    fontSize: 20,
+    marginRight: 12,
+    color: '#fff',
+  },
+  apple
