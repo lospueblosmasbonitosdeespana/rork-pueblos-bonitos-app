@@ -508,7 +508,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#333',
   },
-  apple
   appleButtonIcon: {
     fontSize: 20,
     marginRight: 12,
@@ -519,3 +518,4 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#fff',
   },
+});
