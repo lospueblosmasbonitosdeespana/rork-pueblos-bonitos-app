@@ -39,14 +39,13 @@ export default function LoginScreen() {
   const fadeAnim = useState(new Animated.Value(0))[0];
   const passwordInputRef = React.useRef<TextInput>(null);
 
-  const [request, googleResponse, googlePromptAsync] = Google.useAuthRequest({
+  const [googleRequest, googleResponse, googlePromptAsync, googleDiscovery] = Google.useAuthRequest({
   iosClientId: GOOGLE_IOS_CLIENT_ID,
   androidClientId: GOOGLE_ANDROID_CLIENT_ID,
   webClientId: GOOGLE_WEB_CLIENT_ID,
   redirectUri: "https://auth.expo.io/@franmestre/pueblos-bonitos-app",
 });
-
-console.log("🔍 redirectUri usada por Google:", request?.redirectUri);   
+console.log("🔍 redirectUri usada por Google:", googleRequest?.redirectUri);
   
   React.useEffect(() => {
     Animated.timing(fadeAnim, {
