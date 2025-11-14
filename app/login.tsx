@@ -43,6 +43,7 @@ export default function LoginScreen() {
     iosClientId: GOOGLE_IOS_CLIENT_ID,
     androidClientId: GOOGLE_ANDROID_CLIENT_ID,
     webClientId: GOOGLE_WEB_CLIENT_ID,
+    redirectUri: 'https://auth.expo.io/@franmestre/pueblos-bonitos-app',
   });
 
   React.useEffect(() => {
