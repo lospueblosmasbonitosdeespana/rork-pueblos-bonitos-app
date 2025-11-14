@@ -1,8 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Platform } from "react-native";
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity } from "react-native";
 import { useAuth } from "@/contexts/auth";
 import { RefreshCw } from "lucide-react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface PuebloVisitado {
   id: number;
@@ -14,7 +13,6 @@ interface PuebloVisitado {
 
 export default function MapaPueblosVisitados() {
   const { user, isLoading: authLoading, isAuthenticated } = useAuth();
-  const insets = useSafeAreaInsets();
   const [pueblos, setPueblos] = useState<PuebloVisitado[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -100,76 +98,29 @@ export default function MapaPueblosVisitados() {
     );
   }
 
-  if (Platform.OS === 'web') {
-    return (
-      <View style={styles.center}>
-        <Text style={styles.webTitle}>Pueblos Visitados</Text>
-        <Text style={styles.webSubtitle}>
-          Has visitado {pueblos.length} {pueblos.length === 1 ? 'pueblo' : 'pueblos'}
-        </Text>
-        <View style={styles.pueblosList}>
-          {pueblos.map((pueblo) => (
-            <View key={pueblo.id} style={styles.puebloItem}>
-              <Text style={styles.puebloName}>📍 {pueblo.name}</Text>
-            </View>
-          ))}
-        </View>
-        <TouchableOpacity
-          style={styles.retryButton}
-          onPress={fetchPueblosVisitados}
-        >
-          <RefreshCw size={20} color="#fff" />
-          <Text style={styles.retryButtonText}>Recargar</Text>
-        </TouchableOpacity>
-        <Text style={styles.webNote}>
-          El mapa interactivo está disponible en la app móvil
-        </Text>
-      </View>
-    );
-  }
-
-  const MapView = require('react-native-maps').default;
-  const Marker = require('react-native-maps').Marker;
-  const PROVIDER_GOOGLE = require('react-native-maps').PROVIDER_GOOGLE;
-
   return (
-    <View style={styles.container}>
-      <MapView
-        style={styles.map}
-        provider={PROVIDER_GOOGLE}
-        initialRegion={{
-          latitude: 40.0,
-          longitude: -3.7,
-          latitudeDelta: 10,
-          longitudeDelta: 10,
-        }}
-      >
+    <View style={styles.center}>
+      <Text style={styles.webTitle}>Pueblos Visitados</Text>
+      <Text style={styles.webSubtitle}>
+        Has visitado {pueblos.length} {pueblos.length === 1 ? 'pueblo' : 'pueblos'}
+      </Text>
+      <View style={styles.pueblosList}>
         {pueblos.map((pueblo) => (
-          <Marker
-            key={pueblo.id}
-            coordinate={{
-              latitude: pueblo.lat,
-              longitude: pueblo.lng,
-            }}
-            title={pueblo.name}
-            description="Pueblo visitado"
-            pinColor="#d60000"
-          />
+          <View key={pueblo.id} style={styles.puebloItem}>
+            <Text style={styles.puebloName}>📍 {pueblo.name}</Text>
+          </View>
         ))}
-      </MapView>
-
+      </View>
       <TouchableOpacity
-        style={[styles.reloadButton, { top: 16 + insets.top }]}
+        style={styles.retryButton}
         onPress={fetchPueblosVisitados}
       >
-        <RefreshCw size={24} color="#fff" />
+        <RefreshCw size={20} color="#fff" />
+        <Text style={styles.retryButtonText}>Recargar</Text>
       </TouchableOpacity>
-
-      <View style={[styles.counter, { bottom: 20 + insets.bottom }]}>
-        <Text style={styles.counterText}>
-          {pueblos.length} {pueblos.length === 1 ? "pueblo visitado" : "pueblos visitados"}
-        </Text>
-      </View>
+      <Text style={styles.webNote}>
+        El mapa interactivo está disponible en la app móvil
+      </Text>
     </View>
   );
 }
