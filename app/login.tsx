@@ -2,7 +2,6 @@ import { router } from 'expo-router';
 import { ArrowLeft, LogIn } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { makeRedirectUri } from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import {
@@ -48,17 +47,10 @@ export default function LoginScreen() {
     try {
       setIsGoogleLoading(true);
 
-      // Deep link directo a la app (sin proxy)
-      const returnUrl = makeRedirectUri({
-        scheme: 'myapp',
-        path: 'login-success',
-        useProxy: false,
-      });
+      const returnUrl = 'exp://linh3i8-anonymous-8081.exp.direct/--/login-success';
       console.log('🔗 Google returnUrl:', returnUrl);
 
-      const authUrl =
-        `https://lospueblosmasbonitosdeespana.org/wp-login.php?loginSocial=google` +
-        `&redirect_to=${encodeURIComponent(returnUrl)}`;
+      const authUrl = 'https://lospueblosmasbonitosdeespana.org/account-2/?loginSocial=google&redirect_to=exp://linh3i8-anonymous-8081.exp.direct/--/login-success';
 
       const result = await WebBrowser.openAuthSessionAsync(authUrl, returnUrl);
       console.log('✅ Resultado Google:', result);
