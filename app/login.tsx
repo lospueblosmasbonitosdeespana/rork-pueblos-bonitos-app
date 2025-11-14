@@ -26,7 +26,7 @@ WebBrowser.maybeCompleteAuthSession();
 
 const GOOGLE_IOS_CLIENT_ID = '668620158239-8bb43ohkh0f2cp8d8tc97a5aoglp2ua9.apps.googleusercontent.com';
 const GOOGLE_ANDROID_CLIENT_ID = '668620158239-pnessev4surmlsjael5htsem06fcllvn.apps.googleusercontent.com';
-const GOOGLE_WEB_CLIENT_ID = '668620158239-to6rkbe6grl7rnki7uj903actrv4g5hv.apps.googleusercontent.com';
+const GOOGLE_WEB_CLIENT_ID = '668620158239-8ksncobinge6dcborof978ibij25ecb3.apps.googleusercontent.com';
 const GOOGLE_REDIRECT_URI = 'https://auth.expo.io/@franmestre/pueblos-bonitos-app';
 
 export default function LoginScreen() {
