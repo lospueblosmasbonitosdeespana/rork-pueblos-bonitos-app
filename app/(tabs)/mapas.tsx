@@ -1,55 +1,57 @@
 import React from 'react';
 import { View } from 'react-native';
 import { WebView } from 'react-native-webview';
+import { useLanguage } from '@/contexts/language';
 
 export default function Mapas() {
-  const injectedCSS = `
-    (function() {
-      function limpiarMapa() {
-        // Ocultar títulos y botones de arriba
-        const textos = document.querySelectorAll('h1, h2, h3, .page-title, .elementor-heading-title');
-        textos.forEach(el => {
-          if (el.innerText && el.innerText.toLowerCase().includes('disfruta nuestra red de pueblos')) {
-            el.style.display = 'none';
-          }
-        });
+  const { language } = useLanguage();
 
-        // Ocultar los botones "Mapa" y "Listado"
-        const botones = document.querySelectorAll('a, button, div');
-        botones.forEach(el => {
-          const texto = (el.textContent || '').toLowerCase();
-          if (texto.includes('mapa') || texto.includes('listado')) {
-            el.style.display = 'none';
-          }
-        });
-
-        // Ocultar cualquier bloque de cabecera superior
-        const cabecera = document.querySelector('header, .elementor-location-header');
-        if (cabecera) cabecera.style.display = 'none';
-
-        // Ajustar el mapa a pantalla completa
-        const mapa = document.querySelector('#map, .elementor-widget-google_maps, .elementor-widget');
-        if (mapa) {
-          mapa.style.position = 'fixed';
-          mapa.style.top = '0';
-          mapa.style.left = '0';
-          mapa.style.width = '100vw';
-          mapa.style.height = '100vh';
-          mapa.style.zIndex = '1';
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html lang="${language}">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+      <title>Mapa Boldest</title>
+      <style>
+        * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
         }
-      }
-
-      limpiarMapa();
-      new MutationObserver(limpiarMapa).observe(document.documentElement, {childList: true, subtree: true});
-    })();
-
-    true;
+        html, body {
+          width: 100%;
+          height: 100%;
+          overflow: hidden;
+        }
+        #bWidgetMap {
+          width: 100%;
+          height: 100%;
+        }
+      </style>
+    </head>
+    <body>
+      <div
+        id="bWidgetMap"
+        integration="full"
+        topHeight="40"
+        showCurtain="true"
+        showButtons="false"
+        parenturiprefix="bwidget:"
+        ignoreBottomContent="true"
+        embedurl="https://maps.lospueblosmasbonitosdeespana.org"
+        embedmainuri="/${language}/app"
+        mapScrollwheel="true"
+      ></div>
+      <script type="text/javascript" src="https://maps.lospueblosmasbonitosdeespana.org/embed.js"></script>
+    </body>
+    </html>
   `;
 
   return (
     <View style={{ flex: 1, backgroundColor: '#fff' }}>
       <WebView
-        source={{ uri: 'https://lospueblosmasbonitosdeespana.org/pueblos?app=1' }}
+        source={{ html: htmlContent }}
         style={{ flex: 1 }}
         originWhitelist={['*']}
         javaScriptEnabled
@@ -62,7 +64,9 @@ export default function Mapas() {
         mixedContentMode="always"
         setSupportMultipleWindows={false}
         startInLoadingState
-        injectedJavaScript={injectedCSS}
+        scalesPageToFit={true}
+        bounces={false}
+        scrollEnabled={true}
       />
     </View>
   );
