@@ -5,6 +5,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import * as WebBrowser from 'expo-web-browser';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as Google from 'expo-auth-session/providers/google';
+import { makeRedirectUri } from 'expo-auth-session';
 import {
   ActivityIndicator,
   Alert,
@@ -26,8 +27,6 @@ WebBrowser.maybeCompleteAuthSession();
 
 const GOOGLE_IOS_CLIENT_ID = '668620158239-8bb43ohkh0f2cp8d8tc97a5aoglp2ua9.apps.googleusercontent.com';
 const GOOGLE_ANDROID_CLIENT_ID = '668620158239-pnessev4surmlsjael5htsem06fcllvn.apps.googleusercontent.com';
-const GOOGLE_WEB_CLIENT_ID = '668620158239-8ksncobinge6dcborof978ibij25ecb3.apps.googleusercontent.com';
-const GOOGLE_REDIRECT_URI = 'https://auth.expo.io/@franmestre/pueblos-bonitos-app';
 
 export default function LoginScreen() {
   const { login } = useAuth();
@@ -40,22 +39,24 @@ export default function LoginScreen() {
   const fadeAnim = useState(new Animated.Value(0))[0];
   const passwordInputRef = React.useRef<TextInput>(null);
 
-  const [googleRequest, googleResponse, googlePromptAsync] = Google.useAuthRequest({
-    iosClientId: GOOGLE_IOS_CLIENT_ID,
-    androidClientId: GOOGLE_ANDROID_CLIENT_ID,
-    webClientId: GOOGLE_WEB_CLIENT_ID,
-    redirectUri: GOOGLE_REDIRECT_URI,
-    responseType: 'id_token',
-  });
+  const [googleRequest, googleResponse, googlePromptAsync] = Google.useAuthRequest(
+    {
+      iosClientId: GOOGLE_IOS_CLIENT_ID,
+      androidClientId: GOOGLE_ANDROID_CLIENT_ID,
+      redirectUri: makeRedirectUri({ native: 'myapp://auth' }),
+      responseType: 'id_token',
+    },
+    { useProxy: false }
+  );
 
   useEffect(() => {
-  if (googleRequest) {
-    console.log('✅ Google Auth request creada');
-    console.log('📍 redirectUri:', googleRequest.redirectUri || 'undefined');
-    console.log('🔥 URL DE AUTORIZACIÓN COMPLETA:', googleRequest?.url);
-    alert('URL REAL: ' + googleRequest?.url);
-  }
-}, [googleRequest]);
+    if (googleRequest) {
+      console.log('✅ Google Auth request creada (NATIVO)');
+      console.log('📍 redirectUri:', googleRequest.redirectUri);
+      console.log('🔥 URL completa:', googleRequest.url);
+      console.log('⚙️ useProxy: false');
+    }
+  }, [googleRequest]);
   
 
   React.useEffect(() => {
