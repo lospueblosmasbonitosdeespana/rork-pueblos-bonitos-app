@@ -153,7 +153,7 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
 
   const login = async (
     credentials: LoginCredentials, 
-    options?: { appleIdentityToken?: string }
+    options?: { appleIdentityToken?: string; googleJwt?: string; googleUser?: any }
   ): Promise<{ success: boolean; error?: string }> => {
     try {
       console.log('🔐 Autenticando con LPBE...');
@@ -175,6 +175,25 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
         console.log('✅ React Query limpiado');
       } catch (qErr) {
         console.warn('⚠️ No se pudo limpiar React Query:', qErr);
+      }
+      
+      // Si es Google Login, usar los datos ya recibidos
+      if (options?.googleJwt && options?.googleUser) {
+        console.log('🔵 Guardando sesión de Google Login...');
+        const user = options.googleUser;
+        await setStoredUserId(user.id.toString());
+        await setStoredToken(options.googleJwt);
+        
+        setState({ 
+          user: { ...user, role: 'subscriber' }, 
+          userId: user.id.toString(), 
+          token: options.googleJwt,
+          isLoading: false, 
+          isAuthenticated: true 
+        });
+
+        console.log('✅ Google Login completado exitosamente');
+        return { success: true };
       }
       
       // Si es Apple Login, usar endpoint diferente

@@ -1,9 +1,10 @@
 import { router } from 'expo-router';
 import { ArrowLeft, LogIn } from 'lucide-react-native';
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import * as WebBrowser from 'expo-web-browser';
 import * as AppleAuthentication from 'expo-apple-authentication';
+import * as Google from 'expo-auth-session/providers/google';
 import {
   ActivityIndicator,
   Alert,
@@ -23,6 +24,10 @@ import { useAuth } from '@/contexts/auth';
 const LPBE_RED = '#c1121f';
 WebBrowser.maybeCompleteAuthSession();
 
+const GOOGLE_IOS_CLIENT_ID = 'YOUR_IOS_CLIENT_ID.apps.googleusercontent.com';
+const GOOGLE_ANDROID_CLIENT_ID = 'YOUR_ANDROID_CLIENT_ID.apps.googleusercontent.com';
+const GOOGLE_WEB_CLIENT_ID = 'YOUR_WEB_CLIENT_ID.apps.googleusercontent.com';
+
 export default function LoginScreen() {
   const { login } = useAuth();
   const queryClient = useQueryClient();
@@ -34,6 +39,12 @@ export default function LoginScreen() {
   const fadeAnim = useState(new Animated.Value(0))[0];
   const passwordInputRef = React.useRef<TextInput>(null);
 
+  const [, googleResponse, googlePromptAsync] = Google.useAuthRequest({
+    iosClientId: GOOGLE_IOS_CLIENT_ID,
+    androidClientId: GOOGLE_ANDROID_CLIENT_ID,
+    webClientId: GOOGLE_WEB_CLIENT_ID,
+  });
+
   React.useEffect(() => {
     Animated.timing(fadeAnim, {
       toValue: 1,
@@ -42,26 +53,80 @@ export default function LoginScreen() {
     }).start();
   }, [fadeAnim]);
 
-  // 🔵 Login con Google (flujo web de Nextend)
+  // 🔵 Login con Google (flujo nativo)
   const handleGoogleLogin = async () => {
     try {
       setIsGoogleLoading(true);
-
-      const returnUrl = 'exp://linh3i8-anonymous-8081.exp.direct/--/login-success';
-      console.log('🔗 Google returnUrl:', returnUrl);
-
-      const authUrl = 'https://lospueblosmasbonitosdeespana.org/account-2/?loginSocial=google&redirect_to=exp://linh3i8-anonymous-8081.exp.direct/--/login-success';
-
-      const result = await WebBrowser.openAuthSessionAsync(authUrl, returnUrl);
-      console.log('✅ Resultado Google:', result);
-      Alert.alert('Google', 'Login completado o cancelado. Revisa consola.');
+      console.log('🔵 Iniciando Google Login nativo...');
+      await googlePromptAsync();
     } catch (error) {
-      console.error('Google web login error:', error);
+      console.error('Google native login error:', error);
+      Alert.alert('Error', 'No se pudo completar el inicio de sesión con Google.');
+      setIsGoogleLoading(false);
+    }
+  };
+
+  const handleGoogleNativeLogin = useCallback(async (idToken: string) => {
+    try {
+      console.log('📡 Enviando id_token de Google al backend...');
+      
+      const response = await fetch('https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v2/google-login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          token: idToken,
+        }),
+      });
+
+      console.log('📊 Google Login response status:', response.status);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('❌ Error Google Login:', errorData);
+        Alert.alert('Error', errorData.message || 'No se pudo completar el inicio de sesión con Google.');
+        setIsGoogleLoading(false);
+        return;
+      }
+
+      const data = await response.json();
+      console.log('✅ Google Login exitoso:', data);
+
+      if (!data.jwt || !data.user) {
+        Alert.alert('Error', 'Respuesta del servidor inválida.');
+        setIsGoogleLoading(false);
+        return;
+      }
+
+      console.log('💾 Guardando sesión en AuthContext...');
+      const result = await login(
+        { username: '', password: '' },
+        { googleJwt: data.jwt, googleUser: data.user }
+      );
+
+      if (result.success) {
+        console.log('✅ Google Login completado');
+        Animated.sequence([
+          Animated.timing(fadeAnim, { toValue: 0, duration: 300, useNativeDriver: true }),
+        ]).start(() => router.replace('/(tabs)/profile'));
+      } else {
+        Alert.alert('Error', result.error || 'No se pudo completar el inicio de sesión con Google.');
+      }
+    } catch (error: any) {
+      console.error('Google login error:', error);
       Alert.alert('Error', 'No se pudo completar el inicio de sesión con Google.');
     } finally {
       setIsGoogleLoading(false);
     }
-  };
+  }, [login, fadeAnim]);
+
+  React.useEffect(() => {
+    if (googleResponse?.type === 'success') {
+      const { id_token } = googleResponse.params;
+      handleGoogleNativeLogin(id_token);
+    }
+  }, [googleResponse, handleGoogleNativeLogin]);
 
   // 🍎 Login con Apple (flujo nativo)
   const handleAppleLogin = async () => {
