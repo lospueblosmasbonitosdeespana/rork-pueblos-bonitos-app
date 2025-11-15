@@ -1,7 +1,10 @@
 workflows:
   ios-build:
     name: iOS Build (Expo Prebuild)
+
     environment:
+      groups:
+        - apple_credentials
       vars:
         NODE_VERSION: "18"
 
