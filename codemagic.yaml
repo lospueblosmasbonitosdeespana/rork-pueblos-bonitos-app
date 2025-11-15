@@ -4,7 +4,7 @@ workflows:
 
     environment:
       groups:
-        - apple_credentials
+        - appstore_credentials # <-- Este grupo debe contener APP_STORE_CONNECT_ISSUER_ID, KEY_IDENTIFIER, PRIVATE_KEY
       vars:
         NODE_VERSION: "18"
 
@@ -22,6 +22,8 @@ workflows:
           cd ios
           pod install --repo-update
           cd ..
+
+      # La firma se asigna automáticamente, no necesitas manipular manualmente los certificados/perfiles
 
       - name: Build iOS app
         script: |
@@ -44,7 +46,9 @@ workflows:
     artifacts:
       - build/ipa/*.ipa
 
+    code_signing:
+      distribution_type: app_store # O 'ad_hoc' según necesidad
+      bundle_identifier: com.tuempresa.pueblosbonitos # <-- Exacto al de tu app
+
     publishing:
-      app_store_connect:
-        apple_id: $APPLE_ID
-        password: $APP_SPECIFIC_PASSWORD
+      app_store_connect: {} # Así está perfecto, sin apple_id ni password
