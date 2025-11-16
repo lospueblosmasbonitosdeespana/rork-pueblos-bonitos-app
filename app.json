@@ -2,7 +2,7 @@
   "expo": {
     "name": "Pueblos Bonitos App",
     "slug": "pueblos-bonitos-app",
-    "version": "2.0.0",
+    "version": "2.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "myapp",
@@ -14,25 +14,26 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "app.rork.pueblos-bonitos-app",
-      "infoPlist": {
-        "NSCameraUsageDescription": "Allow $(PRODUCT_NAME) to access your camera",
-        "NSMicrophoneUsageDescription": "Allow $(PRODUCT_NAME) to access your microphone",
-        "NSFaceIDUsageDescription": "Allow $(PRODUCT_NAME) to access your Face ID biometric data.",
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "Allow $(PRODUCT_NAME) to use your location.",
-        "NSLocationAlwaysUsageDescription": "Allow $(PRODUCT_NAME) to use your location.",
-        "NSLocationWhenInUseUsageDescription": "Allow $(PRODUCT_NAME) to use your location.",
-        "UIBackgroundModes": [
-          "location"
-        ],
-        "NSPhotoLibraryUsageDescription": "Allow $(PRODUCT_NAME) to access your photos"
-      },
-      "config": {
-        "usesNonExemptEncryption": false
-      },
-      "usesAppleSignIn": true
-    },
+  "supportsTablet": true,
+  "bundleIdentifier": "app.rork.pueblos-bonitos-app",
+  "buildNumber": "201",
+  "infoPlist": {
+    "NSCameraUsageDescription": "Allow $(PRODUCT_NAME) to access your camera",
+    "NSMicrophoneUsageDescription": "Allow $(PRODUCT_NAME) to access your microphone",
+    "NSFaceIDUsageDescription": "Allow $(PRODUCT_NAME) to access your Face ID biometric data.",
+    "NSLocationAlwaysAndWhenInUseUsageDescription": "Allow $(PRODUCT_NAME) to use your location.",
+    "NSLocationAlwaysUsageDescription": "Allow $(PRODUCT_NAME) to use your location.",
+    "NSLocationWhenInUseUsageDescription": "Allow $(PRODUCT_NAME) to use your location.",
+    "UIBackgroundModes": [
+      "location"
+    ],
+    "NSPhotoLibraryUsageDescription": "Allow $(PRODUCT_NAME) to access your photos"
+  },
+  "config": {
+    "usesNonExemptEncryption": false
+  },
+  "usesAppleSignIn": true
+},
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
