@@ -9,39 +9,42 @@ class GoogleSignInModule: NSObject {
   func signIn(_ resolve: @escaping RCTPromiseResolveBlock,
               rejecter reject: @escaping RCTPromiseRejectBlock) {
 
-    guard let rootVC = UIApplication.shared.windows.first?.rootViewController else {
+    guard let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+          let rootVC = scene.windows.first?.rootViewController else {
         reject("NO_ROOT", "No root view controller", nil)
         return
     }
 
-    let config = GIDConfiguration(
-        clientID: "1050453988650-cq20qu63m02778k7ihkmghim6n0073og.apps.googleusercontent.com"
+    let configuration = GIDConfiguration(
+      clientID: "1050453988650-cq20qu63m02778k7ihkmghim6n0073og.apps.googleusercontent.com"
     )
 
     GIDSignIn.sharedInstance.signIn(
-      with: config,
-      presenting: rootVC
-    ) { user, error in
-        
-        if let error = error {
-            reject("GOOGLE_ERROR", error.localizedDescription, error)
-            return
-        }
+      withPresenting: rootVC,
+      hint: nil,
+      additionalScopes: [],
+      configuration: configuration
+    ) { result, error in
 
-        guard let user = user else {
-            reject("NO_USER", "El usuario es nulo", nil)
-            return
-        }
+      if let error = error {
+        reject("GOOGLE_ERROR", error.localizedDescription, error)
+        return
+      }
 
-        let idToken = user.idToken?.tokenString ?? ""
-        let accessToken = user.accessToken.tokenString
-        
-        resolve([
-            "idToken": idToken,
-            "accessToken": accessToken,
-            "email": user.profile?.email ?? "",
-            "name": user.profile?.name ?? ""
-        ])
+      guard let user = result?.user else {
+        reject("NO_USER", "El usuario es nulo", nil)
+        return
+      }
+
+      let idToken = user.idToken?.tokenString ?? ""
+      let accessToken = user.accessToken.tokenString
+
+      resolve([
+        "idToken": idToken,
+        "accessToken": accessToken,
+        "email": user.profile?.email ?? "",
+        "name": user.profile?.name ?? ""
+      ])
     }
   }
 }

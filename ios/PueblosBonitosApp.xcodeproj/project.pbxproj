@@ -13,6 +13,8 @@
 		53B1D79E08BC900BC17531F4 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 7B037B30A8DA2676D6517D58 /* PrivacyInfo.xcprivacy */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
 		D3967893BB64A9D79F9CD200 /* libPods-PueblosBonitosApp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D2A65DE5C75CC5EA07E17079 /* libPods-PueblosBonitosApp.a */; };
+		E42A8B5F2ECA531500C564D2 /* GoogleSignInModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = E42A8B5E2ECA531500C564D2 /* GoogleSignInModule.swift */; };
+		E42A8B602ECA531500C564D2 /* GoogleSignInModule.m in Sources */ = {isa = PBXBuildFile; fileRef = E42A8B5D2ECA531500C564D2 /* GoogleSignInModule.m */; };
 		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
 /* End PBXBuildFile section */
 
@@ -27,6 +29,9 @@
 		B420139F190808265BE2DC43 /* Pods-PueblosBonitosApp.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-PueblosBonitosApp.release.xcconfig"; path = "Target Support Files/Pods-PueblosBonitosApp/Pods-PueblosBonitosApp.release.xcconfig"; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
 		D2A65DE5C75CC5EA07E17079 /* libPods-PueblosBonitosApp.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-PueblosBonitosApp.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		E42A8B5C2ECA531500C564D2 /* GoogleSignInModule.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GoogleSignInModule.h; sourceTree = "<group>"; };
+		E42A8B5D2ECA531500C564D2 /* GoogleSignInModule.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = GoogleSignInModule.m; sourceTree = "<group>"; };
+		E42A8B5E2ECA531500C564D2 /* GoogleSignInModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleSignInModule.swift; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = PueblosBonitosApp/AppDelegate.swift; sourceTree = "<group>"; };
 		F11748442D0722820044C1D9 /* PueblosBonitosApp-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "PueblosBonitosApp-Bridging-Header.h"; path = "PueblosBonitosApp/PueblosBonitosApp-Bridging-Header.h"; sourceTree = "<group>"; };
@@ -47,11 +52,15 @@
 		13B07FAE1A68108700A75B9A /* PueblosBonitosApp */ = {
 			isa = PBXGroup;
 			children = (
+				E42A8B5C2ECA531500C564D2 /* GoogleSignInModule.h */,
+				E42A8B5D2ECA531500C564D2 /* GoogleSignInModule.m */,
+				E42A8B5E2ECA531500C564D2 /* GoogleSignInModule.swift */,
 				F11748412D0307B40044C1D9 /* AppDelegate.swift */,
 				F11748442D0722820044C1D9 /* PueblosBonitosApp-Bridging-Header.h */,
 				BB2F792B24A3F905000567C9 /* Supporting */,
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
+				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */,
 				7B037B30A8DA2676D6517D58 /* PrivacyInfo.xcprivacy */,
 			);
@@ -86,7 +95,6 @@
 			isa = PBXGroup;
 			children = (
 				13B07FAE1A68108700A75B9A /* PueblosBonitosApp */,
-				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
 				DC696BD4BA79ADB5B0BA46A7 /* Pods */,
@@ -344,6 +352,8 @@
 			files = (
 				F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */,
 				2430FD82C3FB1695365250B4 /* ExpoModulesProvider.swift in Sources */,
+				E42A8B5F2ECA531500C564D2 /* GoogleSignInModule.swift in Sources */,
+				E42A8B602ECA531500C564D2 /* GoogleSignInModule.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
