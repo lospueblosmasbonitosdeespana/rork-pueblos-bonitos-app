@@ -41,7 +41,7 @@ public class AppDelegate: ExpoAppDelegate {
   ) -> Bool {
 
     // ✅ PRIMERO Google Sign-In
-    if GIDSignIn.sharedInstance.handle(url) {
+    if GIDSignIn.sharedInstance().handle(url) {
         return true
     }
 
