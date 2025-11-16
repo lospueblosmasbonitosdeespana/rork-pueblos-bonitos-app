@@ -13,6 +13,11 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
+    "extra": {
+      "expo": {
+        "projectId": "4f1e0a1b-91fb-47e1-8232-7d4088ae1f23"
+      }
+    },
     "ios": {
   "supportsTablet": true,
   "bundleIdentifier": "app.rork.pueblos-bonitos-app",
