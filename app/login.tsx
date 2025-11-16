@@ -40,14 +40,13 @@ export default function LoginScreen() {
   const passwordInputRef = React.useRef<TextInput>(null);
 
   const [googleRequest, googleResponse, googlePromptAsync] = Google.useAuthRequest(
-    {
-      iosClientId: GOOGLE_IOS_CLIENT_ID,
-      androidClientId: GOOGLE_ANDROID_CLIENT_ID,
-      redirectUri: makeRedirectUri({ native: 'myapp://auth' }),
-      responseType: 'id_token',
-    },
-    { useProxy: false }
-  );
+  {
+    iosClientId: GOOGLE_IOS_CLIENT_ID,
+    androidClientId: GOOGLE_ANDROID_CLIENT_ID,
+    responseType: 'id_token',
+  },
+  { useProxy: true }
+);
 
   useEffect(() => {
     if (googleRequest) {
