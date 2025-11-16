@@ -1,7 +1,7 @@
 import { router, Tabs } from "expo-router";
-import { Bell, Home, MapPin, Compass, Map, User, ShoppingBag, ShoppingCart } from "lucide-react-native";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
 import { COLORS } from "@/constants/theme";
 import { useLanguage } from "@/contexts/language";
@@ -16,7 +16,7 @@ function NotificationBellButton() {
       onPress={() => router.push('/centro-notificaciones')}
       style={bellStyles.container}
     >
-      <Bell size={22} color={COLORS.primary} strokeWidth={2} />
+      <Ionicons name="notifications-outline" size={22} color={COLORS.primary} />
       {unreadCount > 0 && (
         <View style={bellStyles.badge}>
           <Text style={bellStyles.badgeText}>
@@ -36,7 +36,8 @@ function CartButton() {
       onPress={() => router.push('/carrito')}
       style={bellStyles.container}
     >
-      <ShoppingCart size={22} color={COLORS.primary} strokeWidth={2} />
+      <Ionicons name="cart-outline" size={22} color={COLORS.primary} />
+
       {totalItems > 0 && (
         <View style={bellStyles.badge}>
           <Text style={bellStyles.badgeText}>
@@ -87,47 +88,64 @@ export default function TabLayout() {
         options={{
           title: t.tabs.home,
           headerTitle: '',
-          tabBarIcon: ({ color }) => <Home size={24} color={color} strokeWidth={1.5} />,
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="home-outline" size={24} color={color} />
+          ),
         }}
       />
+
       <Tabs.Screen
         name="pueblos"
         options={{
           title: t.tabs.pueblos,
           headerTitle: t.explore.title,
-          tabBarIcon: ({ color }) => <MapPin size={24} color={color} strokeWidth={1.5} />,
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="location-outline" size={24} color={color} />
+          ),
         }}
       />
+
       <Tabs.Screen
         name="rutas"
         options={{
           title: t.tabs.rutas,
           headerTitle: t.tabs.rutas,
-          tabBarIcon: ({ color }) => <Compass size={24} color={color} strokeWidth={1.5} />,
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="compass-outline" size={24} color={color} />
+          ),
         }}
       />
+
       <Tabs.Screen
         name="mapas"
         options={{
           title: t.tabs.mapas,
           headerTitle: t.mapas.title,
-          tabBarIcon: ({ color }) => <Map size={24} color={color} strokeWidth={1.5} />,
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="map-outline" size={24} color={color} />
+          ),
         }}
       />
+
       <Tabs.Screen
         name="tienda"
         options={{
           title: "Tienda",
           headerTitle: "Tienda LPBE",
-          tabBarIcon: ({ color }) => <ShoppingBag size={24} color={color} strokeWidth={1.5} />,
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="bag-outline" size={24} color={color} />
+          ),
         }}
       />
+
       <Tabs.Screen
         name="profile"
         options={{
           title: "Cuenta",
           headerTitle: "Mi Cuenta",
-          tabBarIcon: ({ color }) => <User size={24} color={color} strokeWidth={1.5} />,
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="person-outline" size={24} color={color} />
+          ),
         }}
       />
     </Tabs>
