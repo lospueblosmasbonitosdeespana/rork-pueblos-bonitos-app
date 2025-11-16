@@ -25,8 +25,8 @@ import { useAuth } from '@/contexts/auth';
 const LPBE_RED = '#c1121f';
 WebBrowser.maybeCompleteAuthSession();
 
-const GOOGLE_IOS_CLIENT_ID = '668620158239-c1j9l462eioafsdp31dekkqr8317612n.apps.googleusercontent.com';
-const GOOGLE_ANDROID_CLIENT_ID = '668620158239-lsj182bbu9f8i29okoursd3upkclpqth.apps.googleusercontent.com';
+const GOOGLE_IOS_CLIENT_ID = "1050453988650-cq20qu63m02778k7ihkmghim6n0073og.apps.googleusercontent.com";
+const GOOGLE_ANDROID_CLIENT_ID = "1050453988650-76ll3u8a2mg3vfus3qrmd6r60sgvv1rf.apps.googleusercontent.com";
 
 export default function LoginScreen() {
   const { login } = useAuth();
