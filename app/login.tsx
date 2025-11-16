@@ -1,4 +1,4 @@
-console.log("🔥🔥 LOGIN.TSX ACTIVO DESDE ESTA CARPETA (NATIVO GOOGLE) 🔥🔥");
+console.log("🔥🔥 LOGIN.TSX ACTIVO DESDE ESTA CARPETA (SIN GOOGLE) 🔥🔥");
 import { router } from 'expo-router';
 import { ArrowLeft, LogIn } from 'lucide-react-native';
 import React, { useState, useCallback, useEffect } from 'react';
@@ -20,15 +20,9 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/contexts/auth';
-import { NativeModules } from 'react-native';   // ⭐ GOOGLE NATIVO
-
-const { GoogleSignInModule } = NativeModules;   // ⭐ GOOGLE NATIVO
 
 const LPBE_RED = '#c1121f';
 WebBrowser.maybeCompleteAuthSession();
-
-const GOOGLE_IOS_CLIENT_ID = "1050453988650-cq20qu63m02778k7ihkmghim6n0073og.apps.googleusercontent.com";
-const GOOGLE_ANDROID_CLIENT_ID = "1050453988650-76ll3u8a2mg3vfus3qrmd6r60sgvv1rf.apps.googleusercontent.com";
 
 export default function LoginScreen() {
   const { login } = useAuth();
@@ -36,87 +30,9 @@ export default function LoginScreen() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isAppleLoading, setIsAppleLoading] = useState(false);
   const fadeAnim = useState(new Animated.Value(0))[0];
   const passwordInputRef = React.useRef<TextInput>(null);
-
-  // -----------------------------------------------------
-  //  ⭐⭐ GOOGLE NATIVO (SUSTITUYE AUTHSESSION)
-  // -----------------------------------------------------
-  const handleGoogleLogin = async () => {
-    try {
-      setIsGoogleLoading(true);
-      console.log("🔵 Iniciando login nativo de Google…");
-
-      const result = await GoogleSignInModule.signIn();
-      console.log("🔐 Resultado Google:", result);
-
-      await handleGoogleNativeLogin(result.idToken);
-
-    } catch (error: any) {
-      console.error("❌ Error Google nativo:", error);
-      Alert.alert("Error", "No se pudo iniciar sesión con Google.");
-    } finally {
-      setIsGoogleLoading(false);
-    }
-  };
-  // -----------------------------------------------------
-
-  const handleGoogleNativeLogin = useCallback(async (idToken: string) => {
-    try {
-      console.log('📡 Enviando id_token de Google al backend...');
-      
-      const response = await fetch('https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v2/google-login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          token: idToken,
-        }),
-      });
-
-      console.log('📊 Google Login response status:', response.status);
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('❌ Error Google Login:', errorData);
-        Alert.alert('Error', errorData.message || 'No se pudo completar el inicio de sesión con Google.');
-        setIsGoogleLoading(false);
-        return;
-      }
-
-      const data = await response.json();
-      console.log('✅ Google Login exitoso:', data);
-
-      if (!data.jwt || !data.user) {
-        Alert.alert('Error', 'Respuesta del servidor inválida.');
-        setIsGoogleLoading(false);
-        return;
-      }
-
-      console.log('💾 Guardando sesión en AuthContext...');
-      const result = await login(
-        { username: '', password: '' },
-        { googleJwt: data.jwt, googleUser: data.user }
-      );
-
-      if (result.success) {
-        console.log('✅ Google Login completado');
-        Animated.sequence([
-          Animated.timing(fadeAnim, { toValue: 0, duration: 300, useNativeDriver: true }),
-        ]).start(() => router.replace('/(tabs)/profile'));
-      } else {
-        Alert.alert('Error', result.error || 'No se pudo completar el inicio de sesión con Google.');
-      }
-    } catch (error: any) {
-      console.error('Google login error:', error);
-      Alert.alert('Error', 'No se pudo completar el inicio de sesión con Google.');
-    } finally {
-      setIsGoogleLoading(false);
-    }
-  }, [login, fadeAnim]);
 
   // 🍎 Login con Apple (NO SE TOCA)
   const handleAppleLogin = async () => {
@@ -195,7 +111,7 @@ export default function LoginScreen() {
   };
 
   // Animación (NO SE TOCA)
-  React.useEffect(() => {
+  useEffect(() => {
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 600,
@@ -234,7 +150,6 @@ export default function LoginScreen() {
             </View>
 
             <View style={styles.form}>
-              
               {/* Usuario + contraseña */}
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Email o usuario</Text>
@@ -293,24 +208,7 @@ export default function LoginScreen() {
                 <View style={styles.dividerLine} />
               </View>
 
-              {/* GOOGLE NATIVO */}
-              <TouchableOpacity
-                style={styles.socialButton}
-                onPress={handleGoogleLogin}
-                disabled={isGoogleLoading || isLoading}
-                activeOpacity={0.8}
-              >
-                {isGoogleLoading ? (
-                  <ActivityIndicator color="#666" />
-                ) : (
-                  <>
-                    <Text style={styles.socialButtonIcon}>G</Text>
-                    <Text style={styles.socialButtonText}>Continuar con Google</Text>
-                  </>
-                )}
-              </TouchableOpacity>
-
-              {/* Apple */}
+              {/* ❌ GOOGLE ELIMINADO – SOLO APPLE */}
               {Platform.OS === 'ios' && (
                 <TouchableOpacity
                   style={[styles.socialButton, styles.appleButton]}
@@ -410,7 +308,7 @@ const styles = StyleSheet.create({
   dividerText: { marginHorizontal: 16, fontSize: 14, color: '#999', fontWeight: '500' },
   socialButton: {
     flexDirection: 'row',
-    alignItems: 'center', 
+    alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#fff',
     borderRadius: 12,
