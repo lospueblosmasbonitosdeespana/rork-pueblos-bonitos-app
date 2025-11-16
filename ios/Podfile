@@ -23,8 +23,8 @@ target 'PueblosBonitosApp' do
   use_expo_modules!
 
   # ⭐⭐⭐ GOOGLE SIGN-IN NATIVO COMPLETO
-  pod 'GoogleSignIn'
-  pod 'GoogleSignInSwift'
+  pod 'GoogleSignIn', '~> 7.0.0'
+  pod 'GoogleSignInSwiftSupport'
 
   if ENV['EXPO_USE_COMMUNITY_AUTOLINKING'] == '1'
     config_command = ['node', '-e', "process.argv=['', '', 'config'];require('@react-native-community/cli').run()"]
