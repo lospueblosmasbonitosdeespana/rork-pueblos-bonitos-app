@@ -1,12 +1,10 @@
-("🔥🔥 LOGIN.TSX ACTIVO DESDE ESTA CARPETA 🔥🔥");
+console.log("🔥🔥 LOGIN.TSX ACTIVO DESDE ESTA CARPETA (NATIVO GOOGLE) 🔥🔥");
 import { router } from 'expo-router';
 import { ArrowLeft, LogIn } from 'lucide-react-native';
 import React, { useState, useCallback, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import * as WebBrowser from 'expo-web-browser';
 import * as AppleAuthentication from 'expo-apple-authentication';
-import * as Google from 'expo-auth-session/providers/google';
-import { makeRedirectUri } from 'expo-auth-session';
 import {
   ActivityIndicator,
   Alert,
@@ -22,6 +20,9 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/contexts/auth';
+import { NativeModules } from 'react-native';   // ⭐ GOOGLE NATIVO
+
+const { GoogleSignInModule } = NativeModules;   // ⭐ GOOGLE NATIVO
 
 const LPBE_RED = '#c1121f';
 WebBrowser.maybeCompleteAuthSession();
@@ -40,45 +41,27 @@ export default function LoginScreen() {
   const fadeAnim = useState(new Animated.Value(0))[0];
   const passwordInputRef = React.useRef<TextInput>(null);
 
-  const [googleRequest, googleResponse, googlePromptAsync] = Google.useAuthRequest(
-  {
-    iosClientId: GOOGLE_IOS_CLIENT_ID,
-    androidClientId: GOOGLE_ANDROID_CLIENT_ID,
-    responseType: 'id_token',
-  },
-  { useProxy: true }
-);
-
-  useEffect(() => {
-    if (googleRequest) {
-      console.log('✅ Google Auth request creada (NATIVO)');
-      console.log('📍 redirectUri:', googleRequest.redirectUri);
-      console.log('🔥 URL completa:', googleRequest.url);
-      console.log('⚙️ useProxy: false');
-    }
-  }, [googleRequest]);
-  
-
-  React.useEffect(() => {
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 600,
-      useNativeDriver: true,
-    }).start();
-  }, [fadeAnim]);
-
-  // 🔵 Login con Google (flujo nativo)
+  // -----------------------------------------------------
+  //  ⭐⭐ GOOGLE NATIVO (SUSTITUYE AUTHSESSION)
+  // -----------------------------------------------------
   const handleGoogleLogin = async () => {
     try {
       setIsGoogleLoading(true);
-      console.log('🔵 Iniciando Google Login nativo...');
-      await googlePromptAsync();
-    } catch (error) {
-      console.error('Google native login error:', error);
-      Alert.alert('Error', 'No se pudo completar el inicio de sesión con Google.');
+      console.log("🔵 Iniciando login nativo de Google…");
+
+      const result = await GoogleSignInModule.signIn();
+      console.log("🔐 Resultado Google:", result);
+
+      await handleGoogleNativeLogin(result.idToken);
+
+    } catch (error: any) {
+      console.error("❌ Error Google nativo:", error);
+      Alert.alert("Error", "No se pudo iniciar sesión con Google.");
+    } finally {
       setIsGoogleLoading(false);
     }
   };
+  // -----------------------------------------------------
 
   const handleGoogleNativeLogin = useCallback(async (idToken: string) => {
     try {
@@ -135,14 +118,7 @@ export default function LoginScreen() {
     }
   }, [login, fadeAnim]);
 
-  React.useEffect(() => {
-    if (googleResponse?.type === 'success') {
-      const { id_token } = googleResponse.params;
-      handleGoogleNativeLogin(id_token);
-    }
-  }, [googleResponse, handleGoogleNativeLogin]);
-
-  // 🍎 Login con Apple (flujo nativo)
+  // 🍎 Login con Apple (NO SE TOCA)
   const handleAppleLogin = async () => {
     try {
       setIsAppleLoading(true);
@@ -168,7 +144,6 @@ export default function LoginScreen() {
         return;
       }
 
-      console.log('📡 Enviando token al backend...');
       const result = await login(
         { username: '', password: '' },
         { appleIdentityToken: credential.identityToken }
@@ -194,7 +169,7 @@ export default function LoginScreen() {
     }
   };
 
-  // 🔐 Login clásico con usuario/contraseña (no se toca)
+  // 🔐 Login clásico con usuario/contraseña (NO SE TOCA)
   const handleLogin = async () => {
     const trimmedUsername = username.trim();
     const trimmedPassword = password.trim();
@@ -218,6 +193,15 @@ export default function LoginScreen() {
       Alert.alert('Error', result.error || 'Credenciales incorrectas o usuario no encontrado');
     }
   };
+
+  // Animación (NO SE TOCA)
+  React.useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 600,
+      useNativeDriver: true,
+    }).start();
+  }, [fadeAnim]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
@@ -250,6 +234,7 @@ export default function LoginScreen() {
             </View>
 
             <View style={styles.form}>
+              
               {/* Usuario + contraseña */}
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Email o usuario</Text>
@@ -308,11 +293,11 @@ export default function LoginScreen() {
                 <View style={styles.dividerLine} />
               </View>
 
-              {/* Google */}
+              {/* GOOGLE NATIVO */}
               <TouchableOpacity
                 style={styles.socialButton}
                 onPress={handleGoogleLogin}
-                disabled={!googleRequest || isGoogleLoading || isLoading}
+                disabled={isGoogleLoading || isLoading}
                 activeOpacity={0.8}
               >
                 {isGoogleLoading ? (
@@ -343,6 +328,7 @@ export default function LoginScreen() {
                   )}
                 </TouchableOpacity>
               )}
+
             </View>
           </Animated.View>
         </ScrollView>
@@ -351,7 +337,7 @@ export default function LoginScreen() {
   );
 }
 
-// 🎨 Estilos (sin cambios)
+// 🎨 Estilos — NO TOCADOS
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
   backButton: {
@@ -424,7 +410,7 @@ const styles = StyleSheet.create({
   dividerText: { marginHorizontal: 16, fontSize: 14, color: '#999', fontWeight: '500' },
   socialButton: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'center', 
     justifyContent: 'center',
     backgroundColor: '#fff',
     borderRadius: 12,
