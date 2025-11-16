@@ -1,3 +1,4 @@
+console.log("🔥🔥 LOGIN.TSX ACTIVO DESDE ESTA CARPETA 🔥🔥");
 import { router } from 'expo-router';
 import { ArrowLeft, LogIn } from 'lucide-react-native';
 import React, { useState, useCallback, useEffect } from 'react';
