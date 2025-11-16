@@ -24,16 +24,23 @@
     <string>2.0.1</string>
     <key>CFBundleSignature</key>
     <string>????</string>
+
+    <!-- 🔥 AQUI AÑADIMOS EL ESQUEMA NATIVO DE GOOGLE (REVERSED_CLIENT_ID) -->
     <key>CFBundleURLTypes</key>
     <array>
       <dict>
         <key>CFBundleURLSchemes</key>
         <array>
+          <!-- tu esquema de la app -->
           <string>myapp</string>
           <string>app.rork.pueblos-bonitos-app</string>
+
+          <!-- esquema que necesita Google Sign-In nativo -->
+          <string>com.googleusercontent.apps.1050453988650-cq20qu63m02778k7ihkmghim6n0073og</string>
         </array>
       </dict>
     </array>
+
     <key>CFBundleVersion</key>
     <string>201</string>
     <key>ITSAppUsesNonExemptEncryption</key>
