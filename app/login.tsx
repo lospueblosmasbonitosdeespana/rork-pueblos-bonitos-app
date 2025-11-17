@@ -1,13 +1,9 @@
-console.log("🔥🔥 LOGIN.TSX ACTIVO (GOOGLE WEB + APPLE NATIVO) 🔥🔥");
-
 import { router } from "expo-router";
 import { ArrowLeft, LogIn } from "lucide-react-native";
 import React, { useState, useCallback, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import * as WebBrowser from "expo-web-browser";
 import * as AppleAuthentication from "expo-apple-authentication";
-import * as Google from "expo-auth-session/providers/google";
-import { makeRedirectUri } from "expo-auth-session";
 import {
   ActivityIndicator,
   Alert,
@@ -27,121 +23,24 @@ import { useAuth } from "@/contexts/auth";
 const LPBE_RED = "#c1121f";
 WebBrowser.maybeCompleteAuthSession();
 
-// ⭐ CLIENTE WEB DE GOOGLE (EL BUENO)
-const GOOGLE_WEB_CLIENT_ID =
-  "1050453988650-3jrbt4jl5ih4u6soj3z2j6xa76v1bpgm.apps.googleusercontent.com";
-
 export default function LoginScreen() {
   const { login } = useAuth();
   const queryClient = useQueryClient();
-
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isAppleLoading, setIsAppleLoading] = useState(false);
   const fadeAnim = useState(new Animated.Value(0))[0];
   const passwordInputRef = React.useRef<TextInput>(null);
 
   // -----------------------------------------------------
-  // ⭐ GOOGLE WEB LOGIN — AUTHSESSION
-  // -----------------------------------------------------
-  const redirectUri = makeRedirectUri({
-    scheme: "myapp", 
-  });
-
-  const [request, response, promptAsync] = Google.useAuthRequest({
-    clientId: GOOGLE_WEB_CLIENT_ID,
-    redirectUri,
-    responseType: "id_token",
-    scopes: ["openid", "profile", "email"],
-  });
-
-  useEffect(() => {
-    if (response?.type === "success") {
-      const token = response.params.id_token;
-      handleGoogleNativeLogin(token);
-    }
-  }, [response]);
-
-  const handleGoogleLogin = async () => {
-    try {
-      setIsGoogleLoading(true);
-      console.log("🌐 Google Web Login iniciado…");
-      await promptAsync();
-    } catch (err) {
-      console.error("Google Web login error:", err);
-      Alert.alert("Error", "No se pudo iniciar sesión con Google.");
-    } finally {
-      setIsGoogleLoading(false);
-    }
-  };
-
-  const handleGoogleNativeLogin = useCallback(
-    async (idToken: string) => {
-      try {
-        console.log("📡 Enviando ID_TOKEN a backend…");
-
-        const response = await fetch(
-          "https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v2/google-login",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ token: idToken }),
-          }
-        );
-
-        console.log("📊 Estado Google backend:", response.status);
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          console.error("❌ Error Google Login:", errorData);
-          Alert.alert(
-            "Error",
-            errorData.message || "No se pudo completar el login con Google."
-          );
-          return;
-        }
-
-        const data = await response.json();
-        console.log("✅ Google Login OK:", data);
-
-        if (!data.jwt || !data.user) {
-          Alert.alert("Error", "Respuesta inválida del servidor.");
-          return;
-        }
-
-        const result = await login(
-          { username: "", password: "" },
-          { googleJwt: data.jwt, googleUser: data.user }
-        );
-
-        if (result.success) {
-          Animated.timing(fadeAnim, {
-            toValue: 0,
-            duration: 300,
-            useNativeDriver: true,
-          }).start(() => router.replace("/(tabs)/profile"));
-        } else {
-          Alert.alert(
-            "Error",
-            result.error || "No se pudo completar el inicio de sesión con Google."
-          );
-        }
-      } catch (error) {
-        console.error("Google backend error:", error);
-        Alert.alert("Error", "No se pudo conectar con el servidor.");
-      }
-    },
-    [login, fadeAnim]
-  );
-
-  // -----------------------------------------------------
-  // 🍎 LOGIN APPLE (NO TOCAR)
+  // 🍎 LOGIN APPLE
   // -----------------------------------------------------
   const handleAppleLogin = async () => {
     try {
       setIsAppleLoading(true);
+
+      console.log("🍎 Iniciando Apple Login…");
 
       const credential = await AppleAuthentication.signInAsync({
         requestedScopes: [
@@ -151,7 +50,7 @@ export default function LoginScreen() {
       });
 
       if (!credential.identityToken) {
-        Alert.alert("Error", "Apple no devolvió token válido.");
+        Alert.alert("Error", "No se recibió token de identidad de Apple.");
         return;
       }
 
@@ -161,11 +60,13 @@ export default function LoginScreen() {
       );
 
       if (result.success) {
-        Animated.timing(fadeAnim, {
-          toValue: 0,
-          duration: 300,
-          useNativeDriver: true,
-        }).start(() => router.replace("/(tabs)/profile"));
+        Animated.sequence([
+          Animated.timing(fadeAnim, {
+            toValue: 0,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+        ]).start(() => router.replace("/(tabs)/profile"));
       } else {
         Alert.alert(
           "Error",
@@ -175,7 +76,7 @@ export default function LoginScreen() {
     } catch (error) {
       if ((error as any).code !== "ERR_CANCELED") {
         console.error("Apple Login error:", error);
-        Alert.alert("Error", "Error al iniciar sesión con Apple.");
+        Alert.alert("Error", "No se pudo completar el inicio de sesión con Apple.");
       }
     } finally {
       setIsAppleLoading(false);
@@ -205,11 +106,13 @@ export default function LoginScreen() {
     setIsLoading(false);
 
     if (result.success) {
-      Animated.timing(fadeAnim, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }).start(() => router.replace("/(tabs)/profile"));
+      Animated.sequence([
+        Animated.timing(fadeAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start(() => router.replace("/(tabs)/profile"));
     } else {
       Alert.alert(
         "Error",
@@ -219,7 +122,7 @@ export default function LoginScreen() {
   };
 
   // -----------------------------------------------------
-  // ANIMACIÓN
+  // ANIMACIÓN INICIAL
   // -----------------------------------------------------
   useEffect(() => {
     Animated.timing(fadeAnim, {
@@ -237,9 +140,7 @@ export default function LoginScreen() {
       <TouchableOpacity
         style={styles.backButton}
         onPress={() =>
-          router.canGoBack()
-            ? router.back()
-            : router.replace("/(tabs)/home")
+          router.canGoBack() ? router.back() : router.replace("/(tabs)/home")
         }
       >
         <ArrowLeft size={24} color="#1a1a1a" strokeWidth={2} />
@@ -266,7 +167,7 @@ export default function LoginScreen() {
             </View>
 
             <View style={styles.form}>
-              {/* Usuario */}
+              {/* Usuario + contraseña */}
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Email o usuario</Text>
                 <TextInput
@@ -279,13 +180,10 @@ export default function LoginScreen() {
                   autoCorrect={false}
                   returnKeyType="next"
                   editable={!isLoading}
-                  onSubmitEditing={() =>
-                    passwordInputRef.current?.focus()
-                  }
+                  onSubmitEditing={() => passwordInputRef.current?.focus()}
                 />
               </View>
 
-              {/* Contraseña */}
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Contraseña</Text>
                 <TextInput
@@ -304,13 +202,10 @@ export default function LoginScreen() {
                 />
               </View>
 
-              {/* Botón login */}
               <TouchableOpacity
                 style={[
                   styles.button,
-                  (isLoading ||
-                    !username.trim() ||
-                    !password.trim()) &&
+                  (isLoading || !username.trim() || !password.trim()) &&
                     styles.buttonDisabled,
                 ]}
                 onPress={handleLogin}
@@ -329,7 +224,7 @@ export default function LoginScreen() {
                 <View style={styles.dividerLine} />
               </View>
 
-              {/* 🍎 Apple */}
+              {/* 🍎 BOTÓN APPLE */}
               {Platform.OS === "ios" && (
                 <TouchableOpacity
                   style={[styles.socialButton, styles.appleButton]}
@@ -348,24 +243,6 @@ export default function LoginScreen() {
                   )}
                 </TouchableOpacity>
               )}
-
-              {/* 🌐 Google */}
-              <TouchableOpacity
-                style={styles.socialButton}
-                onPress={handleGoogleLogin}
-                disabled={!request || isGoogleLoading || isLoading}
-              >
-                {isGoogleLoading ? (
-                  <ActivityIndicator color="#666" />
-                ) : (
-                  <>
-                    <Text style={styles.socialButtonIcon}>G</Text>
-                    <Text style={styles.socialButtonText}>
-                      Continuar con Google
-                    </Text>
-                  </>
-                )}
-              </TouchableOpacity>
             </View>
           </Animated.View>
         </ScrollView>
