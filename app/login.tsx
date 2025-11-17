@@ -1,12 +1,13 @@
-console.log("🔥🔥 LOGIN.TSX ACTIVO DESDE ESTA CARPETA (GOOGLE WEB + APPLE NATIVO) 🔥🔥");
-import { router } from 'expo-router';
-import { ArrowLeft, LogIn } from 'lucide-react-native';
-import React, { useState, useCallback, useEffect } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
-import * as WebBrowser from 'expo-web-browser';
-import * as AppleAuthentication from 'expo-apple-authentication';
-import * as Google from 'expo-auth-session/providers/google';
-import { makeRedirectUri } from 'expo-auth-session';
+console.log("🔥🔥 LOGIN.TSX ACTIVO (GOOGLE WEB + APPLE NATIVO) 🔥🔥");
+
+import { router } from "expo-router";
+import { ArrowLeft, LogIn } from "lucide-react-native";
+import React, { useState, useCallback, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import * as WebBrowser from "expo-web-browser";
+import * as AppleAuthentication from "expo-apple-authentication";
+import * as Google from "expo-auth-session/providers/google";
+import { makeRedirectUri } from "expo-auth-session";
 import {
   ActivityIndicator,
   Alert,
@@ -19,109 +20,121 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useAuth } from '@/contexts/auth';
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useAuth } from "@/contexts/auth";
 
-const LPBE_RED = '#c1121f';
+const LPBE_RED = "#c1121f";
 WebBrowser.maybeCompleteAuthSession();
 
-// ⭐ CLIENTE WEB OFICIAL DE GOOGLE (NO NATIVO)
+// ⭐ CLIENTE WEB DE GOOGLE (EL BUENO)
 const GOOGLE_WEB_CLIENT_ID =
   "1050453988650-3jrbt4jl5ih4u6soj3z2j6xa76v1bpgm.apps.googleusercontent.com";
 
-// ⭐ GOOGLE LOGIN — AUTHSESSION (NO NATIVO, VERSIÓN 2025)
-const redirectUri = makeRedirectUri({
-  scheme: "myapp",
-  // Expo convierte este scheme automaticamente en:
-  // https://auth.expo.io/@franmestre/pueblos-bonitos-app
-  // que es lo que Google exige que tengas en Google Cloud
-});
+export default function LoginScreen() {
+  const { login } = useAuth();
+  const queryClient = useQueryClient();
 
-const [request, response, promptAsync] = Google.useAuthRequest({
-  clientId: GOOGLE_WEB_CLIENT_ID,
-  redirectUri,
-  responseType: "id_token",
-  scopes: ["openid", "profile", "email"],
-});
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [isAppleLoading, setIsAppleLoading] = useState(false);
+  const fadeAnim = useState(new Animated.Value(0))[0];
+  const passwordInputRef = React.useRef<TextInput>(null);
 
-useEffect(() => {
-  if (response?.type === "success") {
-    const token = response.params.id_token;
-    handleGoogleNativeLogin(token);
-  }
-}, [response]);
+  // -----------------------------------------------------
+  // ⭐ GOOGLE WEB LOGIN — AUTHSESSION
+  // -----------------------------------------------------
+  const redirectUri = makeRedirectUri({
+    scheme: "myapp", 
+  });
 
-const handleGoogleLogin = async () => {
-  try {
-    setIsGoogleLoading(true);
-    console.log("🌐 Iniciando Google Web Login (AuthSession)…");
-    await promptAsync();
-  } catch (err) {
-    console.error("Google Web login error:", err);
-    Alert.alert("Error", "No se pudo iniciar sesión con Google.");
-  } finally {
-    setIsGoogleLoading(false);
-  }
-};
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    clientId: GOOGLE_WEB_CLIENT_ID,
+    redirectUri,
+    responseType: "id_token",
+    scopes: ["openid", "profile", "email"],
+  });
 
-const handleGoogleNativeLogin = useCallback(async (idToken: string) => {
-  try {
-    console.log("📡 Enviando ID_TOKEN de Google al backend...");
+  useEffect(() => {
+    if (response?.type === "success") {
+      const token = response.params.id_token;
+      handleGoogleNativeLogin(token);
+    }
+  }, [response]);
 
-    const response = await fetch(
-      "https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v2/google-login",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token: idToken }),
+  const handleGoogleLogin = async () => {
+    try {
+      setIsGoogleLoading(true);
+      console.log("🌐 Google Web Login iniciado…");
+      await promptAsync();
+    } catch (err) {
+      console.error("Google Web login error:", err);
+      Alert.alert("Error", "No se pudo iniciar sesión con Google.");
+    } finally {
+      setIsGoogleLoading(false);
+    }
+  };
+
+  const handleGoogleNativeLogin = useCallback(
+    async (idToken: string) => {
+      try {
+        console.log("📡 Enviando ID_TOKEN a backend…");
+
+        const response = await fetch(
+          "https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v2/google-login",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token: idToken }),
+          }
+        );
+
+        console.log("📊 Estado Google backend:", response.status);
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error("❌ Error Google Login:", errorData);
+          Alert.alert(
+            "Error",
+            errorData.message || "No se pudo completar el login con Google."
+          );
+          return;
+        }
+
+        const data = await response.json();
+        console.log("✅ Google Login OK:", data);
+
+        if (!data.jwt || !data.user) {
+          Alert.alert("Error", "Respuesta inválida del servidor.");
+          return;
+        }
+
+        const result = await login(
+          { username: "", password: "" },
+          { googleJwt: data.jwt, googleUser: data.user }
+        );
+
+        if (result.success) {
+          Animated.timing(fadeAnim, {
+            toValue: 0,
+            duration: 300,
+            useNativeDriver: true,
+          }).start(() => router.replace("/(tabs)/profile"));
+        } else {
+          Alert.alert(
+            "Error",
+            result.error || "No se pudo completar el inicio de sesión con Google."
+          );
+        }
+      } catch (error) {
+        console.error("Google backend error:", error);
+        Alert.alert("Error", "No se pudo conectar con el servidor.");
       }
-    );
-
-    console.log("📊 Google login status:", response.status);
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error("❌ Error Google Login:", errorData);
-      Alert.alert(
-        "Error",
-        errorData.message || "No se pudo completar el login con Google."
-      );
-      return;
-    }
-
-    const data = await response.json();
-    console.log("✅ Google Login exitoso:", data);
-
-    if (!data.jwt || !data.user) {
-      Alert.alert("Error", "Respuesta inválida del servidor.");
-      return;
-    }
-
-    const result = await login(
-      { username: "", password: "" },
-      { googleJwt: data.jwt, googleUser: data.user }
-    );
-
-    if (result.success) {
-      Animated.sequence([
-        Animated.timing(fadeAnim, {
-          toValue: 0,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-      ]).start(() => router.replace("/(tabs)/profile"));
-    } else {
-      Alert.alert(
-        "Error",
-        result.error || "No se pudo completar el inicio de sesión con Google."
-      );
-    }
-  } catch (error) {
-    console.error("Google backend login error:", error);
-    Alert.alert("Error", "No se pudo conectar con el servidor.");
-  }
-}, [login, fadeAnim]);
+    },
+    [login, fadeAnim]
+  );
 
   // -----------------------------------------------------
   // 🍎 LOGIN APPLE (NO TOCAR)
@@ -129,8 +142,6 @@ const handleGoogleNativeLogin = useCallback(async (idToken: string) => {
   const handleAppleLogin = async () => {
     try {
       setIsAppleLoading(true);
-
-      console.log("🍎 Iniciando Apple Login…");
 
       const credential = await AppleAuthentication.signInAsync({
         requestedScopes: [
@@ -140,7 +151,7 @@ const handleGoogleNativeLogin = useCallback(async (idToken: string) => {
       });
 
       if (!credential.identityToken) {
-        Alert.alert("Error", "Apple no devolvió token de identidad.");
+        Alert.alert("Error", "Apple no devolvió token válido.");
         return;
       }
 
@@ -150,13 +161,11 @@ const handleGoogleNativeLogin = useCallback(async (idToken: string) => {
       );
 
       if (result.success) {
-        Animated.sequence([
-          Animated.timing(fadeAnim, {
-            toValue: 0,
-            duration: 300,
-            useNativeDriver: true,
-          }),
-        ]).start(() => router.replace("/(tabs)/profile"));
+        Animated.timing(fadeAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }).start(() => router.replace("/(tabs)/profile"));
       } else {
         Alert.alert(
           "Error",
@@ -166,7 +175,7 @@ const handleGoogleNativeLogin = useCallback(async (idToken: string) => {
     } catch (error) {
       if ((error as any).code !== "ERR_CANCELED") {
         console.error("Apple Login error:", error);
-        Alert.alert("Error", "No se pudo completar el inicio de sesión con Apple.");
+        Alert.alert("Error", "Error al iniciar sesión con Apple.");
       }
     } finally {
       setIsAppleLoading(false);
@@ -174,7 +183,7 @@ const handleGoogleNativeLogin = useCallback(async (idToken: string) => {
   };
 
   // -----------------------------------------------------
-  // 🔐 LOGIN NORMAL (NO TOCAR)
+  // 🔐 LOGIN NORMAL
   // -----------------------------------------------------
   const handleLogin = async () => {
     const trimmedUsername = username.trim();
@@ -196,13 +205,11 @@ const handleGoogleNativeLogin = useCallback(async (idToken: string) => {
     setIsLoading(false);
 
     if (result.success) {
-      Animated.sequence([
-        Animated.timing(fadeAnim, {
-          toValue: 0,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-      ]).start(() => router.replace("/(tabs)/profile"));
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start(() => router.replace("/(tabs)/profile"));
     } else {
       Alert.alert(
         "Error",
@@ -259,6 +266,7 @@ const handleGoogleNativeLogin = useCallback(async (idToken: string) => {
             </View>
 
             <View style={styles.form}>
+              {/* Usuario */}
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Email o usuario</Text>
                 <TextInput
@@ -277,6 +285,7 @@ const handleGoogleNativeLogin = useCallback(async (idToken: string) => {
                 />
               </View>
 
+              {/* Contraseña */}
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Contraseña</Text>
                 <TextInput
@@ -295,6 +304,7 @@ const handleGoogleNativeLogin = useCallback(async (idToken: string) => {
                 />
               </View>
 
+              {/* Botón login */}
               <TouchableOpacity
                 style={[
                   styles.button,
@@ -315,13 +325,11 @@ const handleGoogleNativeLogin = useCallback(async (idToken: string) => {
               {/* DIVIDER */}
               <View style={styles.divider}>
                 <View style={styles.dividerLine} />
-                <Text style={styles.dividerText}>
-                  O continúa con
-                </Text>
+                <Text style={styles.dividerText}>O continúa con</Text>
                 <View style={styles.dividerLine} />
               </View>
 
-              {/* 🍎 BOTÓN APPLE */}
+              {/* 🍎 Apple */}
               {Platform.OS === "ios" && (
                 <TouchableOpacity
                   style={[styles.socialButton, styles.appleButton]}
@@ -341,7 +349,7 @@ const handleGoogleNativeLogin = useCallback(async (idToken: string) => {
                 </TouchableOpacity>
               )}
 
-              {/* 🌐 GOOGLE WEB LOGIN — DEBAJO DE APPLE */}
+              {/* 🌐 Google */}
               <TouchableOpacity
                 style={styles.socialButton}
                 onPress={handleGoogleLogin}
@@ -358,7 +366,6 @@ const handleGoogleNativeLogin = useCallback(async (idToken: string) => {
                   </>
                 )}
               </TouchableOpacity>
-
             </View>
           </Animated.View>
         </ScrollView>
