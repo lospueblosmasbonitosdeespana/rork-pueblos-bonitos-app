@@ -28,108 +28,100 @@ WebBrowser.maybeCompleteAuthSession();
 
 // ⭐ CLIENTE WEB OFICIAL DE GOOGLE (NO NATIVO)
 const GOOGLE_WEB_CLIENT_ID =
-  "1050453988650-3jrbt4jl5ih4u6soj3z2j6xa76v1bpgm.apps.googleusercontent.com"; // ← EL QUE FUNCIONA
+  "1050453988650-3jrbt4jl5ih4u6soj3z2j6xa76v1bpgm.apps.googleusercontent.com";
 
-export default function LoginScreen() {
-  const { login } = useAuth();
-  const queryClient = useQueryClient();
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-  const [isAppleLoading, setIsAppleLoading] = useState(false);
-  const fadeAnim = useState(new Animated.Value(0))[0];
-  const passwordInputRef = React.useRef<TextInput>(null);
+// ⭐ GOOGLE LOGIN — AUTHSESSION (NO NATIVO, VERSIÓN 2025)
+const redirectUri = makeRedirectUri({
+  scheme: "myapp",
+  // Expo convierte este scheme automaticamente en:
+  // https://auth.expo.io/@franmestre/pueblos-bonitos-app
+  // que es lo que Google exige que tengas en Google Cloud
+});
 
-  // -----------------------------------------------------
-  // ⭐ GOOGLE LOGIN — AUTHSESSION (NO NATIVO)
-  // -----------------------------------------------------
-  const [request, response, promptAsync] = Google.useAuthRequest({
-    clientId: GOOGLE_WEB_CLIENT_ID,
-    redirectUri: makeRedirectUri({
-      scheme: "myapp",
-    }),
-    responseType: "id_token",
-    scopes: ["openid", "profile", "email"],
-  });
+const [request, response, promptAsync] = Google.useAuthRequest({
+  clientId: GOOGLE_WEB_CLIENT_ID,
+  redirectUri,
+  responseType: "id_token",
+  scopes: ["openid", "profile", "email"],
+});
 
-  useEffect(() => {
-    if (response?.type === "success") {
-      const token = response.params.id_token;
-      handleGoogleNativeLogin(token);
-    }
-  }, [response]);
+useEffect(() => {
+  if (response?.type === "success") {
+    const token = response.params.id_token;
+    handleGoogleNativeLogin(token);
+  }
+}, [response]);
 
-  const handleGoogleLogin = async () => {
-    try {
-      setIsGoogleLoading(true);
-      console.log("🌐 Iniciando Google Web Login (AuthSession)…");
-      await promptAsync();
-    } catch (err) {
-      console.error("Google Web login error:", err);
-      Alert.alert("Error", "No se pudo iniciar sesión con Google.");
-    } finally {
-      setIsGoogleLoading(false);
-    }
-  };
+const handleGoogleLogin = async () => {
+  try {
+    setIsGoogleLoading(true);
+    console.log("🌐 Iniciando Google Web Login (AuthSession)…");
+    await promptAsync();
+  } catch (err) {
+    console.error("Google Web login error:", err);
+    Alert.alert("Error", "No se pudo iniciar sesión con Google.");
+  } finally {
+    setIsGoogleLoading(false);
+  }
+};
 
-  const handleGoogleNativeLogin = useCallback(async (idToken: string) => {
-    try {
-      console.log('📡 Enviando ID_TOKEN de Google al backend...');
+const handleGoogleNativeLogin = useCallback(async (idToken: string) => {
+  try {
+    console.log("📡 Enviando ID_TOKEN de Google al backend...");
 
-      const response = await fetch(
-        "https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v2/google-login",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ token: idToken }),
-        }
+    const response = await fetch(
+      "https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v2/google-login",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: idToken }),
+      }
+    );
+
+    console.log("📊 Google login status:", response.status);
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error("❌ Error Google Login:", errorData);
+      Alert.alert(
+        "Error",
+        errorData.message || "No se pudo completar el login con Google."
       );
-
-      console.log("📊 Google login status:", response.status);
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("❌ Error Google Login:", errorData);
-        Alert.alert(
-          "Error",
-          errorData.message || "No se pudo completar el login con Google."
-        );
-        return;
-      }
-
-      const data = await response.json();
-      console.log("✅ Google Login exitoso:", data);
-
-      if (!data.jwt || !data.user) {
-        Alert.alert("Error", "Respuesta inválida del servidor.");
-        return;
-      }
-
-      const result = await login(
-        { username: "", password: "" },
-        { googleJwt: data.jwt, googleUser: data.user }
-      );
-
-      if (result.success) {
-        Animated.sequence([
-          Animated.timing(fadeAnim, {
-            toValue: 0,
-            duration: 300,
-            useNativeDriver: true,
-          }),
-        ]).start(() => router.replace("/(tabs)/profile"));
-      } else {
-        Alert.alert(
-          "Error",
-          result.error || "No se pudo completar el inicio de sesión con Google."
-        );
-      }
-    } catch (error) {
-      console.error("Google backend login error:", error);
-      Alert.alert("Error", "No se pudo conectar con el servidor.");
+      return;
     }
-  }, [login, fadeAnim]);
+
+    const data = await response.json();
+    console.log("✅ Google Login exitoso:", data);
+
+    if (!data.jwt || !data.user) {
+      Alert.alert("Error", "Respuesta inválida del servidor.");
+      return;
+    }
+
+    const result = await login(
+      { username: "", password: "" },
+      { googleJwt: data.jwt, googleUser: data.user }
+    );
+
+    if (result.success) {
+      Animated.sequence([
+        Animated.timing(fadeAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start(() => router.replace("/(tabs)/profile"));
+    } else {
+      Alert.alert(
+        "Error",
+        result.error || "No se pudo completar el inicio de sesión con Google."
+      );
+    }
+  } catch (error) {
+    console.error("Google backend login error:", error);
+    Alert.alert("Error", "No se pudo conectar con el servidor.");
+  }
+}, [login, fadeAnim]);
 
   // -----------------------------------------------------
   // 🍎 LOGIN APPLE (NO TOCAR)
