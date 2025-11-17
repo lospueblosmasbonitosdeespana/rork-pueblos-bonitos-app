@@ -21,15 +21,16 @@ prepare_react_native_project!
 target 'PueblosBonitosApp' do
   use_expo_modules!
 
-  # ⭐⭐⭐ GOOGLE SIGN-IN NATIVO (VERSIÓN CORRECTA PARA SDK 51)
-  pod 'GoogleSignIn', '~> 6.2.4'
-
   if ENV['EXPO_USE_COMMUNITY_AUTOLINKING'] == '1'
     config_command = ['node', '-e', "process.argv=['', '', 'config'];require('@react-native-community/cli').run()"]
   else
     config_command = [
-      'npx', 'expo-modules-autolinking', 'react-native-config',
-      '--json', '--platform', 'ios'
+      'npx',
+      'expo-modules-autolinking',
+      'react-native-config',
+      '--json',
+      '--platform',
+      'ios'
     ]
   end
 

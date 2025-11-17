@@ -1,10 +1,12 @@
-console.log("🔥🔥 LOGIN.TSX ACTIVO DESDE ESTA CARPETA (SIN GOOGLE) 🔥🔥");
+console.log("🔥🔥 LOGIN.TSX ACTIVO DESDE ESTA CARPETA (GOOGLE WEB + APPLE NATIVO) 🔥🔥");
 import { router } from 'expo-router';
 import { ArrowLeft, LogIn } from 'lucide-react-native';
 import React, { useState, useCallback, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import * as WebBrowser from 'expo-web-browser';
 import * as AppleAuthentication from 'expo-apple-authentication';
+import * as Google from 'expo-auth-session/providers/google';
+import { makeRedirectUri } from 'expo-auth-session';
 import {
   ActivityIndicator,
   Alert,
@@ -24,23 +26,120 @@ import { useAuth } from '@/contexts/auth';
 const LPBE_RED = '#c1121f';
 WebBrowser.maybeCompleteAuthSession();
 
+// ⭐ CLIENTE WEB OFICIAL DE GOOGLE (NO NATIVO)
+const GOOGLE_WEB_CLIENT_ID =
+  "1050453988650-3jrbt4jl5ih4u6soj3z2j6xa76v1bpgm.apps.googleusercontent.com"; // ← EL QUE FUNCIONA
+
 export default function LoginScreen() {
   const { login } = useAuth();
   const queryClient = useQueryClient();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isAppleLoading, setIsAppleLoading] = useState(false);
   const fadeAnim = useState(new Animated.Value(0))[0];
   const passwordInputRef = React.useRef<TextInput>(null);
 
-  // 🍎 Login con Apple (NO SE TOCA)
+  // -----------------------------------------------------
+  // ⭐ GOOGLE LOGIN — AUTHSESSION (NO NATIVO)
+  // -----------------------------------------------------
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    clientId: GOOGLE_WEB_CLIENT_ID,
+    redirectUri: makeRedirectUri({
+      scheme: "myapp",
+    }),
+    responseType: "id_token",
+    scopes: ["openid", "profile", "email"],
+  });
+
+  useEffect(() => {
+    if (response?.type === "success") {
+      const token = response.params.id_token;
+      handleGoogleNativeLogin(token);
+    }
+  }, [response]);
+
+  const handleGoogleLogin = async () => {
+    try {
+      setIsGoogleLoading(true);
+      console.log("🌐 Iniciando Google Web Login (AuthSession)…");
+      await promptAsync();
+    } catch (err) {
+      console.error("Google Web login error:", err);
+      Alert.alert("Error", "No se pudo iniciar sesión con Google.");
+    } finally {
+      setIsGoogleLoading(false);
+    }
+  };
+
+  const handleGoogleNativeLogin = useCallback(async (idToken: string) => {
+    try {
+      console.log('📡 Enviando ID_TOKEN de Google al backend...');
+
+      const response = await fetch(
+        "https://lospueblosmasbonitosdeespana.org/wp-json/lpbe/v2/google-login",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token: idToken }),
+        }
+      );
+
+      console.log("📊 Google login status:", response.status);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("❌ Error Google Login:", errorData);
+        Alert.alert(
+          "Error",
+          errorData.message || "No se pudo completar el login con Google."
+        );
+        return;
+      }
+
+      const data = await response.json();
+      console.log("✅ Google Login exitoso:", data);
+
+      if (!data.jwt || !data.user) {
+        Alert.alert("Error", "Respuesta inválida del servidor.");
+        return;
+      }
+
+      const result = await login(
+        { username: "", password: "" },
+        { googleJwt: data.jwt, googleUser: data.user }
+      );
+
+      if (result.success) {
+        Animated.sequence([
+          Animated.timing(fadeAnim, {
+            toValue: 0,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+        ]).start(() => router.replace("/(tabs)/profile"));
+      } else {
+        Alert.alert(
+          "Error",
+          result.error || "No se pudo completar el inicio de sesión con Google."
+        );
+      }
+    } catch (error) {
+      console.error("Google backend login error:", error);
+      Alert.alert("Error", "No se pudo conectar con el servidor.");
+    }
+  }, [login, fadeAnim]);
+
+  // -----------------------------------------------------
+  // 🍎 LOGIN APPLE (NO TOCAR)
+  // -----------------------------------------------------
   const handleAppleLogin = async () => {
     try {
       setIsAppleLoading(true);
 
-      console.log('🍎 Iniciando Apple Login nativo...');
-      
+      console.log("🍎 Iniciando Apple Login…");
+
       const credential = await AppleAuthentication.signInAsync({
         requestedScopes: [
           AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
@@ -48,89 +147,107 @@ export default function LoginScreen() {
         ],
       });
 
-      console.log('✅ Credencial Apple recibida:', {
-        user: credential.user,
-        email: credential.email,
-        fullName: credential.fullName,
-        identityToken: credential.identityToken ? 'Presente' : 'Ausente',
-      });
-
       if (!credential.identityToken) {
-        Alert.alert('Error', 'No se recibió el token de identidad de Apple.');
+        Alert.alert("Error", "Apple no devolvió token de identidad.");
         return;
       }
 
       const result = await login(
-        { username: '', password: '' },
+        { username: "", password: "" },
         { appleIdentityToken: credential.identityToken }
       );
 
       if (result.success) {
-        console.log('✅ Apple Login exitoso');
         Animated.sequence([
-          Animated.timing(fadeAnim, { toValue: 0, duration: 300, useNativeDriver: true }),
-        ]).start(() => router.replace('/(tabs)/profile'));
+          Animated.timing(fadeAnim, {
+            toValue: 0,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+        ]).start(() => router.replace("/(tabs)/profile"));
       } else {
-        Alert.alert('Error', result.error || 'No se pudo completar el inicio de sesión con Apple.');
+        Alert.alert(
+          "Error",
+          result.error || "No se pudo completar el inicio de sesión con Apple."
+        );
       }
-    } catch (error: any) {
-      console.error('Apple login error:', error);
-      if (error.code === 'ERR_CANCELED') {
-        console.log('🚫 Usuario canceló el login de Apple');
-      } else {
-        Alert.alert('Error', 'No se pudo completar el inicio de sesión con Apple.');
+    } catch (error) {
+      if ((error as any).code !== "ERR_CANCELED") {
+        console.error("Apple Login error:", error);
+        Alert.alert("Error", "No se pudo completar el inicio de sesión con Apple.");
       }
     } finally {
       setIsAppleLoading(false);
     }
   };
 
-  // 🔐 Login clásico con usuario/contraseña (NO SE TOCA)
+  // -----------------------------------------------------
+  // 🔐 LOGIN NORMAL (NO TOCAR)
+  // -----------------------------------------------------
   const handleLogin = async () => {
     const trimmedUsername = username.trim();
     const trimmedPassword = password.trim();
 
     if (!trimmedUsername || !trimmedPassword) {
-      Alert.alert('Error', 'Por favor completa todos los campos');
+      Alert.alert("Error", "Por favor completa todos los campos.");
       return;
     }
 
     setIsLoading(true);
     queryClient.clear();
 
-    const result = await login({ username: trimmedUsername, password: trimmedPassword });
+    const result = await login(
+      { username: trimmedUsername, password: trimmedPassword },
+      {}
+    );
+
     setIsLoading(false);
 
     if (result.success) {
       Animated.sequence([
-        Animated.timing(fadeAnim, { toValue: 0, duration: 300, useNativeDriver: true }),
-      ]).start(() => router.replace('/(tabs)/profile'));
+        Animated.timing(fadeAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start(() => router.replace("/(tabs)/profile"));
     } else {
-      Alert.alert('Error', result.error || 'Credenciales incorrectas o usuario no encontrado');
+      Alert.alert(
+        "Error",
+        result.error || "Credenciales incorrectas o usuario no encontrado."
+      );
     }
   };
 
-  // Animación (NO SE TOCA)
+  // -----------------------------------------------------
+  // ANIMACIÓN
+  // -----------------------------------------------------
   useEffect(() => {
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 600,
       useNativeDriver: true,
     }).start();
-  }, [fadeAnim]);
+  }, []);
 
+  // -----------------------------------------------------
+  // UI
+  // -----------------------------------------------------
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
       <TouchableOpacity
         style={styles.backButton}
-        onPress={() => (router.canGoBack() ? router.back() : router.replace('/(tabs)/home'))}
-        activeOpacity={0.7}
+        onPress={() =>
+          router.canGoBack()
+            ? router.back()
+            : router.replace("/(tabs)/home")
+        }
       >
         <ArrowLeft size={24} color="#1a1a1a" strokeWidth={2} />
       </TouchableOpacity>
 
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardView}
       >
         <ScrollView
@@ -150,7 +267,6 @@ export default function LoginScreen() {
             </View>
 
             <View style={styles.form}>
-              {/* Usuario + contraseña */}
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Email o usuario</Text>
                 <TextInput
@@ -163,7 +279,9 @@ export default function LoginScreen() {
                   autoCorrect={false}
                   returnKeyType="next"
                   editable={!isLoading}
-                  onSubmitEditing={() => passwordInputRef.current?.focus()}
+                  onSubmitEditing={() =>
+                    passwordInputRef.current?.focus()
+                  }
                 />
               </View>
 
@@ -177,9 +295,9 @@ export default function LoginScreen() {
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry
+                  returnKeyType="done"
                   autoCapitalize="none"
                   autoCorrect={false}
-                  returnKeyType="done"
                   editable={!isLoading}
                   onSubmitEditing={handleLogin}
                 />
@@ -188,11 +306,12 @@ export default function LoginScreen() {
               <TouchableOpacity
                 style={[
                   styles.button,
-                  (isLoading || !username.trim() || !password.trim()) && styles.buttonDisabled,
+                  (isLoading ||
+                    !username.trim() ||
+                    !password.trim()) &&
+                    styles.buttonDisabled,
                 ]}
                 onPress={handleLogin}
-                disabled={isLoading || !username.trim() || !password.trim()}
-                activeOpacity={0.8}
               >
                 {isLoading ? (
                   <ActivityIndicator color="#fff" />
@@ -201,31 +320,52 @@ export default function LoginScreen() {
                 )}
               </TouchableOpacity>
 
-              {/* Divider social */}
+              {/* DIVIDER */}
               <View style={styles.divider}>
                 <View style={styles.dividerLine} />
-                <Text style={styles.dividerText}>O continúa con</Text>
+                <Text style={styles.dividerText}>
+                  O continúa con
+                </Text>
                 <View style={styles.dividerLine} />
               </View>
 
-              {/* ❌ GOOGLE ELIMINADO – SOLO APPLE */}
-              {Platform.OS === 'ios' && (
+              {/* 🍎 BOTÓN APPLE */}
+              {Platform.OS === "ios" && (
                 <TouchableOpacity
                   style={[styles.socialButton, styles.appleButton]}
                   onPress={handleAppleLogin}
                   disabled={isAppleLoading || isLoading}
-                  activeOpacity={0.8}
                 >
                   {isAppleLoading ? (
                     <ActivityIndicator color="#fff" />
                   ) : (
                     <>
                       <Text style={styles.appleButtonIcon}></Text>
-                      <Text style={styles.appleButtonText}>Continuar con Apple</Text>
+                      <Text style={styles.appleButtonText}>
+                        Continuar con Apple
+                      </Text>
                     </>
                   )}
                 </TouchableOpacity>
               )}
+
+              {/* 🌐 GOOGLE WEB LOGIN — DEBAJO DE APPLE */}
+              <TouchableOpacity
+                style={styles.socialButton}
+                onPress={handleGoogleLogin}
+                disabled={!request || isGoogleLoading || isLoading}
+              >
+                {isGoogleLoading ? (
+                  <ActivityIndicator color="#666" />
+                ) : (
+                  <>
+                    <Text style={styles.socialButtonIcon}>G</Text>
+                    <Text style={styles.socialButtonText}>
+                      Continuar con Google
+                    </Text>
+                  </>
+                )}
+              </TouchableOpacity>
 
             </View>
           </Animated.View>
@@ -235,37 +375,41 @@ export default function LoginScreen() {
   );
 }
 
-// 🎨 Estilos — NO TOCADOS
+// 🎨 ESTILOS — NO TOCAR
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1, backgroundColor: "#fff" },
   backButton: {
-    position: 'absolute',
+    position: "absolute",
     top: 60,
     left: 20,
     zIndex: 10,
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#f8f8f8',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
+    backgroundColor: "#f8f8f8",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
   },
   keyboardView: { flex: 1 },
-  scrollContent: { flexGrow: 1, justifyContent: 'center', paddingVertical: 40 },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: "center",
+    paddingVertical: 40,
+  },
   content: { paddingHorizontal: 24 },
-  header: { alignItems: 'center', marginBottom: 40 },
+  header: { alignItems: "center", marginBottom: 40 },
   iconContainer: {
     width: 96,
     height: 96,
     borderRadius: 48,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "#fff",
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: 24,
     shadowColor: LPBE_RED,
     shadowOffset: { width: 0, height: 4 },
@@ -273,27 +417,43 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 8,
   },
-  title: { fontSize: 32, fontWeight: '700', color: '#1a1a1a', marginBottom: 12, textAlign: 'center' },
-  subtitle: { fontSize: 16, color: '#666', textAlign: 'center', lineHeight: 24 },
-  form: { width: '100%' },
+  title: {
+    fontSize: 32,
+    fontWeight: "700",
+    color: "#1a1a1a",
+    marginBottom: 12,
+    textAlign: "center",
+  },
+  subtitle: {
+    fontSize: 16,
+    color: "#666",
+    textAlign: "center",
+    lineHeight: 24,
+  },
+  form: { width: "100%" },
   inputGroup: { marginBottom: 24 },
-  label: { fontSize: 14, fontWeight: '600', color: '#333', marginBottom: 8 },
+  label: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 8,
+  },
   input: {
-    backgroundColor: '#f8f8f8',
+    backgroundColor: "#f8f8f8",
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 16,
     fontSize: 16,
-    color: '#1a1a1a',
+    color: "#1a1a1a",
     borderWidth: 2,
-    borderColor: '#f0f0f0',
+    borderColor: "#f0f0f0",
   },
   button: {
     backgroundColor: LPBE_RED,
     borderRadius: 12,
     paddingVertical: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginTop: 8,
     shadowColor: LPBE_RED,
     shadowOffset: { width: 0, height: 4 },
@@ -302,29 +462,63 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   buttonDisabled: { opacity: 0.6 },
-  buttonText: { color: '#fff', fontSize: 18, fontWeight: '700' },
-  divider: { flexDirection: 'row', alignItems: 'center', marginVertical: 28 },
-  dividerLine: { flex: 1, height: 1, backgroundColor: '#e0e0e0' },
-  dividerText: { marginHorizontal: 16, fontSize: 14, color: '#999', fontWeight: '500' },
+  buttonText: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "700",
+  },
+  divider: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 28,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: "#e0e0e0",
+  },
+  dividerText: {
+    marginHorizontal: 16,
+    fontSize: 14,
+    color: "#999",
+    fontWeight: "500",
+  },
   socialButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#fff',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#fff",
     borderRadius: 12,
     paddingVertical: 16,
     marginBottom: 12,
     borderWidth: 1.5,
-    borderColor: '#e0e0e0',
-    shadowColor: '#000',
+    borderColor: "#e0e0e0",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 2,
     elevation: 1,
   },
-  socialButtonIcon: { fontSize: 20, fontWeight: '700', color: '#4285F4', marginRight: 12 },
-  socialButtonText: { fontSize: 16, fontWeight: '600', color: '#333' },
-  appleButton: { backgroundColor: '#000', borderColor: '#000' },
-  appleButtonIcon: { fontSize: 20, marginRight: 12, color: '#fff' },
-  appleButtonText: { fontSize: 16, fontWeight: '600', color: '#fff' },
+  socialButtonIcon: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#4285F4",
+    marginRight: 12,
+  },
+  socialButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#333",
+  },
+  appleButton: { backgroundColor: "#000", borderColor: "#000" },
+  appleButtonIcon: {
+    fontSize: 20,
+    marginRight: 12,
+    color: "#fff",
+  },
+  appleButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#fff",
+  },
 });

@@ -1,7 +1,6 @@
 import Expo
 import React
 import ReactAppDependencyProvider
-import GoogleSignIn   // ✅ AÑADIDO PARA GOOGLE SIGN-IN NATIVO
 
 @UIApplicationMain
 public class AppDelegate: ExpoAppDelegate {
@@ -33,41 +32,30 @@ public class AppDelegate: ExpoAppDelegate {
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 
-  // MARK: - Linking API (MODIFICADO PARA GOOGLE SIGN-IN)
+  // Linking API
   public override func application(
     _ app: UIApplication,
     open url: URL,
-    options: [UIApplication.OpenURLOptionsKey : Any] = [:]
+    options: [UIApplication.OpenURLOptionsKey: Any] = [:]
   ) -> Bool {
-
-    // ✅ PRIMERO Google Sign-In
-    if GIDSignIn.sharedInstance().handle(url) {
-        return true
-    }
-
-    // ✅ Luego Expo + React Native Linking
     return super.application(app, open: url, options: options)
         || RCTLinkingManager.application(app, open: url, options: options)
   }
 
-  // MARK: - Universal Links
+  // Universal Links
   public override func application(
     _ application: UIApplication,
     continue userActivity: NSUserActivity,
     restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void
   ) -> Bool {
     let result = RCTLinkingManager.application(application, continue: userActivity, restorationHandler: restorationHandler)
-
-    return super.application(application, continue: userActivity, restorationHandler: restorationHandler)
-        || result
+    return super.application(application, continue: userActivity, restorationHandler: restorationHandler) || result
   }
 }
 
 class ReactNativeDelegate: ExpoReactNativeFactoryDelegate {
-  // Extension point for config-plugins
 
   override func sourceURL(for bridge: RCTBridge) -> URL? {
-    // needed to return the correct URL for expo-dev-client.
     bridge.bundleURL ?? bundleURL()
   }
 
