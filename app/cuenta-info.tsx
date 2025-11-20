@@ -5,6 +5,7 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  Linking,
   Platform,
   ScrollView,
   StyleSheet,
@@ -18,6 +19,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/contexts/auth';
 
 const LPBE_RED = '#c1121f';
+const DELETE_ACCOUNT_URL = 'https://lospueblosmasbonitosdeespana.org/account-2/privacy/';
 
 export default function CuentaInfoScreen() {
   const { user, token, isLoading, updateUser } = useAuth();
@@ -352,6 +354,23 @@ export default function CuentaInfoScreen() {
     setIsEditingName(false);
   };
 
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      '¿Eliminar tu cuenta?',
+      'Esta acción es permanente y no se puede deshacer. Se eliminará tu cuenta y tus datos de Los Pueblos Más Bonitos de España.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: () => {
+            Linking.openURL(DELETE_ACCOUNT_URL);
+          },
+        },
+      ],
+    );
+  };
+
   if (isLoading) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
@@ -518,6 +537,20 @@ export default function CuentaInfoScreen() {
               </View>
             </View>
           </View>
+        </View>
+
+        <View style={styles.deleteSection}>
+          <Text style={styles.deleteSectionTitle}>Eliminar mi cuenta</Text>
+          <Text style={styles.deleteSectionText}>
+            Esta acción es permanente y borrará tu cuenta y tus datos de Los Pueblos Más Bonitos de España.
+          </Text>
+          <TouchableOpacity
+            style={styles.deleteButton}
+            onPress={handleDeleteAccount}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.deleteButtonText}>Eliminar mi cuenta y mis datos</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -689,5 +722,37 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     backgroundColor: '#e8e8e8',
+  },
+  deleteSection: {
+    marginTop: 40,
+    paddingTop: 32,
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0',
+  },
+  deleteSectionTitle: {
+    fontSize: 18,
+    fontWeight: '700' as const,
+    color: '#1a1a1a',
+    marginBottom: 12,
+  },
+  deleteSectionText: {
+    fontSize: 14,
+    color: '#666',
+    lineHeight: 20,
+    marginBottom: 20,
+  },
+  deleteButton: {
+    backgroundColor: '#fff',
+    borderWidth: 2,
+    borderColor: '#dc3545',
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+  },
+  deleteButtonText: {
+    fontSize: 16,
+    fontWeight: '600' as const,
+    color: '#dc3545',
   },
 });

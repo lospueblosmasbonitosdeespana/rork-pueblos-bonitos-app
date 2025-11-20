@@ -20,26 +20,26 @@
       }
     },
     "ios": {
-  "supportsTablet": true,
-  "bundleIdentifier": "app.rork.pueblos-bonitos-app",
-  "buildNumber": "201",
-  "infoPlist": {
-    "NSCameraUsageDescription": "Allow $(PRODUCT_NAME) to access your camera",
-    "NSMicrophoneUsageDescription": "Allow $(PRODUCT_NAME) to access your microphone",
-    "NSFaceIDUsageDescription": "Allow $(PRODUCT_NAME) to access your Face ID biometric data.",
-    "NSLocationAlwaysAndWhenInUseUsageDescription": "Allow $(PRODUCT_NAME) to use your location.",
-    "NSLocationAlwaysUsageDescription": "Allow $(PRODUCT_NAME) to use your location.",
-    "NSLocationWhenInUseUsageDescription": "Allow $(PRODUCT_NAME) to use your location.",
-    "UIBackgroundModes": [
-      "location"
-    ],
-    "NSPhotoLibraryUsageDescription": "Allow $(PRODUCT_NAME) to access your photos"
-  },
-  "config": {
-    "usesNonExemptEncryption": false
-  },
-  "usesAppleSignIn": true
-},
+      "supportsTablet": true,
+      "bundleIdentifier": "app.rork.pueblos-bonitos-app",
+      "buildNumber": "201",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Allow $(PRODUCT_NAME) to access your camera",
+        "NSMicrophoneUsageDescription": "Allow $(PRODUCT_NAME) to access your microphone",
+        "NSFaceIDUsageDescription": "Allow $(PRODUCT_NAME) to access your Face ID biometric data.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Allow $(PRODUCT_NAME) to use your location.",
+        "NSLocationAlwaysUsageDescription": "Allow $(PRODUCT_NAME) to use your location.",
+        "NSLocationWhenInUseUsageDescription": "Allow $(PRODUCT_NAME) to use your location.",
+        "UIBackgroundModes": [
+          "location"
+        ],
+        "NSPhotoLibraryUsageDescription": "Allow $(PRODUCT_NAME) to access your photos"
+      },
+      "config": {
+        "usesNonExemptEncryption": false
+      },
+      "usesAppleSignIn": true
+    },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
@@ -86,6 +86,9 @@
           "icon": "./local/assets/notification_icon.png",
           "color": "#ffffff",
           "defaultChannel": "default",
+          "sounds": [
+            "./local/assets/notification_sound.wav"
+          ],
           "enableBackgroundRemoteNotifications": false
         }
       ],
