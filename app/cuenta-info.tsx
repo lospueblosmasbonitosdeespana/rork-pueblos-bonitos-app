@@ -12,6 +12,7 @@ import {
   TouchableOpacity,
   View,
   Alert,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -364,7 +365,7 @@ export default function CuentaInfoScreen() {
           text: 'Eliminar',
           style: 'destructive',
           onPress: () => {
-            router.push('/eliminar-cuenta');
+            Linking.openURL('https://lospueblosmasbonitosdeespana.org/account-2/delete/');
           },
         },
       ],
