@@ -3,9 +3,7 @@ import { Camera, Edit2, Mail, Save, User, X } from 'lucide-react-native';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Image,
-  Linking,
   Platform,
   ScrollView,
   StyleSheet,
@@ -13,16 +11,18 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 
 import { useAuth } from '@/contexts/auth';
 
 const LPBE_RED = '#c1121f';
-const DELETE_ACCOUNT_URL = 'https://lospueblosmasbonitosdeespana.org/account-2/privacy/';
 
 export default function CuentaInfoScreen() {
   const { user, token, isLoading, updateUser } = useAuth();
+  const router = useRouter();
   const [isUploading, setIsUploading] = useState(false);
   const [isSyncing, setIsSyncing] = useState(true);
   const [syncError, setSyncError] = useState<string | null>(null);
@@ -364,7 +364,7 @@ export default function CuentaInfoScreen() {
           text: 'Eliminar',
           style: 'destructive',
           onPress: () => {
-            Linking.openURL(DELETE_ACCOUNT_URL);
+            router.push('/eliminar-cuenta');
           },
         },
       ],

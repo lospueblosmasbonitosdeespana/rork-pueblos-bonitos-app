@@ -333,6 +333,15 @@ function RootLayoutNav() {
             contentStyle: { flex: 1, backgroundColor: "#fff" },
           }}
         />
+        <Stack.Screen
+          name="eliminar-cuenta"
+          options={{
+            headerShown: false,
+            presentation: "modal",
+            gestureEnabled: true,
+            animation: "default",
+          }}
+        />
       </Stack>
     </>
   );
