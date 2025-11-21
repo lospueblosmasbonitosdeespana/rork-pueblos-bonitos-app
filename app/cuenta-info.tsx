@@ -442,11 +442,11 @@ export default function CuentaInfoScreen() {
             disabled={isUploading}
           >
             <Image
-              key={`${displayAvatar}-${Date.now()}`}
-              source={{ uri: `${displayAvatar}?t=${Date.now()}` }}
-              style={styles.avatar}
-              resizeMode="cover"
-            />
+             key={displayAvatar}
+             source={{ uri: displayAvatar }}
+             style={styles.avatar}
+             resizeMode="cover"
+           />
             {isUploading ? (
               <View style={styles.avatarOverlay}>
                 <ActivityIndicator size="large" color="#fff" />
