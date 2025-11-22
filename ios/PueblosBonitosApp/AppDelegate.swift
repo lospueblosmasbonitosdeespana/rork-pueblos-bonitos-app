@@ -38,8 +38,7 @@ public class AppDelegate: ExpoAppDelegate {
     open url: URL,
     options: [UIApplication.OpenURLOptionsKey: Any] = [:]
   ) -> Bool {
-    return super.application(app, open: url, options: options)
-        || RCTLinkingManager.application(app, open: url, options: options)
+    return super.application(app, open: url, options: options) || RCTLinkingManager.application(app, open: url, options: options)
   }
 
   // Universal Links
@@ -54,8 +53,10 @@ public class AppDelegate: ExpoAppDelegate {
 }
 
 class ReactNativeDelegate: ExpoReactNativeFactoryDelegate {
+  // Extension point for config-plugins
 
   override func sourceURL(for bridge: RCTBridge) -> URL? {
+    // needed to return the correct URL for expo-dev-client.
     bridge.bundleURL ?? bundleURL()
   }
 

@@ -7,29 +7,29 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0D9BC53C6A79F9CB7DD1BA30 /* libPods-PueblosBonitosApp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 10BF98DCD8FC69228CC1522A /* libPods-PueblosBonitosApp.a */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
-		2430FD82C3FB1695365250B4 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4056BA530FB5D68E5AC79961 /* ExpoModulesProvider.swift */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
-		53B1D79E08BC900BC17531F4 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 7B037B30A8DA2676D6517D58 /* PrivacyInfo.xcprivacy */; };
-		B3506C0F2CD8AB35E0869C83 /* libPods-PueblosBonitosApp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A0AF3F5CE3598639BFD54A48 /* libPods-PueblosBonitosApp.a */; };
+		719ADF5F3B248B1DC6C413D6 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FBB18CA0274F78E21434888 /* ExpoModulesProvider.swift */; };
+		8C1FED3696AE16804D3A0C59 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 1897C0BE6B6A8091CEBA9CB3 /* PrivacyInfo.xcprivacy */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
 		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		10BF98DCD8FC69228CC1522A /* libPods-PueblosBonitosApp.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-PueblosBonitosApp.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07F961A680F5B00A75B9A /* PueblosBonitosApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PueblosBonitosApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = PueblosBonitosApp/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = PueblosBonitosApp/Info.plist; sourceTree = "<group>"; };
-		4056BA530FB5D68E5AC79961 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-PueblosBonitosApp/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
-		6C5E851CB35FD1B90766817A /* Pods-PueblosBonitosApp.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-PueblosBonitosApp.debug.xcconfig"; path = "Target Support Files/Pods-PueblosBonitosApp/Pods-PueblosBonitosApp.debug.xcconfig"; sourceTree = "<group>"; };
-		7B037B30A8DA2676D6517D58 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = PueblosBonitosApp/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		A0AF3F5CE3598639BFD54A48 /* libPods-PueblosBonitosApp.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-PueblosBonitosApp.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		1897C0BE6B6A8091CEBA9CB3 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = PueblosBonitosApp/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		5FBB18CA0274F78E21434888 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-PueblosBonitosApp/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = PueblosBonitosApp/SplashScreen.storyboard; sourceTree = "<group>"; };
-		B9E42DC83BABA1C2114CEDFC /* Pods-PueblosBonitosApp.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-PueblosBonitosApp.release.xcconfig"; path = "Target Support Files/Pods-PueblosBonitosApp/Pods-PueblosBonitosApp.release.xcconfig"; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = PueblosBonitosApp/AppDelegate.swift; sourceTree = "<group>"; };
 		F11748442D0722820044C1D9 /* PueblosBonitosApp-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "PueblosBonitosApp-Bridging-Header.h"; path = "PueblosBonitosApp/PueblosBonitosApp-Bridging-Header.h"; sourceTree = "<group>"; };
+		F517460AF33FA3D3156B640A /* Pods-PueblosBonitosApp.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-PueblosBonitosApp.debug.xcconfig"; path = "Target Support Files/Pods-PueblosBonitosApp/Pods-PueblosBonitosApp.debug.xcconfig"; sourceTree = "<group>"; };
+		F6CB46C8C819C2EB7A614BB4 /* Pods-PueblosBonitosApp.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-PueblosBonitosApp.release.xcconfig"; path = "Target Support Files/Pods-PueblosBonitosApp/Pods-PueblosBonitosApp.release.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -37,7 +37,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B3506C0F2CD8AB35E0869C83 /* libPods-PueblosBonitosApp.a in Frameworks */,
+				0D9BC53C6A79F9CB7DD1BA30 /* libPods-PueblosBonitosApp.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -52,28 +52,36 @@
 				BB2F792B24A3F905000567C9 /* Supporting */,
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
-				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */,
-				7B037B30A8DA2676D6517D58 /* PrivacyInfo.xcprivacy */,
+				1897C0BE6B6A8091CEBA9CB3 /* PrivacyInfo.xcprivacy */,
 			);
 			name = PueblosBonitosApp;
+			sourceTree = "<group>";
+		};
+		2492701462711F4C50080CFD /* ExpoModulesProviders */ = {
+			isa = PBXGroup;
+			children = (
+				F6CABEE5F35F21376FF8A29B /* PueblosBonitosApp */,
+			);
+			name = ExpoModulesProviders;
 			sourceTree = "<group>";
 		};
 		2D16E6871FA4F8E400B85C8A /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				A0AF3F5CE3598639BFD54A48 /* libPods-PueblosBonitosApp.a */,
+				10BF98DCD8FC69228CC1522A /* libPods-PueblosBonitosApp.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		75A31B856CFC2174DF9CA568 /* PueblosBonitosApp */ = {
+		3AE8B8F01D6E95FC96F1677E /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				4056BA530FB5D68E5AC79961 /* ExpoModulesProvider.swift */,
+				F517460AF33FA3D3156B640A /* Pods-PueblosBonitosApp.debug.xcconfig */,
+				F6CB46C8C819C2EB7A614BB4 /* Pods-PueblosBonitosApp.release.xcconfig */,
 			);
-			name = PueblosBonitosApp;
+			path = Pods;
 			sourceTree = "<group>";
 		};
 		832341AE1AAA6A7D00B99B32 /* Libraries */ = {
@@ -87,10 +95,11 @@
 			isa = PBXGroup;
 			children = (
 				13B07FAE1A68108700A75B9A /* PueblosBonitosApp */,
+				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
-				DC696BD4BA79ADB5B0BA46A7 /* Pods */,
-				BA4A17DA69E0E57E5CEC919E /* ExpoModulesProviders */,
+				3AE8B8F01D6E95FC96F1677E /* Pods */,
+				2492701462711F4C50080CFD /* ExpoModulesProviders */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -105,14 +114,6 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		BA4A17DA69E0E57E5CEC919E /* ExpoModulesProviders */ = {
-			isa = PBXGroup;
-			children = (
-				75A31B856CFC2174DF9CA568 /* PueblosBonitosApp */,
-			);
-			name = ExpoModulesProviders;
-			sourceTree = "<group>";
-		};
 		BB2F792B24A3F905000567C9 /* Supporting */ = {
 			isa = PBXGroup;
 			children = (
@@ -122,13 +123,12 @@
 			path = PueblosBonitosApp/Supporting;
 			sourceTree = "<group>";
 		};
-		DC696BD4BA79ADB5B0BA46A7 /* Pods */ = {
+		F6CABEE5F35F21376FF8A29B /* PueblosBonitosApp */ = {
 			isa = PBXGroup;
 			children = (
-				6C5E851CB35FD1B90766817A /* Pods-PueblosBonitosApp.debug.xcconfig */,
-				B9E42DC83BABA1C2114CEDFC /* Pods-PueblosBonitosApp.release.xcconfig */,
+				5FBB18CA0274F78E21434888 /* ExpoModulesProvider.swift */,
 			);
-			path = Pods;
+			name = PueblosBonitosApp;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -138,14 +138,14 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "PueblosBonitosApp" */;
 			buildPhases = (
-				DCCE2E02487603BCD807CAF2 /* [CP] Check Pods Manifest.lock */,
-				5304F0AC2C61642571526CA2 /* [Expo] Configure project */,
+				08A4A3CD28434E44B6B9DE2E /* [CP] Check Pods Manifest.lock */,
+				580C7A58ED1AC737BD36A07E /* [Expo] Configure project */,
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
-				C336FAE30C380E1511B5EA0F /* [CP] Embed Pods Frameworks */,
-				ADF88E66D225042AB0010B15 /* [CP] Copy Pods Resources */,
+				800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */,
+				CE6072FF9746E6F6A61BDA6D /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -195,7 +195,7 @@
 				BB2F792D24A3F905000567C9 /* Expo.plist in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */,
-				53B1D79E08BC900BC17531F4 /* PrivacyInfo.xcprivacy in Resources */,
+				8C1FED3696AE16804D3A0C59 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -219,7 +219,29 @@
 			shellPath = /bin/sh;
 			shellScript = "if [[ -f \"$PODS_ROOT/../.xcode.env\" ]]; then\n  source \"$PODS_ROOT/../.xcode.env\"\nfi\nif [[ -f \"$PODS_ROOT/../.xcode.env.local\" ]]; then\n  source \"$PODS_ROOT/../.xcode.env.local\"\nfi\n\n# The project root by default is one level up from the ios directory\nexport PROJECT_ROOT=\"$PROJECT_DIR\"/..\n\nif [[ \"$CONFIGURATION\" = *Debug* ]]; then\n  export SKIP_BUNDLING=1\nfi\nif [[ -z \"$ENTRY_FILE\" ]]; then\n  # Set the entry JS file using the bundler's entry resolution.\n  export ENTRY_FILE=\"$(\"$NODE_BINARY\" -e \"require('expo/scripts/resolveAppEntry')\" \"$PROJECT_ROOT\" ios absolute | tail -n 1)\"\nfi\n\nif [[ -z \"$CLI_PATH\" ]]; then\n  # Use Expo CLI\n  export CLI_PATH=\"$(\"$NODE_BINARY\" --print \"require.resolve('@expo/cli', { paths: [require.resolve('expo/package.json')] })\")\"\nfi\nif [[ -z \"$BUNDLE_COMMAND\" ]]; then\n  # Default Expo CLI command for bundling\n  export BUNDLE_COMMAND=\"export:embed\"\nfi\n\n# Source .xcode.env.updates if it exists to allow\n# SKIP_BUNDLING to be unset if needed\nif [[ -f \"$PODS_ROOT/../.xcode.env.updates\" ]]; then\n  source \"$PODS_ROOT/../.xcode.env.updates\"\nfi\n# Source local changes to allow overrides\n# if needed\nif [[ -f \"$PODS_ROOT/../.xcode.env.local\" ]]; then\n  source \"$PODS_ROOT/../.xcode.env.local\"\nfi\n\n`\"$NODE_BINARY\" --print \"require('path').dirname(require.resolve('react-native/package.json')) + '/scripts/react-native-xcode.sh'\"`\n\n";
 		};
-		5304F0AC2C61642571526CA2 /* [Expo] Configure project */ = {
+		08A4A3CD28434E44B6B9DE2E /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-PueblosBonitosApp-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+		580C7A58ED1AC737BD36A07E /* [Expo] Configure project */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -243,7 +265,7 @@
 			shellPath = /bin/sh;
 			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-PueblosBonitosApp/expo-configure-project.sh\"\n";
 		};
-		ADF88E66D225042AB0010B15 /* [CP] Copy Pods Resources */ = {
+		800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -287,7 +309,7 @@
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-PueblosBonitosApp/Pods-PueblosBonitosApp-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		C336FAE30C380E1511B5EA0F /* [CP] Embed Pods Frameworks */ = {
+		CE6072FF9746E6F6A61BDA6D /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -309,28 +331,6 @@
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-PueblosBonitosApp/Pods-PueblosBonitosApp-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		DCCE2E02487603BCD807CAF2 /* [CP] Check Pods Manifest.lock */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
-				"${PODS_ROOT}/Manifest.lock",
-			);
-			name = "[CP] Check Pods Manifest.lock";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-PueblosBonitosApp-checkManifestLockResult.txt",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
-			showEnvVarsInLog = 0;
-		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -339,7 +339,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */,
-				2430FD82C3FB1695365250B4 /* ExpoModulesProvider.swift in Sources */,
+				719ADF5F3B248B1DC6C413D6 /* ExpoModulesProvider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -348,12 +348,14 @@
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 6C5E851CB35FD1B90766817A /* Pods-PueblosBonitosApp.debug.xcconfig */;
+			baseConfigurationReference = F517460AF33FA3D3156B640A /* Pods-PueblosBonitosApp.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = PueblosBonitosApp/PueblosBonitosApp.entitlements;
-				CURRENT_PROJECT_VERSION = 1;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 204;
 				DEVELOPMENT_TEAM = BQZQ58GPM9;
 				ENABLE_BITCODE = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
@@ -361,12 +363,14 @@
 					"FB_SONARKIT_ENABLED=1",
 				);
 				INFOPLIST_FILE = PueblosBonitosApp/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Pueblos Bonitos";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.travel";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 2.0.4;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",
@@ -375,6 +379,7 @@
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
 				PRODUCT_BUNDLE_IDENTIFIER = "app.rork.pueblos-bonitos-app";
 				PRODUCT_NAME = PueblosBonitosApp;
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "PueblosBonitosApp/PueblosBonitosApp-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -385,20 +390,24 @@
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = B9E42DC83BABA1C2114CEDFC /* Pods-PueblosBonitosApp.release.xcconfig */;
+			baseConfigurationReference = F6CB46C8C819C2EB7A614BB4 /* Pods-PueblosBonitosApp.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = PueblosBonitosApp/PueblosBonitosApp.entitlements;
-				CURRENT_PROJECT_VERSION = 1;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 204;
 				DEVELOPMENT_TEAM = BQZQ58GPM9;
 				INFOPLIST_FILE = PueblosBonitosApp/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Pueblos Bonitos";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.travel";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 2.0.4;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",
@@ -407,6 +416,7 @@
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
 				PRODUCT_BUNDLE_IDENTIFIER = "app.rork.pueblos-bonitos-app";
 				PRODUCT_NAME = PueblosBonitosApp;
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "PueblosBonitosApp/PueblosBonitosApp-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";

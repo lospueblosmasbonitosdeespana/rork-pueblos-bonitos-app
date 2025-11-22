@@ -3,7 +3,7 @@
     "name": "Pueblos Bonitos App",
     "slug": "pueblos-bonitos-app",
     "owner": "franmestre",
-    "version": "2.0.1",
+    "version": "2.0.4",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "myapp",
@@ -22,9 +22,9 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "app.rork.pueblos-bonitos-app",
-      "buildNumber": "201",
+      "buildNumber": "204",
       "infoPlist": {
-        "NSCameraUsageDescription": "Allow $(PRODUCT_NAME) to access your camera",
+        "NSCameraUsageDescription": "La cámara se utiliza para escanear los códigos QR oficiales de los pueblos y registrar tus visitas. Por ejemplo, escanea el QR en un pueblo para hacer rutas y desbloquear información.",
         "NSMicrophoneUsageDescription": "Allow $(PRODUCT_NAME) to access your microphone",
         "NSFaceIDUsageDescription": "Allow $(PRODUCT_NAME) to access your Face ID biometric data.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Allow $(PRODUCT_NAME) to use your location.",
@@ -86,9 +86,6 @@
           "icon": "./local/assets/notification_icon.png",
           "color": "#ffffff",
           "defaultChannel": "default",
-          "sounds": [
-            "./local/assets/notification_sound.wav"
-          ],
           "enableBackgroundRemoteNotifications": false
         }
       ],

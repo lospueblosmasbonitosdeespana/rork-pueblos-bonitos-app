@@ -15,7 +15,6 @@ import {
   ActivityIndicator,
   Alert,
   Animated,
-  Image,
   Platform,
   ScrollView,
   StyleSheet,
@@ -24,6 +23,7 @@ import {
   View,
 } from 'react-native';
 
+import { Image } from 'expo-image';
 import { useAuth } from '@/contexts/auth';
 
 const LPBE_RED = '#c1121f';
@@ -45,36 +45,28 @@ export default function ProfileScreen() {
         }).start();
       }
     }
-  }, [isLoading, isAuthenticated, user, fadeAnim]);
-
-
+  }, [isLoading, isAuthenticated, user]);
 
   const handleLogout = () => {
     if (Platform.OS === 'web') {
       const confirmed = window.confirm('¿Estás seguro que deseas finalizar sesión?');
-      if (confirmed) {
-        logout();
-      }
-    } else {
-      Alert.alert(
-        'Cerrar Sesión',
-        '¿Estás seguro que deseas finalizar sesión?',
-        [
-          {
-            text: 'No',
-            style: 'cancel',
-          },
-          {
-            text: 'Sí',
-            style: 'destructive',
-            onPress: async () => {
-              await logout();
-            },
-          },
-        ],
-        { cancelable: false }
-      );
+      if (confirmed) logout();
+      return;
     }
+
+    Alert.alert(
+      'Cerrar Sesión',
+      '¿Estás seguro que deseas finalizar sesión?',
+      [
+        { text: 'No', style: 'cancel' },
+        {
+          text: 'Sí',
+          style: 'destructive',
+          onPress: async () => await logout(),
+        },
+      ],
+      { cancelable: false }
+    );
   };
 
   if (isLoading) {
@@ -88,22 +80,31 @@ export default function ProfileScreen() {
     );
   }
 
-  if (!isAuthenticated || !user) {
-    return null;
-  }
+  if (!isAuthenticated || !user) return null;
 
-  const fullName = [user.first_name, user.last_name].filter(Boolean).join(' ') || user.name;
-  
+  const fullName =
+    [user.first_name, user.last_name].filter(Boolean).join(' ') || user.name;
+
+  // ------------------------------------------------------------
+  //  🔥 Avatar dinámico sin keys peligrosas para Android
+  // ------------------------------------------------------------
   let displayAvatar = user.photo || user.profile_photo || user.avatar_url;
-  
-  if (displayAvatar && displayAvatar.startsWith('http')) {
-    
-  } else if (displayAvatar && !displayAvatar.startsWith('http')) {
+
+  // Caso UM: ruta relativa => construir URL absoluta
+  if (displayAvatar && !displayAvatar.startsWith('http')) {
     const userId = user.id || user.user_id;
     displayAvatar = `https://lospueblosmasbonitosdeespana.org/wp-content/uploads/ultimatemember/${userId}/${displayAvatar}`;
-  } else {
-    displayAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&size=200&background=c1121f&color=fff`;
   }
+
+  // Fallback total
+  if (!displayAvatar) {
+    displayAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(
+      fullName
+    )}&size=200&background=c1121f&color=fff`;
+  }
+
+  // Forzar refresh del avatar SIN usar keys dinámicas inseguras
+  const avatarSrc = { uri: `${displayAvatar}?t=${Date.now()}` };
 
   const menuOptions = [
     {
@@ -158,80 +159,58 @@ export default function ProfileScreen() {
   ];
 
   return (
-    <View style={styles.container}>
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
-          <View style={styles.header}>
-            <View style={styles.avatarContainer}>
-              <Image
-                key={`${displayAvatar}-${user.photo || user.profile_photo || user.avatar_url || ''}`}
-                source={{ uri: `${displayAvatar}?t=${Date.now()}` }}
-                style={styles.avatar}
-                resizeMode="cover"
-              />
-            </View>
-            <Text style={styles.name}>{fullName}</Text>
-            <Text style={styles.email}>{user.email}</Text>
+  <View style={styles.container}>
+    <ScrollView
+      contentContainerStyle={styles.scrollContent}
+      showsVerticalScrollIndicator={false}
+    >
+      <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
+        <View style={styles.header}>
+          {/* 🔥 AVATAR FIX PARA ANDROID (expo-image + overflow:hidden) */}
+          <View style={styles.avatarContainer}>
+            <Image
+              source={avatarSrc}
+              style={[styles.avatar, { overflow: 'hidden' }]}
+              contentFit="cover"
+              transition={200}
+            />
           </View>
 
-          <View style={styles.menuSection}>
-            {menuOptions.map((option) => (
-              <TouchableOpacity
-                key={option.id}
-                style={[
-                  styles.menuItem,
-                  !option.active && styles.menuItemInactive,
-                ]}
-                onPress={option.active ? option.onPress : undefined}
-                activeOpacity={option.active ? 0.7 : 1}
-                disabled={!option.active}
-              >
-                <View style={styles.menuItemLeft}>
-                  <View
-                    style={[
-                      styles.menuIconContainer,
-                      !option.active && styles.menuIconInactive,
-                    ]}
-                  >
-                    <option.icon
-                      size={22}
-                      color={option.active ? LPBE_RED : '#999'}
-                      strokeWidth={2}
-                    />
-                  </View>
-                  <Text
-                    style={[
-                      styles.menuLabel,
-                      !option.active && styles.menuLabelInactive,
-                    ]}
-                  >
-                    {option.label}
-                  </Text>
+          <Text style={styles.name}>{fullName}</Text>
+          <Text style={styles.email}>{user.email}</Text>
+        </View>
+
+        <View style={styles.menuSection}>
+          {menuOptions.map((option) => (
+            <TouchableOpacity
+              key={option.id}
+              style={[styles.menuItem]}
+              onPress={option.onPress}
+              activeOpacity={0.7}
+            >
+              <View style={styles.menuItemLeft}>
+                <View style={styles.menuIconContainer}>
+                  <option.icon size={22} color={LPBE_RED} strokeWidth={2} />
                 </View>
-                <ChevronRight
-                  size={20}
-                  color={option.active ? '#999' : '#ccc'}
-                  strokeWidth={2}
-                />
-              </TouchableOpacity>
-            ))}
-          </View>
+                <Text style={styles.menuLabel}>{option.label}</Text>
+              </View>
+              <ChevronRight size={20} color="#999" strokeWidth={2} />
+            </TouchableOpacity>
+          ))}
+        </View>
 
-          <TouchableOpacity
-            style={styles.logoutButton}
-            onPress={handleLogout}
-            activeOpacity={0.8}
-          >
-            <LogOut size={22} color="#fff" strokeWidth={2} />
-            <Text style={styles.logoutButtonText}>Cerrar Sesión</Text>
-          </TouchableOpacity>
-        </Animated.View>
-      </ScrollView>
-    </View>
-  );
+        <TouchableOpacity
+          style={styles.logoutButton}
+          onPress={handleLogout}
+          activeOpacity={0.8}
+        >
+          <LogOut size={22} color="#fff" strokeWidth={2} />
+          <Text style={styles.logoutButtonText}>Cerrar Sesión</Text>
+        </TouchableOpacity>
+      </Animated.View>
+    </ScrollView>
+  </View>
+);
 }
 
 const styles = StyleSheet.create({
@@ -264,23 +243,23 @@ const styles = StyleSheet.create({
     height: 120,
     borderRadius: 60,
     marginBottom: 20,
-    shadowColor: LPBE_RED,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 8,
     backgroundColor: '#fff',
+    shadowColor: LPBE_RED,
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 12,
   },
   avatar: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-  },
+  width: 120,
+  height: 120,
+  borderRadius: 60,
+  overflow: 'hidden',   // 🔥 evita el crash en Android
+},
   name: {
-    fontSize: 28,
-    fontWeight: '700' as const,
+    fontSize: 26,
+    fontWeight: '700',
     color: '#1a1a1a',
-    marginBottom: 8,
+    marginBottom: 6,
     textAlign: 'center',
   },
   email: {
@@ -289,71 +268,49 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   menuSection: {
-    marginBottom: 32,
+    marginTop: 20,
+    marginBottom: 40,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: '#fff',
-    borderRadius: 12,
+    marginBottom: 14,
     padding: 16,
-    marginBottom: 12,
+    borderRadius: 12,
+    borderColor: '#eee',
     borderWidth: 1,
-    borderColor: '#f0f0f0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  menuItemInactive: {
-    backgroundColor: '#fafafa',
-    opacity: 0.6,
   },
   menuItemLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    flex: 1,
   },
   menuIconContainer: {
     width: 44,
     height: 44,
     borderRadius: 22,
     backgroundColor: '#fff5f5',
-    alignItems: 'center',
     justifyContent: 'center',
+    alignItems: 'center',
     marginRight: 14,
-  },
-  menuIconInactive: {
-    backgroundColor: '#f5f5f5',
   },
   menuLabel: {
     fontSize: 16,
     color: '#1a1a1a',
-    fontWeight: '600' as const,
-    flex: 1,
-  },
-  menuLabelInactive: {
-    color: '#999',
+    fontWeight: '600',
   },
   logoutButton: {
     backgroundColor: LPBE_RED,
-    borderRadius: 12,
-    paddingVertical: 18,
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'center',
-    gap: 10,
-    shadowColor: LPBE_RED,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
+    paddingVertical: 18,
+    borderRadius: 12,
   },
   logoutButtonText: {
     color: '#fff',
     fontSize: 18,
-    fontWeight: '700' as const,
+    fontWeight: '700',
+    marginLeft: 10,
   },
 });
